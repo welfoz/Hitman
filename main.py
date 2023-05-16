@@ -116,8 +116,24 @@ def generateNumGuards(n_col : int, n_lig : int, n_gar : int, nLitterauxUtilises 
         clauses.append(clause)
     return clauses, nLitterauxUtilises + len(clauses)
 
+# generation du nombre de gardes sur la carte
+# part du principe que generateTypesGrid a ete appele en tout premier (et que le litteral pour le civil en 11 est 4)
+def generateNumCivils(n_col : int, n_lig : int, n_civ : int, nLitterauxUtilises : int) -> Tuple[ClauseBase, int]:
+    clauses = []
+    litterals = []
+    for i in range(n_col):
+        for j in range(n_lig):
+            litterals.append(i * n_lig * 7 + j * 7 + 4)
+    for comb in itertools.combinations(litterals, n_civ):
+        clause = list(comb)
+        for l in litterals:
+            if l not in clause:
+                clause.append(-l)
+        clauses.append(clause)
+    return clauses, nLitterauxUtilises + len(clauses)
+
 def main():
-    # print(generateNumGuards(2, 2, 2, 28)[0])
+    # print(generateNumCivils(3, 3, 2, 28)[0])
 
 
 if __name__ == "__main__":
