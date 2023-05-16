@@ -84,3 +84,25 @@ résultat de l'action, nouvelles informations:
     - ajout nouvelles clauses grâces aux cases découvertes 
 
 comptage des points 
+
+# nombre de clauses SAT :
+-> Toutes les fonctions qui génèrent des clauses doivent utiliser les bons littéraux (ex si règle 1 utilise de 1 à 20, règle 2 doit utiliser à partir de 21). On peut passer à ces fonctions le nombre de litéraux déjà utilisés et qu'elles retourne un couple (BaseClauses, NouveauxNombreLitteraux).
+
+Paramètres :
+n_col colonnes et n_lig lignes
+n_gar gardes et n_civ civils
+
+- règle 1 (options possibles pour une case) : n_col * n_lig * 7
+    - 1 : vide
+    - 2 : mur
+    - 3 : garde
+    - 4 : civil
+    - 5 : cible
+    - 6 : corde
+    - 7 : costume
+
+- règle 2 (contraintes sur le nombre de gardes) : n_gar parmi (n_col * n_lig)
+
+- règle 3 (contraintes sur le nombre de civils) : n_civ parmi (n_col * n_lig)
+
+...
