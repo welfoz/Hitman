@@ -1,5 +1,6 @@
 from typing import List, Tuple
 import subprocess
+import itertools
 
 # alias de types
 Grid = List[List[int]] 
@@ -97,10 +98,26 @@ def generateTypesGrid(n_col : int, n_lig : int, nLitterauxUtilises : int) -> Tup
             for k in range(7):
                 literals.append(nLitterauxUtilises + i * n_lig * 7 + j * 7 + k + 1)
             clauses += unique(literals)
-    return clauses, nLitterauxUtilises + n_col * n_lig * 7
+    return clauses, nLitterauxUtilises + len(clauses)
+
+# generation du nombre de gardes sur la carte
+# part du principe que generateTypesGrid a ete appele en tout premier (et que le litteral pour le garde en 11 est 3)
+def generateNumGuards(n_col : int, n_lig : int, n_gar : int, nLitterauxUtilises : int) -> Tuple[ClauseBase, int]:
+    clauses = []
+    litterals = []
+    for i in range(n_col):
+        for j in range(n_lig):
+            litterals.append(i * n_lig * 7 + j * 7 + 3)
+    for comb in itertools.combinations(litterals, n_gar):
+        clause = list(comb)
+        for l in litterals:
+            if l not in clause:
+                clause.append(-l)
+        clauses.append(clause)
+    return clauses, nLitterauxUtilises + len(clauses)
 
 def main():
-    # print(generateTypesGrid(2, 2, 0)[0])
+    # print(generateNumGuards(2, 2, 2, 28)[0])
 
 
 if __name__ == "__main__":
