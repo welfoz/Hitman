@@ -101,12 +101,13 @@ def unique(literals: List[Literal]) -> ClauseBase:
 
 # generation des types possibles pour une case
 def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
+    objectNumer = len(OBJECTS_INDEX)
     clauses = []
     for i in range(n_col):
         for j in range(n_lig):
             literals = []
-            for k in range(7):
-                literals.append(i * n_lig * 7 + j * 7 + k + 1)
+            for k in range(objectNumer):
+                literals.append(i * n_lig * objectNumer + j * objectNumer + k + 1)
             clauses += unique(literals)
     return clauses
 

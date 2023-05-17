@@ -1,8 +1,5 @@
 # TO DO 
-- reprendre l'example du prof sur le boum pousse (dans le cours) --> doit y avoir des bonnes idées
 - coder les règles une par une et vérifier qu'elles fonctionnent
-
-
 
 
 # rules 
