@@ -111,29 +111,13 @@ def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
             clauses += unique(literals)
     return clauses
 
-# generation du nombre de gardes sur la carte
-def generateNumGuards(n_col : int, n_lig : int, n_gar : int) -> ClauseBase:
+def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_index: int) -> ClauseBase:
     clauses = []
     litterals = []
     for i in range(n_col):
         for j in range(n_lig):
-            litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'])
-    for comb in itertools.combinations(litterals, n_gar):
-        clause = list(comb)
-        for l in litterals:
-            if l not in clause:
-                clause.append(-l)
-        clauses.append(clause)
-    return clauses
-
-# generation du nombre de gardes sur la carte
-def generateNumCivils(n_col : int, n_lig : int, n_civ : int) -> ClauseBase:
-    clauses = []
-    litterals = []
-    for i in range(n_col):
-        for j in range(n_lig):
-            litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['civil'])
-    for comb in itertools.combinations(litterals, n_civ):
+            litterals.append(i * n_lig * 7 + j * 7 + object_index)
+    for comb in itertools.combinations(litterals, n_object):
         clause = list(comb)
         for l in litterals:
             if l not in clause:
@@ -142,14 +126,19 @@ def generateNumCivils(n_col : int, n_lig : int, n_civ : int) -> ClauseBase:
     return clauses
 
 def main():
-    clauses = []
     linesNumber = 2
     columnsNumber = 2
-    clauses += generateTypesGrid(columnsNumber, linesNumber)
-    clauses += generateNumGuards(columnsNumber, linesNumber, 1)
-    clauses += generateNumCivils(columnsNumber, linesNumber, 1)
-    print(clauses)
+    guardNumber = 1
+    civilNumber = 1
 
+    clauses = []
+    clauses += generateTypesGrid(columnsNumber, linesNumber)
+    clauses += generateClausesForObject(columnsNumber, linesNumber, guardNumber, OBJECTS_INDEX['guard'])
+    clauses += generateClausesForObject(columnsNumber, linesNumber, civilNumber, OBJECTS_INDEX['civil'])
+    clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['target'])
+    clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['rope'])
+    clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['costume'])
+    print(clauses)
 
 if __name__ == "__main__":
     main()
