@@ -1,13 +1,20 @@
 # TO DO 
-- reprendre l'example du prof sur le boum pousse (dans le cours) --> doit y avoir des bonnes idées
 - coder les règles une par une et vérifier qu'elles fonctionnent
-
+- penser à comment faire le choix du déplacement (@Pol tu vois qqchose à faire avant ?)
+- implementer choix de déplacement
 
 
 
 # rules 
 
-1. 1 case contient 1 et 1 seul truc (reprendre sudoku)
+1. 1 case contient 1 et 1 seul type, un type est soit: 
+    - un garde -> S (security)
+    - un invité -> G (guest)
+    - un déguisement -> C (costume)
+    - une corde -> R (rope)
+    - la cible -> T (target)
+    - un mur -> W (wall)
+    - rien -> E 
 
 2. les gardes et invités regardent dans une direction et une seule direction (est-ce important dans les clauses ??? --> pense pas, c'est à stocker en dehors des clauses juste pour compter les points)
 
@@ -15,14 +22,6 @@
 
 4. il y a 1 cible, 1 déguisement, 1 corde dans la piece 
 
-5. un truc est soit: 
-    - un garde -> S (security)
-    - un invité -> G (guest)
-    - un déguisement -> C (costume)
-    - une corde -> R (rope)
-    - la cible -> T (target)
-    - un mur -> W (wall)
-    - rien -> E (est-ce important de coder le vide ? du moment que si c'est pas un truc, c'est vide -> allège un peu les clauses non ? jsp)
 
 
 ## Additionnel: 
@@ -31,6 +30,21 @@
 - hitman voit entre 1 et 3 cases (max) devant lui, sa vision s'arrête au premier obstacle
 - hitman entend, autour de lui. Il sait le nb X de gardes et d'invités autour de lui. Donc il sait aussi X - 9 non gardes et non invités.
 S'il voit un garde ou un invité devant lui, X - 1 gardes et invités restants autour de lui et 9 - (X - 1) non gardes et non invités restants autour de lui. 
+- si hitman est sur la meme case qu'un civil, il est caché par le civil
+- on ne peut pas avancer sur un garde
+- on peut etre sur la meme case qu'un invité en disant "pardon"
+- on ne peut pas avancer sur un mur
+- la case de départ est forcement une bordure
+- quand on voit une bordure -> en déduire des clauses 
+- à partir de 5 (gardes + invités) autour de nous on en entend 5+
+
+### Notes
+- le choix du déplacement + la phase 2 de recherche des états est à faire en python
+- ca doit tourner en salle de TP 
+
+### Questionnements ???
+- est-ce qu'on enlève des clauses au fur et à mesure pour soulager le prg ?? (à voir si on veut optimiser le temps de calcul ou pas)
+
 
 <br>
 
