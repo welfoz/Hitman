@@ -90,19 +90,19 @@ def unique(literals: List[Literal]) -> ClauseBase:
 #     return clauses
 
 # generation des types possibles pour une case
-def generateTypesGrid(n_col : int, n_lig : int, nLitterauxUtilises : int) -> Tuple[ClauseBase, int]:
+def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
     clauses = []
     for i in range(n_col):
         for j in range(n_lig):
             literals = []
             for k in range(7):
-                literals.append(nLitterauxUtilises + i * n_lig * 7 + j * 7 + k + 1)
+                literals.append(i * n_lig * 7 + j * 7 + k + 1)
             clauses += unique(literals)
-    return clauses, nLitterauxUtilises + len(clauses)
+    return clauses
 
 # generation du nombre de gardes sur la carte
 # part du principe que generateTypesGrid a ete appele en tout premier (et que le litteral pour le garde en 11 est 3)
-def generateNumGuards(n_col : int, n_lig : int, n_gar : int, nLitterauxUtilises : int) -> Tuple[ClauseBase, int]:
+def generateNumGuards(n_col : int, n_lig : int, n_gar : int) -> ClauseBase:
     clauses = []
     litterals = []
     for i in range(n_col):
@@ -114,11 +114,11 @@ def generateNumGuards(n_col : int, n_lig : int, n_gar : int, nLitterauxUtilises 
             if l not in clause:
                 clause.append(-l)
         clauses.append(clause)
-    return clauses, nLitterauxUtilises + len(clauses)
+    return clauses
 
 # generation du nombre de gardes sur la carte
 # part du principe que generateTypesGrid a ete appele en tout premier (et que le litteral pour le civil en 11 est 4)
-def generateNumCivils(n_col : int, n_lig : int, n_civ : int, nLitterauxUtilises : int) -> Tuple[ClauseBase, int]:
+def generateNumCivils(n_col : int, n_lig : int, n_civ : int) -> ClauseBase:
     clauses = []
     litterals = []
     for i in range(n_col):
@@ -130,10 +130,14 @@ def generateNumCivils(n_col : int, n_lig : int, n_civ : int, nLitterauxUtilises 
             if l not in clause:
                 clause.append(-l)
         clauses.append(clause)
-    return clauses, nLitterauxUtilises + len(clauses)
+    return clauses
 
 def main():
-    # print(generateNumCivils(3, 3, 2, 28)[0])
+    clauses = []
+    clauses += generateTypesGrid(2, 2)
+    clauses += generateNumGuards(2, 2, 1)
+    clauses += generateNumCivils(2, 2, 1)
+    print(clauses)
 
 
 if __name__ == "__main__":
