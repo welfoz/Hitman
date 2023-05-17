@@ -10,6 +10,16 @@ Clause = List[Literal]
 ClauseBase = List[Clause]
 Model = List[Literal]
 
+OBJECTS_INDEX = {
+    'empty': 1,
+    'wall': 2,
+    'guard': 3,
+    'civil': 4,
+    'target': 5,
+    'rope': 6,
+    'costume': 7
+}
+
 #### fonctions fournies
 def write_dimacs_file(dimacs: str, filename: str):
     with open(filename, "w", newline="") as cnf:
@@ -101,13 +111,12 @@ def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
     return clauses
 
 # generation du nombre de gardes sur la carte
-# part du principe que generateTypesGrid a ete appele en tout premier (et que le litteral pour le garde en 11 est 3)
 def generateNumGuards(n_col : int, n_lig : int, n_gar : int) -> ClauseBase:
     clauses = []
     litterals = []
     for i in range(n_col):
         for j in range(n_lig):
-            litterals.append(i * n_lig * 7 + j * 7 + 3)
+            litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'])
     for comb in itertools.combinations(litterals, n_gar):
         clause = list(comb)
         for l in litterals:
@@ -117,13 +126,12 @@ def generateNumGuards(n_col : int, n_lig : int, n_gar : int) -> ClauseBase:
     return clauses
 
 # generation du nombre de gardes sur la carte
-# part du principe que generateTypesGrid a ete appele en tout premier (et que le litteral pour le civil en 11 est 4)
 def generateNumCivils(n_col : int, n_lig : int, n_civ : int) -> ClauseBase:
     clauses = []
     litterals = []
     for i in range(n_col):
         for j in range(n_lig):
-            litterals.append(i * n_lig * 7 + j * 7 + 4)
+            litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['civil'])
     for comb in itertools.combinations(litterals, n_civ):
         clause = list(comb)
         for l in litterals:
@@ -134,9 +142,11 @@ def generateNumCivils(n_col : int, n_lig : int, n_civ : int) -> ClauseBase:
 
 def main():
     clauses = []
-    clauses += generateTypesGrid(2, 2)
-    clauses += generateNumGuards(2, 2, 1)
-    clauses += generateNumCivils(2, 2, 1)
+    linesNumber = 2
+    columnsNumber = 2
+    clauses += generateTypesGrid(columnsNumber, linesNumber)
+    clauses += generateNumGuards(columnsNumber, linesNumber, 1)
+    clauses += generateNumCivils(columnsNumber, linesNumber, 1)
     print(clauses)
 
 
