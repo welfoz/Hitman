@@ -81,6 +81,7 @@ def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
             clauses += unique(literals)
     return clauses
 
+# generation des clauses pour un nombre donne d'ojects dans la carte
 def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_index: int) -> ClauseBase:
     clauses = []
     litterals = []
