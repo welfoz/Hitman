@@ -112,35 +112,26 @@ def ajouterInfoVision(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBa
     clauses.append([x * n_lig * 7 + y * 7 + typeCase])
     return clauses
 
-
-def solveur(clauses: ClauseBase, dimension : int) -> List[int]:
+def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
+    filename = "temp.cnf"
     dimacs = clausesToDimacs(clauses, dimension)
-    write_dimacs_file("\n".join(dimacs), "test.cnf")
-    sol = exec_gophersat("test.cnf")
-    if not sol[0]:
-        raise Exception("Pas de solution")
-    return sol[1]
+    write_dimacs_file("\n".join(dimacs), filename)
+    return exec_gophersat(filename)
 
 def testUnicite(clauses: ClauseBase, dimension : int) -> bool:
-    dimacs = clausesToDimacs(clauses, dimension)
-    write_dimacs_file("\n".join(dimacs), "test.cnf")
-    sol = exec_gophersat("test.cnf")
+    sol = solveur(clauses, dimension)
     #print(sol)
-    if sol[0]:
-        #print("Solution : \n")
-        #print(sol[1])
-        dimacs2 = clausesToDimacs(clauses + [[-x for x in sol[1]]], dimension)
-        write_dimacs_file("\n".join(dimacs2), "test2.cnf")
-        sol2 = exec_gophersat("test2.cnf")
-        if sol2[0]:
-            #print("Pas d'unicite")
-            return False
-        else:
-            #print("Solution unique")
-            return True
-    else:
-        #print("Pas de solution")
+    if not sol[0]: return False
+
+    #print("Solution : \n")
+    #print(sol[1])
+    sol2 = solveur(clauses + [[-x for x in sol[1]]], dimension)
+    if sol2[0]:
+        #print("Pas d'unicite")
         return False
+    else:
+        #print("Solution unique")
+        return True
 
 def main():
     linesNumber = 3
