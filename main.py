@@ -96,27 +96,58 @@ def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_ind
         clauses.append(clause)
     return clauses
 
-def testUnicite(clauses: ClauseBase, dimension : int):
+# ajout d'une information de vision
+def ajouterInfoVision(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBase:
+    print("Infos de la case vue : ")
+    x = int(input("x : "))
+    y = int(input("y : "))
+    if x not in range(0,n_col) or y not in range(0,n_lig):
+        raise Exception("Coordonnees invalides")
+    print("Types possibles : ")
+    for key, value in OBJECTS_INDEX.items():
+        print(f"'{key}' : {value}")
+    typeCase = int(input("Type de la case : "))
+    if typeCase not in OBJECTS_INDEX.values():
+        raise Exception("Type invalide")
+    clauses.append([x * n_lig * 7 + y * 7 + typeCase])
+    return clauses
+
+
+def solveur(clauses: ClauseBase, dimension : int) -> List[int]:
     dimacs = clausesToDimacs(clauses, dimension)
     write_dimacs_file("\n".join(dimacs), "test.cnf")
     sol = exec_gophersat("test.cnf")
-    print(sol)
+    if not sol[0]:
+        raise Exception("Pas de solution")
+    return sol[1]
+
+def testUnicite(clauses: ClauseBase, dimension : int) -> bool:
+    dimacs = clausesToDimacs(clauses, dimension)
+    write_dimacs_file("\n".join(dimacs), "test.cnf")
+    sol = exec_gophersat("test.cnf")
+    #print(sol)
     if sol[0]:
-        print("Solution : \n")
-        print(sol[1])
+        #print("Solution : \n")
+        #print(sol[1])
         dimacs2 = clausesToDimacs(clauses + [[-x for x in sol[1]]], dimension)
         write_dimacs_file("\n".join(dimacs2), "test2.cnf")
         sol2 = exec_gophersat("test2.cnf")
         if sol2[0]:
-            print("Pas d'unicite")
+            #print("Pas d'unicite")
+            return False
+        else:
+            #print("Solution unique")
+            return True
     else:
-        print("Pas de solution")
+        #print("Pas de solution")
+        return False
 
 def main():
-    linesNumber = 2
-    columnsNumber = 2
+    linesNumber = 3
+    columnsNumber = 3
     guardNumber = 1
     civilNumber = 1
+    dimension = columnsNumber * linesNumber * len(OBJECTS_INDEX)
 
     clauses = []
     clauses += generateTypesGrid(columnsNumber, linesNumber)
@@ -127,7 +158,13 @@ def main():
     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['costume'])
     print(clauses)
 
-    testUnicite(clauses, columnsNumber * linesNumber * len(OBJECTS_INDEX))
+    while not testUnicite(clauses, dimension):
+        ajouterInfoVision(clauses, columnsNumber, linesNumber)
+        print(clauses)
+    
+    print("Carte connue : \n")
+    print(solveur(clauses, dimension))
+
 
 if __name__ == "__main__":
     main()
