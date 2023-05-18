@@ -97,7 +97,7 @@ def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_ind
     return clauses
 
 # ajout d'une information de vision
-def ajouterInfoVision(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBase:
+def addInfoVision(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBase:
     print("Infos de la case vue : ")
     x = int(input("x : "))
     y = int(input("y : "))
@@ -118,7 +118,7 @@ def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
     write_dimacs_file("\n".join(dimacs), filename)
     return exec_gophersat(filename)
 
-def testUnicite(clauses: ClauseBase, dimension : int) -> bool:
+def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
     sol = solveur(clauses, dimension)
     #print(sol)
     if not sol[0]: return False
@@ -149,8 +149,8 @@ def main():
     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['costume'])
     print(clauses)
 
-    while not testUnicite(clauses, dimension):
-        ajouterInfoVision(clauses, columnsNumber, linesNumber)
+    while not isSolutionUnique(clauses, dimension):
+        addInfoVision(clauses, columnsNumber, linesNumber)
         print(clauses)
     
     print("Carte connue : \n")
