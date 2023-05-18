@@ -1,6 +1,7 @@
 from typing import List, Tuple
 import subprocess
 import itertools
+import os
 
 # alias de types
 Grid = List[List[int]] 
@@ -25,8 +26,9 @@ def write_dimacs_file(dimacs: str, filename: str):
     with open(filename, "w", newline="") as cnf:
         cnf.write(dimacs)
 
+# l'executable gophersat soit etre dans le cwd
 def exec_gophersat(
-    filename: str, cmd: str = "gophersat", encoding: str = "utf8"
+    filename: str, cmd: str = os.getcwd() + "/gophersat", encoding: str = "utf8"
 ) -> Tuple[bool, List[int]]:
     result = subprocess.run(
         [cmd, filename], capture_output=True, check=True, encoding=encoding
@@ -42,16 +44,16 @@ def exec_gophersat(
     return True, [int(x) for x in model]
 
 def clausesToDimacs(clauses: ClauseBase, dimension: int) -> List[str]:
-    dimacs = "p cnf " + str(pow(dimension, 3)) + ' ' + str(len(clauses))
-
-    result = []
+    # dimacs = "p cnf " + str(pow(dimension, 3)) + ' ' + str(len(clauses)) pas compris pk c'est dim^3
+    dimacs = "p cnf " + str(dimension) + ' ' + str(len(clauses))
+    result = [dimacs]
     for clause in clauses:
         line = ""
         for literal in clause:
             line += str(literal) + " "
         line += "0"
         result.append(line)
-
+    result.append("")
     return result
 
 def atLeastOne(literals: List[Literal]) -> ClauseBase:
@@ -107,6 +109,10 @@ def main():
     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['rope'])
     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['costume'])
     print(clauses)
+
+    dimacs = clausesToDimacs(clauses, columnsNumber * linesNumber * len(OBJECTS_INDEX))
+    write_dimacs_file("\n".join(dimacs), "test.cnf")
+    print(exec_gophersat("test.cnf"))
 
 if __name__ == "__main__":
     main()
