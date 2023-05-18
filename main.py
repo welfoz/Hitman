@@ -54,16 +54,6 @@ def clausesToDimacs(clauses: ClauseBase, dimension: int) -> List[str]:
 
     return result
 
-# def gridtoClause(grid: Grid) -> ClauseBase: 
-#     clauses = []
-
-#     for i in range(len(grid)):
-#         for j in range(len(grid[i])):
-#             if grid[i][j] != 0:
-#                 clauses.append([i*(pow(len(grid), 2)) + j*(len(grid)) + grid[i][j]])
-
-#     return clauses
-
 def atLeastOne(literals: List[Literal]) -> ClauseBase:
     return [literals]
 
@@ -76,28 +66,6 @@ def atMostOne(literals: List[Literal]) -> ClauseBase:
     
 def unique(literals: List[Literal]) -> ClauseBase:
     return atLeastOne(literals) + atMostOne(literals)
-    
-# def uniqueLinesAndColumns(grid: Grid) -> ClauseBase:
-#     clauses = []
-#     dimension = len(grid)
-#     # lines 
-#     for i in range(dimension):
-#         for j in range(dimension):
-#             literals = []
-#             for k in range(dimension):
-#                 literals.append(i*(pow(dimension, 2)) + j*(dimension) + k + 1)
-#             clauses += unique(literals)
-#             print(unique(literals))
-#             print("-----------")
-    
-#     # columns 
-#     for i in range(dimension):
-#         for j in range(dimension):
-#             literals = []
-#             for k in range(dimension):
-#                 literals.append(i*(pow(dimension, 2)) + j*(dimension) + k + 1)
-#             clauses += unique(literals) 
-#     return clauses
 
 # generation des types possibles pour une case
 def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
