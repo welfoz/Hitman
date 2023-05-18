@@ -3,8 +3,6 @@
 - penser à comment faire le choix du déplacement (@Pol tu vois qqchose à faire avant ?)
 - implementer choix de déplacement
 
-
-
 # rules 
 
 1. 1 case contient 1 et 1 seul type, un type est soit: 
@@ -100,8 +98,6 @@ résultat de l'action, nouvelles informations:
 comptage des points 
 
 # nombre de clauses SAT :
--> Toutes les fonctions qui génèrent des clauses doivent utiliser les bons littéraux (ex si règle 1 utilise de 1 à 20, règle 2 doit utiliser à partir de 21). On peut passer à ces fonctions le nombre de litéraux déjà utilisés et qu'elles retourne un couple (BaseClauses, NouveauxNombreLitteraux).
-
 Paramètres :
 n_col colonnes et n_lig lignes
 n_gar gardes et n_civ civils
