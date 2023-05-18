@@ -28,7 +28,7 @@ def write_dimacs_file(dimacs: str, filename: str):
 
 # l'executable gophersat soit etre dans le cwd
 def exec_gophersat(
-    filename: str, cmd: str = os.getcwd() + "/gophersat", encoding: str = "utf8"
+    filename: str, cmd: str = os.getcwd() + "\gophersat\gophersat.exe", encoding: str = "utf8"
 ) -> Tuple[bool, List[int]]:
     result = subprocess.run(
         [cmd, filename], capture_output=True, check=True, encoding=encoding
