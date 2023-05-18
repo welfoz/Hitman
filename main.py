@@ -95,6 +95,22 @@ def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_ind
         clauses.append(clause)
     return clauses
 
+def testUnicite(clauses: ClauseBase, dimension : int):
+    dimacs = clausesToDimacs(clauses, dimension)
+    write_dimacs_file("\n".join(dimacs), "test.cnf")
+    sol = exec_gophersat("test.cnf")
+    print(sol)
+    if sol[0]:
+        print("Solution : \n")
+        print(sol[1])
+        dimacs2 = clausesToDimacs(clauses + [[-x for x in sol[1]]], dimension)
+        write_dimacs_file("\n".join(dimacs2), "test2.cnf")
+        sol2 = exec_gophersat("test2.cnf")
+        if sol2[0]:
+            print("Pas d'unicite")
+    else:
+        print("Pas de solution")
+
 def main():
     linesNumber = 2
     columnsNumber = 2
@@ -110,9 +126,7 @@ def main():
     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['costume'])
     print(clauses)
 
-    dimacs = clausesToDimacs(clauses, columnsNumber * linesNumber * len(OBJECTS_INDEX))
-    write_dimacs_file("\n".join(dimacs), "test.cnf")
-    print(exec_gophersat("test.cnf"))
+    testUnicite(clauses, columnsNumber * linesNumber * len(OBJECTS_INDEX))
 
 if __name__ == "__main__":
     main()
