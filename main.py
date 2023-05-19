@@ -2,6 +2,7 @@ from typing import List, Tuple
 import subprocess
 import itertools
 import os
+import platform
 
 # alias de types
 Grid = List[List[int]] 
@@ -28,8 +29,15 @@ def write_dimacs_file(dimacs: str, filename: str):
 
 # l'executable gophersat soit etre dans le cwd
 def exec_gophersat(
-    filename: str, cmd: str = os.getcwd() + "\gophersat\gophersat.exe", encoding: str = "utf8"
+    filename: str, cmd: str = "", encoding: str = "utf8"
 ) -> Tuple[bool, List[int]]:
+    # Vérifier si l'OS est macOS
+    if platform.system() == 'Darwin':
+        cmd = os.getcwd() + "/gophersat"
+    # Vérifier si l'OS est Windows
+    if platform.system() == 'Windows':
+        cmd = os.getcwd() + "\gophersat\gophersat.exe"
+
     result = subprocess.run(
         [cmd, filename], capture_output=True, check=True, encoding=encoding
     )
