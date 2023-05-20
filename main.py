@@ -91,18 +91,11 @@ def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
 
 # generation des clauses pour un nombre donne d'ojects dans la carte
 def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_index: int) -> ClauseBase:
-    clauses = []
     litterals = []
     for i in range(n_col):
         for j in range(n_lig):
             litterals.append(i * n_lig * 7 + j * 7 + object_index)
-    for comb in itertools.combinations(litterals, n_object):
-        clause = list(comb)
-        for l in litterals:
-            if l not in clause:
-                clause.append(-l)
-        clauses.append(clause)
-    return clauses
+    return uniqueX(litterals, n_object)
 
 # ajout d'une information de vision
 def addInfoVision(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBase:
@@ -135,11 +128,31 @@ def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
     #print(sol[1])
     sol2 = solveur(clauses + [[-x for x in sol[1]]], dimension)
     if sol2[0]:
-        #print("Pas d'unicite")
+        print("Pas d'unicite")
         return False
     else:
-        #print("Solution unique")
+        print("Solution unique")
         return True
+
+def atMost(atMostNumber: int, literals: List[Literal], result: List[Literal] = []) -> ClauseBase:
+    if len(result) > atMostNumber:
+        return [[-l for l in result]]
+    
+    clauses = []
+    for i in range(len(literals)):
+        clauses += atMost(atMostNumber, literals[i+1:], result + [literals[i]])
+    return clauses
+    
+def atLeast(atLeastNumber: int, literals: List[Literal], result: List[Literal] = []) -> ClauseBase:
+    atMostResult = atMost(atLeastNumber - 2, literals, result)
+
+    clauses = []
+    for i in range(len(atMostResult)):
+        clauses.append(atMostResult[i] + [l for l in literals if -l not in atMostResult[i]])
+    return clauses
+
+def uniqueX(literals: List[Literal], x: int) -> ClauseBase:
+    return atLeast(x, literals) + atMost(x, literals)
 
 def main():
     linesNumber = 3
@@ -149,6 +162,8 @@ def main():
     dimension = columnsNumber * linesNumber * len(OBJECTS_INDEX)
 
     clauses = []
+    # print(uniqueX([1, 2, 3, 4], 3))
+
     clauses += generateTypesGrid(columnsNumber, linesNumber)
     clauses += generateClausesForObject(columnsNumber, linesNumber, guardNumber, OBJECTS_INDEX['guard'])
     clauses += generateClausesForObject(columnsNumber, linesNumber, civilNumber, OBJECTS_INDEX['civil'])
