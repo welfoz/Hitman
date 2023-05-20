@@ -125,6 +125,12 @@ def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
         return True
 
 def atMost(atMostNumber: int, literals: List[Literal], result: List[Literal] = []) -> ClauseBase:
+    """
+    Generate clauses to express that at most atMostNumber literals in literals are true
+    @param atMostNumber: the number of literals that are allowed to be true
+    @param literals: the literals that are concerned by the constraint
+    @param result: needs to be empty, used for recursion
+    """
     if len(result) > atMostNumber:
         return [[-l for l in result]]
     
@@ -134,6 +140,12 @@ def atMost(atMostNumber: int, literals: List[Literal], result: List[Literal] = [
     return clauses
     
 def atLeast(atLeastNumber: int, literals: List[Literal], result: List[Literal] = []) -> ClauseBase:
+    """
+    Generate clauses to express that at least atLeastNumber literals in literals are true
+    @param atLeastNumber: the number of literals that are required to be true
+    @param literals: the literals that are concerned by the constraint
+    @param result: needs to be empty, used for recursion
+    """
     atMostResult = atMost(atLeastNumber - 2, literals, result)
 
     clauses = []
@@ -142,8 +154,15 @@ def atLeast(atLeastNumber: int, literals: List[Literal], result: List[Literal] =
     return clauses
 
 def uniqueX(literals: List[Literal], x: int) -> ClauseBase:
+    """
+    Generate clauses to express that exactly x literals in literals are true
+    @param literals: the literals that are concerned by the constraint
+    @param x: the number of literals that are required to be true
+    """
+
     clauses = []
     
+    # at least x, least x-1, x-2, ... 1
     for i in range(1, x):
         clauses += atLeast(i, literals)
 
