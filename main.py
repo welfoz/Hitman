@@ -64,19 +64,6 @@ def clausesToDimacs(clauses: ClauseBase, dimension: int) -> List[str]:
     result.append("")
     return result
 
-def atLeastOne(literals: List[Literal]) -> ClauseBase:
-    return [literals]
-
-def atMostOne(literals: List[Literal]) -> ClauseBase:
-    clauses = []
-    for i in range(len(literals)):
-        for j in range(i + 1, len(literals)):
-            clauses.append([-literals[i], -literals[j]])
-    return clauses
-    
-def unique(literals: List[Literal]) -> ClauseBase:
-    return atLeastOne(literals) + atMostOne(literals)
-
 # generation des types possibles pour une case
 def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
     objectNumer = len(OBJECTS_INDEX)
@@ -86,7 +73,7 @@ def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
             literals = []
             for k in range(objectNumer):
                 literals.append(i * n_lig * objectNumer + j * objectNumer + k + 1)
-            clauses += unique(literals)
+            clauses += uniqueX(literals, 1)
     return clauses
 
 # generation des clauses pour un nombre donne d'ojects dans la carte
