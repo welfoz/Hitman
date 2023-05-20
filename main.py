@@ -156,8 +156,10 @@ def atLeast(atLeastNumber: int, literals: List[Literal], result: List[Literal] =
 
 def uniqueX(literals: List[Literal], x: int) -> ClauseBase:
     clauses = []
-    if x > 1:
-        clauses += atLeast(1, literals)
+    
+    for i in range(1, x):
+        clauses += atLeast(i, literals)
+
     clauses += atLeast(x, literals) + atMost(x, literals)
     return clauses
 
