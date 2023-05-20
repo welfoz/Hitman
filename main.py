@@ -95,7 +95,10 @@ def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_ind
     for i in range(n_col):
         for j in range(n_lig):
             litterals.append(i * n_lig * 7 + j * 7 + object_index)
-    return uniqueX(litterals, n_object)
+    r = uniqueX(litterals, n_object)
+    print("Clauses pour " + str(n_object) + " " + list(OBJECTS_INDEX.keys())[list(OBJECTS_INDEX.values()).index(object_index)] + " :")
+    print(r)
+    return r
 
 # ajout d'une information de vision
 def addInfoVision(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBase:
@@ -121,7 +124,7 @@ def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
 
 def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
     sol = solveur(clauses, dimension)
-    #print(sol)
+    print(sol)
     if not sol[0]: return False
 
     #print("Solution : \n")
@@ -152,17 +155,24 @@ def atLeast(atLeastNumber: int, literals: List[Literal], result: List[Literal] =
     return clauses
 
 def uniqueX(literals: List[Literal], x: int) -> ClauseBase:
-    return atLeast(x, literals) + atMost(x, literals)
+    clauses = []
+    if x > 1:
+        clauses += atLeast(1, literals)
+    clauses += atLeast(x, literals) + atMost(x, literals)
+    return clauses
 
 def main():
     linesNumber = 3
     columnsNumber = 3
-    guardNumber = 1
+    guardNumber = 2
     civilNumber = 1
     dimension = columnsNumber * linesNumber * len(OBJECTS_INDEX)
 
     clauses = []
     # print(uniqueX([1, 2, 3, 4], 3))
+    # clauses += uniqueX([1, 2, 3, 4], 2)
+    # clauses += uniqueX([1, 2, 3, 4], 1)
+    # print(clauses)
 
     clauses += generateTypesGrid(columnsNumber, linesNumber)
     clauses += generateClausesForObject(columnsNumber, linesNumber, guardNumber, OBJECTS_INDEX['guard'])
