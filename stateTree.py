@@ -2,7 +2,7 @@
 # 3 actions possible: move, turn 90, turn -90
 # store at each index the value of the total information gained for this path
 # return 1, 2, 3 for the best action
-DEPTH_MAX = 4
+DEPTH_MAX = 2
 
 def createMap(n_col : int, n_lig : int):
     """
@@ -24,12 +24,14 @@ def createStateTree(map):
     @param map: the map of the game
     """
 
-    stateTree = []
-    depth = 0
-    for i in range(DEPTH_MAX + 1):
+    stateTree = [0]
+    depth = 1
+    for i in range(DEPTH_MAX):
         # 3 actions possible
         for j in range(pow(3, depth)):
-            stateTree.append(informationGained(map, stateTree))
+            parentIndex = (len(stateTree) - 1) // 3
+            print("parentIndex: " + str(parentIndex))
+            stateTree.append(informationGained(map, stateTree[parentIndex]))
         depth += 1
     return stateTree
 
@@ -48,17 +50,17 @@ def choiceAction(stateTree):
         return 'turn 90'
     return "turn -90"
 
-def informationGained(map, stateTree) -> int:
+def informationGained(map, parentValue) -> int:
     """
     return the information gained by doing action
     @param map: the map of the game
     @param action: the action to do
     """
-    return 1
+    return parentValue + 1
 
-print("choiceAction")
 stateTree = createStateTree(createMap(4, 3))
 print(stateTree)
 print(len(stateTree))
+print("choiceAction")
 print(choiceAction(stateTree))
 
