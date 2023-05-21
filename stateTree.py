@@ -96,34 +96,31 @@ def createStateTree(map, position):
     @param map: the map of the game
     @param position: the position of the agent [x, y, direction]
     """
-
     stateTree = [0]
     positionTree = [position]
     stateMap = [map]
-    depth = 1
-    for i in range(DEPTH_MAX):
-        # 3 actions possible
-        for j in range(pow(3, depth)):
+    depthCount = 1
+    for _ in range(DEPTH_MAX):
+        for _ in range(pow(3, depthCount)):
             parentIndex = (len(stateTree) - 1) // 3
-            # action is 1, 2 or 3
-            action = ((len(stateTree) - 1) % 3) + 1
             parentPosition = positionTree[parentIndex]
             parentMap = stateMap[parentIndex]
 
+            # action is 1, 2 or 3
+            action = ((len(stateTree) - 1) % 3) + 1
+
             newPosition = computePositionBasedOnAction(parentPosition, action)
-            # pnt est ce que faut stocker toutes les stateMaps parents ou meme juste la derniere
-            # on est obligé de comparé l'information de la nouvelle position avec la derniere position
-            # information is [x, y, value]
-            newInfo = newInformation(parentMap, newPosition)
-            totalInformationGained = stateTree[parentIndex] + informationGained(newInfo)
-            # print("parentIndex: " + str(parentIndex))
-            # print("parent map: " + str(parentMap))
+            newInfo = getAllNewInformation(parentMap, newPosition)
+            # print("newInfo: " + str(newInfo))
             newMap = updateMap(copy.deepcopy(parentMap), newInfo)
+
+            totalInformationGained = stateTree[parentIndex] + informationGained(newInfo)
 
             # améliorable en stockant que la derniere position
             stateTree.append(totalInformationGained)
             # améliorable en stockant que la derniere position
             positionTree.append(newPosition)
+            # améliorable en stockant que la derniere position
             stateMap.append(newMap)
 
             # print("----")
@@ -133,7 +130,7 @@ def createStateTree(map, position):
             # print("newPosition: " + str(newPosition))
             # print("information: " + str(newInfo))
             # print("totalInformationGained: " + str(totalInformationGained))
-        depth += 1
+        depthCount += 1
     return stateTree
 
 def choiceAction(stateTree):
@@ -159,13 +156,7 @@ def informationGained(newInfo) -> int:
     +1 if the action reveals may reveal 1 new cells
     0 if we reveal no new cells
     """
-    if len(newInfo) == 3:
-        return 3
-    elif len(newInfo) == 2:
-        return 2
-    elif len(newInfo) == 1:
-        return 1
-    return 0
+    return len(newInfo)
 
 def isInformationAlreadyKnown(map, information) -> bool:
     """
@@ -177,48 +168,46 @@ def isInformationAlreadyKnown(map, information) -> bool:
         return True
     return False
 
-def newInformation(map, position) -> List[Tuple[int, int, int]]:
+def getAllNewInformation(map, position) -> List[Tuple[int, int, int]]:
     """
     return all new information the position reveals compared to the map
     @param map: the map of the game
     @param position: the position of the agent [x, y, direction]
     """
+    vision = 3
     x = position[0]
     y = position[1]
     direction = position[2]
-    vision = 3
-    casesLookedAt = []
+    computeNewPosition = ["=", "="]
     if direction == 'N':
-        for i in range(vision):
-            newPosition = [x, y - i - 1]
-            if isOutsideTheMap(newPosition): continue
-
-            info = [x, y - i - 1, GAME_MAP[y - i - 1][x]]
-            if isInformationAlreadyKnown(map, info): continue
-            casesLookedAt.append(info)
+        computeNewPosition[1] = "-"
     elif direction == 'S':
-        for i in range(vision):
-            newPosition = [x, y + i + 1]
-            if isOutsideTheMap(newPosition): continue
-            info = [x, y + i + 1, GAME_MAP[y + i + 1][x]]
-            if isInformationAlreadyKnown(map, info): continue
-            casesLookedAt.append(info)
+        computeNewPosition[1] = "+"
     elif direction == 'E':
-        for i in range(vision):
-            newPosition = [x + i + 1, y]
-            if isOutsideTheMap(newPosition): continue
-            info = [x + i + 1, y, GAME_MAP[y][x + i + 1]]
-            if isInformationAlreadyKnown(map, info): continue
-            casesLookedAt.append(info)
+        computeNewPosition[0] = "+"
     elif direction == 'W':
-        for i in range(vision):
-            newPosition = [x - i - 1, y]
-            if isOutsideTheMap(newPosition): continue
-            info = [x - i - 1, y, GAME_MAP[y][x - i - 1]]
-            if isInformationAlreadyKnown(map, info): continue
-            casesLookedAt.append(info)
+        computeNewPosition[0] = "-"
 
-    return casesLookedAt
+    casesSeen = []
+    for i in range(vision):
+        newPosition = [x, y]
+        if computeNewPosition[0] == "+":
+            newPosition[0] = x + i + 1
+        elif computeNewPosition[0] == "-":
+            newPosition[0] = x - i - 1
+
+        if computeNewPosition[1] == "+":
+            newPosition[1] = y + i + 1
+        elif computeNewPosition[1] == "-":
+            newPosition[1] = y - i - 1
+
+
+        if isOutsideTheMap(newPosition): continue
+        info = [newPosition[0], newPosition[1], GAME_MAP[newPosition[1]][newPosition[0]]] 
+        if isInformationAlreadyKnown(map, info): continue
+        
+        casesSeen.append(info)
+    return casesSeen
 
 def updateMap(map, newInfo):
     """
@@ -247,7 +236,7 @@ def turn(map, position):
         print("turn -90")
 
     newPosition = computePositionBasedOnAction(position, action)
-    newInfo = newInformation(map, newPosition)
+    newInfo = getAllNewInformation(map, newPosition)
     map = updateMap(map, newInfo)
     # print("newPosition: " + str(newPosition))
     # print("newInfo: " + str(newInfo))
