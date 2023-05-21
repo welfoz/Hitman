@@ -3,7 +3,7 @@ from typing import List, Tuple
 # 3 actions possible: move, turn 90, turn -90
 # store at each index the value of the total information gained for this path
 # return 1, 2, 3 for the best action
-DEPTH_MAX = 2
+DEPTH_MAX = 8
 GAME_MAP = [
     [5, 2, 4],
     [2, 3, 1],
@@ -131,13 +131,13 @@ def createStateTree(map, position):
             positionTree.append(newPosition)
             # stateMap.append(newMap)
 
-            print("----")
-            print("parentIndex: " + str(parentIndex))
-            print("index: " + str(len(stateTree) - 1))
-            print("action: " + str(action))
-            print("newPosition: " + str(newPosition))
-            print("information: " + str(newInfo))
-            print("totalInformationGained: " + str(totalInformationGained))
+            # print("----")
+            # print("parentIndex: " + str(parentIndex))
+            # print("index: " + str(len(stateTree) - 1))
+            # print("action: " + str(action))
+            # print("newPosition: " + str(newPosition))
+            # print("information: " + str(newInfo))
+            # print("totalInformationGained: " + str(totalInformationGained))
         depth += 1
     return stateTree
 
@@ -147,14 +147,14 @@ def choiceAction(stateTree):
     @param stateTree: list of the values of the total information gained for each path
     """
     lastLevelLeafs = stateTree[len(stateTree) - pow(3, DEPTH_MAX):]
-    print(len(lastLevelLeafs))
+    # print(len(lastLevelLeafs))
     indexOfMax = lastLevelLeafs.index(max(lastLevelLeafs))
 
     if (indexOfMax < pow(3, DEPTH_MAX - 1)):
-        return "move"
+        return 1 
     elif (indexOfMax < 2 * pow(3, DEPTH_MAX - 1)):
-        return 'turn 90'
-    return "turn -90"
+        return 2 
+    return 3 
 
 def informationGained(newInfo) -> int:
     """
@@ -225,18 +225,56 @@ def newInformation(map, position) -> List[Tuple[int, int, int]]:
 
     return casesLookedAt
 
+def updateMap(map, newInfo):
+    """
+    update the map with the new information
+    @param map: the map of the game
+    @param newInfo: the new information to update the map
+    """
+    for info in newInfo:
+        map[info[1]][info[0]] = info[2]
+    return map
+
+def turn(map, position):
+    stateTree = createStateTree(map, position)
+    actionName = None
+    # print(stateTree)
+
+    print()
+    print("choiceAction")
+    action = choiceAction(stateTree)
+    if action == 1:
+        actionName = "move"
+        print("move")
+    elif action == 2:
+        actionName = "turn 90"
+        print("turn 90")
+    elif action == 3:
+        actionName = "turn -90"
+        print("turn -90")
+
+    newPosition = computePositionBasedOnAction(map, position, action)
+    newInfo = newInformation(map, newPosition)
+    map = updateMap(map, newInfo)
+    print("newPosition: " + str(newPosition))
+    print("newInfo: " + str(newInfo))
+    print("newMap: " + str(map))
+    return map, newPosition, actionName
 
 # stateTree = createStateTree(createMap(4, 3), [0, 0, 'S'])
 map = [
     [0, 0, 0],
     [0, 0, 0],
-    [1, 0, 0],
-    [7, 0, 0]
+    [0, 0, 0],
+    [0, 0, 0]
 ]
 print(map)
-stateTree = createStateTree(map, [0, 0, 'S'])
-print(stateTree)
-print(len(stateTree))
-print("choiceAction")
-print(choiceAction(stateTree))
 
+position = [0, 0, 'N']
+i = 0
+actions = []
+while i < 10:
+    map, position, actionName = turn(map, position)
+    actions.append(actionName)
+    i += 1
+print(actions)
