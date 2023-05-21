@@ -1,8 +1,15 @@
+from typing import List, Tuple
 # no pruning for now
 # 3 actions possible: move, turn 90, turn -90
 # store at each index the value of the total information gained for this path
 # return 1, 2, 3 for the best action
 DEPTH_MAX = 1
+GAME_MAP = [
+    [5, 2, 4],
+    [2, 3, 1],
+    [1, 6, 3],
+    [7, 1, 1],
+]
 
 def createMap(n_col : int, n_lig : int):
     """
@@ -18,7 +25,8 @@ def createMap(n_col : int, n_lig : int):
     print(map)
     return map
 
-def isOnABorder(map, parentPosition) -> bool:
+# mal nommmée
+def isOnABorder(parentPosition) -> bool:
     """
     return true if the position is on a border of the map
     @param map: the map of the game
@@ -29,22 +37,35 @@ def isOnABorder(map, parentPosition) -> bool:
         if parentPosition[1] == 0:
             return True 
     elif direction == 'S':
-        if parentPosition[1] == (len(map) - 1):
+        if parentPosition[1] == (len(GAME_MAP) - 1):
             return True 
     elif direction == 'E':
-        if parentPosition[0] == (len(map[0]) - 1):
+        if parentPosition[0] == (len(GAME_MAP[0]) - 1):
             return True 
     elif direction == 'W':
         if parentPosition[0] == 0:
             return True 
     return False
 
+
+def isOutsideTheMap(coordinates: Tuple[int, int]) -> bool:
+    """
+    return true if the coordinates are outside the map
+    @param coordinates: the coordinates of the cell [x, y]
+    """
+    if coordinates[0] < 0 or coordinates[1] < 0:
+        return True
+    if coordinates[0] >= len(GAME_MAP[0]) or coordinates[1] >= len(GAME_MAP):
+        return True
+    return False
+
+
 def computePositionBasedOnAction(map, parentPosition, action):
     direction = parentPosition[2]
 
     if action == 1:
         # move
-        if isOnABorder(map, parentPosition): return parentPosition
+        if isOnABorder(parentPosition): return parentPosition
 
         if direction == 'N':
             return [parentPosition[0], parentPosition[1] - 1, direction]
@@ -87,6 +108,7 @@ def createStateTree(map, position):
 
     stateTree = [0]
     positionTree = [position]
+    stateMap = [map]
     depth = 1
     for i in range(DEPTH_MAX):
         # 3 actions possible
@@ -95,18 +117,29 @@ def createStateTree(map, position):
             # action is 1, 2 or 3
             action = ((len(stateTree) - 1) % 3) + 1
             parentPosition = positionTree[parentIndex]
+            parentMap = stateMap[parentIndex]
 
             newPosition = computePositionBasedOnAction(map, parentPosition, action)
+            # pnt est ce que faut stocker toutes les stateMaps parents ou meme juste la derniere
+            # on est obligé de comparé l'information de la nouvelle position avec la derniere position
+            # information is [x, y, value]
             information = informationGained(map, stateTree[parentIndex], newPosition)
 
+            # newMap = 
+            newInfo = newInformation(map, newPosition)
+
+            # améliorable en stockant que la derniere position
             stateTree.append(information)
+            # améliorable en stockant que la derniere position
             positionTree.append(newPosition)
+            # stateMap.append(newMap)
 
             print("----")
             print("parentIndex: " + str(parentIndex))
             print("index: " + str(len(stateTree) - 1))
             print("action: " + str(action))
             print("newPosition: " + str(newPosition))
+            print("information: " + str(newInfo))
         depth += 1
     return stateTree
 
@@ -138,7 +171,69 @@ def informationGained(map, parentValue, position) -> int:
     """
     return parentValue + 1
 
-stateTree = createStateTree(createMap(4, 3), [1, 0, 'N'])
+def isInformationAlreadyKnown(map, information) -> bool:
+    """
+    return true if the information is already known
+    @param map: the map of the game
+    @param information: the information to check [x, y, value]
+    """
+    if map[information[1]][information[0]] == information[2]:
+        return True
+    return False
+
+def newInformation(map, position) -> List[Tuple[int, int, int]]:
+    """
+    return all new information the position reveals compared to the map
+    @param map: the map of the game
+    @param position: the position of the agent [x, y, direction]
+    """
+    x = position[0]
+    y = position[1]
+    direction = position[2]
+    vision = 3
+    casesLookedAt = []
+    if direction == 'N':
+        for i in range(vision):
+            newPosition = [x, y - i - 1]
+            if isOutsideTheMap(newPosition): continue
+
+            info = [x, y - i - 1, GAME_MAP[y - i - 1][x]]
+            if isInformationAlreadyKnown(map, info): continue
+            casesLookedAt.append(info)
+    elif direction == 'S':
+        for i in range(vision):
+            newPosition = [x, y + i + 1]
+            if isOutsideTheMap(newPosition): continue
+            info = [x, y + i + 1, GAME_MAP[y + i + 1][x]]
+            if isInformationAlreadyKnown(map, info): continue
+            casesLookedAt.append(info)
+    elif direction == 'E':
+        for i in range(vision):
+            newPosition = [x + i + 1, y]
+            if isOutsideTheMap(newPosition): continue
+            info = [x + i + 1, y, GAME_MAP[y][x + i + 1]]
+            if isInformationAlreadyKnown(map, info): continue
+            casesLookedAt.append(info)
+    elif direction == 'W':
+        for i in range(vision):
+            newPosition = [x - i - 1, y]
+            if isOutsideTheMap(newPosition): continue
+            info = [x - i - 1, y, GAME_MAP[y][x - i - 1]]
+            if isInformationAlreadyKnown(map, info): continue
+            casesLookedAt.append(info)
+
+    return casesLookedAt
+
+
+# stateTree = createStateTree(createMap(4, 3), [0, 0, 'S'])
+map = [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0]
+]
+print(map)
+stateTree = createStateTree(map, [0, 0, 'S'])
 print(stateTree)
 print(len(stateTree))
 print("choiceAction")
