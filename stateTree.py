@@ -1,15 +1,5 @@
 from typing import List, Tuple
 # no pruning for now
-# 3 actions possible: move, turn 90, turn -90
-# store at each index the value of the total information gained for this path
-# return 1, 2, 3 for the best action
-DEPTH_MAX = 8
-GAME_MAP = [
-    [5, 2, 4],
-    [2, 3, 1],
-    [1, 6, 3],
-    [7, 1, 1],
-]
 
 def createMap(n_col : int, n_lig : int):
     """
@@ -25,28 +15,26 @@ def createMap(n_col : int, n_lig : int):
     print(map)
     return map
 
-# mal nommmée
-def isOnABorder(parentPosition) -> bool:
+def isLookingAtABorder(position) -> bool:
     """
-    return true if the position is on a border of the map
+    return true if the agent is looking at a border
     @param map: the map of the game
     @param parentPosition: the position of the agent [x, y, direction]
     """
-    direction = parentPosition[2]
+    direction = position[2]
     if direction == 'N':
-        if parentPosition[1] == 0:
+        if position[1] == 0:
             return True 
     elif direction == 'S':
-        if parentPosition[1] == (len(GAME_MAP) - 1):
+        if position[1] == (len(GAME_MAP) - 1):
             return True 
     elif direction == 'E':
-        if parentPosition[0] == (len(GAME_MAP[0]) - 1):
+        if position[0] == (len(GAME_MAP[0]) - 1):
             return True 
     elif direction == 'W':
-        if parentPosition[0] == 0:
+        if position[0] == 0:
             return True 
     return False
-
 
 def isOutsideTheMap(coordinates: Tuple[int, int]) -> bool:
     """
@@ -59,44 +47,45 @@ def isOutsideTheMap(coordinates: Tuple[int, int]) -> bool:
         return True
     return False
 
-
-def computePositionBasedOnAction(map, parentPosition, action):
-    direction = parentPosition[2]
+def computePositionBasedOnAction(position, action):
+    direction = position[2]
+    coordinates = [position[0], position[1]]
+    newDirection = direction
 
     if action == 1:
         # move
-        if isOnABorder(parentPosition): return parentPosition
-
-        if direction == 'N':
-            return [parentPosition[0], parentPosition[1] - 1, direction]
+        if isLookingAtABorder(position):
+            pass
+        elif direction == 'N':
+            coordinates[1] -= 1
         elif direction == 'S':
-            return [parentPosition[0], parentPosition[1] + 1, direction]
+            coordinates[1] += 1
         elif direction == 'E':
-            return [parentPosition[0] + 1, parentPosition[1], direction]
+            coordinates[0] += 1
         elif direction == 'W':
-            return [parentPosition[0] - 1, parentPosition[1], direction]
+            coordinates[0] -= 1
     elif action == 2:
         # turn 90
         if direction == 'N':
-            return [parentPosition[0], parentPosition[1], 'E']
+            newDirection = 'E'
         elif direction == 'S':
-            return [parentPosition[0], parentPosition[1], 'W']
+            newDirection = 'W'
         elif direction == 'E':
-            return [parentPosition[0], parentPosition[1], 'S']
+            newDirection = 'S'
         elif direction == 'W':
-            return [parentPosition[0], parentPosition[1], 'N']
+            newDirection = 'N'
     elif action == 3:
         # turn -90
         if direction == 'N':
-            return [parentPosition[0], parentPosition[1], 'W']
+            newDirection = 'W'
         elif direction == 'S':
-            return [parentPosition[0], parentPosition[1], 'E']
+            newDirection = 'E'
         elif direction == 'E':
-            return [parentPosition[0], parentPosition[1], 'N']
+            newDirection = 'N'
         elif direction == 'W':
-            return [parentPosition[0], parentPosition[1], 'S']
+            newDirection = 'S'
 
-    return None
+    return coordinates + [newDirection]
 
 # position changes according to the action
 def createStateTree(map, position):
@@ -118,7 +107,7 @@ def createStateTree(map, position):
             action = ((len(stateTree) - 1) % 3) + 1
             parentPosition = positionTree[parentIndex]
 
-            newPosition = computePositionBasedOnAction(map, parentPosition, action)
+            newPosition = computePositionBasedOnAction(parentPosition, action)
             # pnt est ce que faut stocker toutes les stateMaps parents ou meme juste la derniere
             # on est obligé de comparé l'information de la nouvelle position avec la derniere position
             # information is [x, y, value]
@@ -253,7 +242,7 @@ def turn(map, position):
         actionName = "turn -90"
         print("turn -90")
 
-    newPosition = computePositionBasedOnAction(map, position, action)
+    newPosition = computePositionBasedOnAction(position, action)
     newInfo = newInformation(map, newPosition)
     map = updateMap(map, newInfo)
     print("newPosition: " + str(newPosition))
@@ -261,19 +250,22 @@ def turn(map, position):
     print("newMap: " + str(map))
     return map, newPosition, actionName
 
-# stateTree = createStateTree(createMap(4, 3), [0, 0, 'S'])
-map = [
-    [0, 0, 0],
-    [0, 0, 0],
-    [0, 0, 0],
-    [0, 0, 0]
+DEPTH_MAX = 10
+GAME_MAP = [
+    [5, 2, 4, 2, 1],
+    [2, 3, 1, 2, 3],
+    [1, 6, 3, 1, 2],
+    [7, 1, 1, 2, 3],
+    [7, 1, 3, 2, 3],
 ]
+position = [0, 0, 'N']
+
+map = createMap(5, 5)
 print(map)
 
-position = [0, 0, 'N']
 i = 0
 actions = []
-while i < 10:
+while i < 15:
     map, position, actionName = turn(map, position)
     actions.append(actionName)
     i += 1
