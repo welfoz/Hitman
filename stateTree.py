@@ -2,7 +2,7 @@
 # 3 actions possible: move, turn 90, turn -90
 # store at each index the value of the total information gained for this path
 # return 1, 2, 3 for the best action
-DEPTH_MAX = 3
+DEPTH_MAX = 1
 
 def createMap(n_col : int, n_lig : int):
     """
@@ -15,42 +15,67 @@ def createMap(n_col : int, n_lig : int):
         map.append([])
         for j in range(n_lig):
             map[i].append(0)
+    print(map)
     return map
 
-def computePositionBasedOnAction(parentPosition, action):
-    newPosition = None
+def isOnABorder(map, parentPosition) -> bool:
+    """
+    return true if the position is on a border of the map
+    @param map: the map of the game
+    @param parentPosition: the position of the agent [x, y, direction]
+    """
     direction = parentPosition[2]
+    if direction == 'N':
+        if parentPosition[1] == 0:
+            return True 
+    elif direction == 'S':
+        if parentPosition[1] == (len(map) - 1):
+            return True 
+    elif direction == 'E':
+        if parentPosition[0] == (len(map[0]) - 1):
+            return True 
+    elif direction == 'W':
+        if parentPosition[0] == 0:
+            return True 
+    return False
+
+def computePositionBasedOnAction(map, parentPosition, action):
+    direction = parentPosition[2]
+
     if action == 1:
         # move
+        if isOnABorder(map, parentPosition): return parentPosition
+
         if direction == 'N':
-            newPosition = [parentPosition[0], parentPosition[1] + 1, direction]
+            return [parentPosition[0], parentPosition[1] - 1, direction]
         elif direction == 'S':
-            newPosition = [parentPosition[0], parentPosition[1] - 1, direction]
+            return [parentPosition[0], parentPosition[1] + 1, direction]
         elif direction == 'E':
-            newPosition = [parentPosition[0] + 1, parentPosition[1], direction]
+            return [parentPosition[0] + 1, parentPosition[1], direction]
         elif direction == 'W':
-            newPosition = [parentPosition[0] - 1, parentPosition[1], direction]
+            return [parentPosition[0] - 1, parentPosition[1], direction]
     elif action == 2:
         # turn 90
         if direction == 'N':
-            newPosition = [parentPosition[0], parentPosition[1], 'E']
+            return [parentPosition[0], parentPosition[1], 'E']
         elif direction == 'S':
-            newPosition = [parentPosition[0], parentPosition[1], 'W']
+            return [parentPosition[0], parentPosition[1], 'W']
         elif direction == 'E':
-            newPosition = [parentPosition[0], parentPosition[1], 'S']
+            return [parentPosition[0], parentPosition[1], 'S']
         elif direction == 'W':
-            newPosition = [parentPosition[0], parentPosition[1], 'N']
+            return [parentPosition[0], parentPosition[1], 'N']
     elif action == 3:
         # turn -90
         if direction == 'N':
-            newPosition = [parentPosition[0], parentPosition[1], 'W']
+            return [parentPosition[0], parentPosition[1], 'W']
         elif direction == 'S':
-            newPosition = [parentPosition[0], parentPosition[1], 'E']
+            return [parentPosition[0], parentPosition[1], 'E']
         elif direction == 'E':
-            newPosition = [parentPosition[0], parentPosition[1], 'N']
+            return [parentPosition[0], parentPosition[1], 'N']
         elif direction == 'W':
-            newPosition = [parentPosition[0], parentPosition[1], 'S']
-    return newPosition
+            return [parentPosition[0], parentPosition[1], 'S']
+
+    return None
 
 # position changes according to the action
 def createStateTree(map, position):
@@ -71,7 +96,7 @@ def createStateTree(map, position):
             action = ((len(stateTree) - 1) % 3) + 1
             parentPosition = positionTree[parentIndex]
 
-            newPosition = computePositionBasedOnAction(parentPosition, action)
+            newPosition = computePositionBasedOnAction(map, parentPosition, action)
             information = informationGained(map, stateTree[parentIndex], newPosition)
 
             stateTree.append(information)
@@ -113,7 +138,7 @@ def informationGained(map, parentValue, position) -> int:
     """
     return parentValue + 1
 
-stateTree = createStateTree(createMap(4, 3), [0, 0, 'N'])
+stateTree = createStateTree(createMap(4, 3), [1, 0, 'N'])
 print(stateTree)
 print(len(stateTree))
 print("choiceAction")
