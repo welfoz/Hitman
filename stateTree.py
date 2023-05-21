@@ -3,7 +3,7 @@ from typing import List, Tuple
 # 3 actions possible: move, turn 90, turn -90
 # store at each index the value of the total information gained for this path
 # return 1, 2, 3 for the best action
-DEPTH_MAX = 1
+DEPTH_MAX = 2
 GAME_MAP = [
     [5, 2, 4],
     [2, 3, 1],
@@ -117,19 +117,16 @@ def createStateTree(map, position):
             # action is 1, 2 or 3
             action = ((len(stateTree) - 1) % 3) + 1
             parentPosition = positionTree[parentIndex]
-            parentMap = stateMap[parentIndex]
 
             newPosition = computePositionBasedOnAction(map, parentPosition, action)
             # pnt est ce que faut stocker toutes les stateMaps parents ou meme juste la derniere
             # on est obligé de comparé l'information de la nouvelle position avec la derniere position
             # information is [x, y, value]
-            information = informationGained(map, stateTree[parentIndex], newPosition)
-
-            # newMap = 
             newInfo = newInformation(map, newPosition)
+            totalInformationGained = stateTree[parentIndex] + informationGained(newInfo)
 
             # améliorable en stockant que la derniere position
-            stateTree.append(information)
+            stateTree.append(totalInformationGained)
             # améliorable en stockant que la derniere position
             positionTree.append(newPosition)
             # stateMap.append(newMap)
@@ -140,6 +137,7 @@ def createStateTree(map, position):
             print("action: " + str(action))
             print("newPosition: " + str(newPosition))
             print("information: " + str(newInfo))
+            print("totalInformationGained: " + str(totalInformationGained))
         depth += 1
     return stateTree
 
@@ -158,18 +156,21 @@ def choiceAction(stateTree):
         return 'turn 90'
     return "turn -90"
 
-def informationGained(map, parentValue, position) -> int:
+def informationGained(newInfo) -> int:
     """
     return the information gained by doing action to the parent value
     +3 if the action reveals may reveal 3 new cells
     +2 if the action reveals may reveal 2 new cells
     +1 if the action reveals may reveal 1 new cells
     0 if we reveal no new cells
-    @param map: the map of the game
-    @param parentValue: the value of the total information gained of the parent
-    @param position: the position of the agent [x, y]
     """
-    return parentValue + 1
+    if len(newInfo) == 3:
+        return 3
+    elif len(newInfo) == 2:
+        return 2
+    elif len(newInfo) == 1:
+        return 1
+    return 0
 
 def isInformationAlreadyKnown(map, information) -> bool:
     """
@@ -229,8 +230,8 @@ def newInformation(map, position) -> List[Tuple[int, int, int]]:
 map = [
     [0, 0, 0],
     [0, 0, 0],
-    [0, 0, 0],
-    [0, 0, 0]
+    [1, 0, 0],
+    [7, 0, 0]
 ]
 print(map)
 stateTree = createStateTree(map, [0, 0, 'S'])
