@@ -108,24 +108,23 @@ def createStateTree(map, position):
             # action is 1, 2 or 3
             action = ((len(stateTree) - 1) % 3) + 1
             parentPosition = positionTree[parentIndex]
-            # parentMap = stateMap[parentIndex]
+            parentMap = stateMap[parentIndex]
 
             newPosition = computePositionBasedOnAction(parentPosition, action)
             # pnt est ce que faut stocker toutes les stateMaps parents ou meme juste la derniere
             # on est obligé de comparé l'information de la nouvelle position avec la derniere position
             # information is [x, y, value]
-            # newInfo = newInformation(parentMap, newPosition)
-            newInfo = newInformation(map, newPosition)
+            newInfo = newInformation(parentMap, newPosition)
             totalInformationGained = stateTree[parentIndex] + informationGained(newInfo)
             # print("parentIndex: " + str(parentIndex))
             # print("parent map: " + str(parentMap))
-            # newMap = updateMap(copy.deepcopy(parentMap), newInfo)
+            newMap = updateMap(copy.deepcopy(parentMap), newInfo)
 
             # améliorable en stockant que la derniere position
             stateTree.append(totalInformationGained)
             # améliorable en stockant que la derniere position
             positionTree.append(newPosition)
-            # stateMap.append(newMap)
+            stateMap.append(newMap)
 
             # print("----")
             # print("parentIndex: " + str(parentIndex))
@@ -234,10 +233,8 @@ def updateMap(map, newInfo):
 def turn(map, position):
     stateTree = createStateTree(map, position)
     actionName = None
-    print(stateTree)
 
     print()
-    print("choiceAction")
     action = choiceAction(stateTree)
     if action == 1:
         actionName = "move"
@@ -252,34 +249,44 @@ def turn(map, position):
     newPosition = computePositionBasedOnAction(position, action)
     newInfo = newInformation(map, newPosition)
     map = updateMap(map, newInfo)
-    print("newPosition: " + str(newPosition))
-    print("newInfo: " + str(newInfo))
-    print("newMap: " + str(map))
+    # print("newPosition: " + str(newPosition))
+    # print("newInfo: " + str(newInfo))
+    # print("newMap: " + str(map))
     return map, newPosition, actionName
 
-DEPTH_MAX = 2 
-# GAME_MAP = [
-#     [5, 2, 4, 2, 1],
-#     [2, 3, 1, 2, 3],
-#     [1, 6, 3, 1, 2],
-#     [7, 1, 1, 2, 3],
-#     [7, 1, 3, 2, 3],
-# ]
+DEPTH_MAX = 8 
 GAME_MAP = [
-    [5, 2],
-    [2, 3],
+    [5, 2, 4, 2, 1],
+    [2, 3, 1, 2, 3],
+    [1, 6, 3, 1, 2],
+    [7, 1, 1, 2, 3],
+    [7, 1, 3, 2, 3],
 ]
-position = [0, 0, 'N']
+# GAME_MAP = [
+#     [5, 2],
+#     [2, 3],
+# ]
+position = [2, 3, 'N']
 
 # map = createMap(5, 5)
-map = createMap(2, 2)
+map = createMap(5, 5)
 
 print(map)
 
 i = 0
+solutionFound = False
 actions = []
-while i < 5:
+while i < 35 and not solutionFound:
     map, position, actionName = turn(map, position)
     actions.append(actionName)
     i += 1
+
+    found = False
+    for lig in map:
+        for cell in lig:
+            if cell == 0:
+                found = True
+    if not found:
+        solutionFound = True
 print(actions)
+print("solutionFound in " + str(i) + " turns: " + str(solutionFound))
