@@ -1,8 +1,8 @@
 from typing import List, Tuple
 import subprocess
-import itertools
 import os
 import platform
+from enum import Enum
 
 # alias de types
 Grid = List[List[int]] 
@@ -11,6 +11,8 @@ Literal = int
 Clause = List[Literal]
 ClauseBase = List[Clause]
 Model = List[Literal]
+Action = Enum('Action', ['turn90', 'turn-90', 'move'])
+LookingDirection = Enum('LookingDirection', ['nord', 'est', 'sud', 'ouest', 'na'])
 
 OBJECTS_INDEX = {
     'empty': 1,
@@ -169,12 +171,52 @@ def uniqueX(literals: List[Literal], x: int) -> ClauseBase:
     clauses += atLeast(x, literals) + atMost(x, literals)
     return clauses
 
+def moveChoice(map: Grid, position: Tuple[int, int], lookingDirection: LookingDirection) -> Action:
+    """
+    todo: 
+    - deals with borders -> turn, first Fabien
+    - deals with walls
+    - deals with guards and civils vision 
+    - minimizes the number of actions
+    """
+    print("move")
+
+def createMap(n_col : int, n_lig : int) -> Grid:
+    """
+    Create a map of size n_col * n_lig
+    @param n_col: number of columns
+    @param n_lig: number of lines
+    """
+    map = []
+    for i in range(n_col):
+        map.append([])
+        for j in range(n_lig):
+            map[i].append(0)
+    return map
+
 def main():
     linesNumber = 3
-    columnsNumber = 3
+    columnsNumber = 4
     guardNumber = 2
     civilNumber = 1
     dimension = columnsNumber * linesNumber * len(OBJECTS_INDEX)
+
+    direction = {
+        "nord": "n",
+        "est": "e",
+        "sud": "s",
+        "ouest": "o",
+        "default": "a" # for any
+    }
+
+    map = createMap(columnsNumber, linesNumber)
+    print(map)
+    # print(Action.move.value)
+
+    # if we 
+    # dont know where a guard looks: ga
+    # know where a guard looks: gn, ge, gs, go
+    # for civil: ca, cn, ce, cs, co
 
     clauses = []
     # print(uniqueX([1, 2, 3, 4], 3))
