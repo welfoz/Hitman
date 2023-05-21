@@ -1,4 +1,5 @@
 from typing import List, Tuple
+import copy
 # no pruning for now
 
 def createMap(n_col : int, n_lig : int):
@@ -93,6 +94,7 @@ def createStateTree(map, position):
     computes the total information gained for each path with DEPTH_MAX depth
     return a list of the values of the total information gained for each path 
     @param map: the map of the game
+    @param position: the position of the agent [x, y, direction]
     """
 
     stateTree = [0]
@@ -106,13 +108,18 @@ def createStateTree(map, position):
             # action is 1, 2 or 3
             action = ((len(stateTree) - 1) % 3) + 1
             parentPosition = positionTree[parentIndex]
+            # parentMap = stateMap[parentIndex]
 
             newPosition = computePositionBasedOnAction(parentPosition, action)
             # pnt est ce que faut stocker toutes les stateMaps parents ou meme juste la derniere
             # on est obligé de comparé l'information de la nouvelle position avec la derniere position
             # information is [x, y, value]
+            # newInfo = newInformation(parentMap, newPosition)
             newInfo = newInformation(map, newPosition)
             totalInformationGained = stateTree[parentIndex] + informationGained(newInfo)
+            # print("parentIndex: " + str(parentIndex))
+            # print("parent map: " + str(parentMap))
+            # newMap = updateMap(copy.deepcopy(parentMap), newInfo)
 
             # améliorable en stockant que la derniere position
             stateTree.append(totalInformationGained)
@@ -137,13 +144,13 @@ def choiceAction(stateTree):
     """
     lastLevelLeafs = stateTree[len(stateTree) - pow(3, DEPTH_MAX):]
     # print(len(lastLevelLeafs))
-    indexOfMax = lastLevelLeafs.index(max(lastLevelLeafs))
+    totalPointsForAction1 = sum(lastLevelLeafs[:pow(3, DEPTH_MAX - 1)])
+    totalPointsForAction2 = sum(lastLevelLeafs[pow(3, DEPTH_MAX - 1):2 * pow(3, DEPTH_MAX - 1)])
+    totalPointsForAction3 = sum(lastLevelLeafs[2 * pow(3, DEPTH_MAX - 1):])
+    totalPoints = [totalPointsForAction1, totalPointsForAction2, totalPointsForAction3]
 
-    if (indexOfMax < pow(3, DEPTH_MAX - 1)):
-        return 1 
-    elif (indexOfMax < 2 * pow(3, DEPTH_MAX - 1)):
-        return 2 
-    return 3 
+    indexOfTheMaxOfTotal = totalPoints.index(max(totalPoints))
+    return indexOfTheMaxOfTotal + 1
 
 def informationGained(newInfo) -> int:
     """
@@ -227,7 +234,7 @@ def updateMap(map, newInfo):
 def turn(map, position):
     stateTree = createStateTree(map, position)
     actionName = None
-    # print(stateTree)
+    print(stateTree)
 
     print()
     print("choiceAction")
@@ -250,22 +257,28 @@ def turn(map, position):
     print("newMap: " + str(map))
     return map, newPosition, actionName
 
-DEPTH_MAX = 10
+DEPTH_MAX = 2 
+# GAME_MAP = [
+#     [5, 2, 4, 2, 1],
+#     [2, 3, 1, 2, 3],
+#     [1, 6, 3, 1, 2],
+#     [7, 1, 1, 2, 3],
+#     [7, 1, 3, 2, 3],
+# ]
 GAME_MAP = [
-    [5, 2, 4, 2, 1],
-    [2, 3, 1, 2, 3],
-    [1, 6, 3, 1, 2],
-    [7, 1, 1, 2, 3],
-    [7, 1, 3, 2, 3],
+    [5, 2],
+    [2, 3],
 ]
 position = [0, 0, 'N']
 
-map = createMap(5, 5)
+# map = createMap(5, 5)
+map = createMap(2, 2)
+
 print(map)
 
 i = 0
 actions = []
-while i < 15:
+while i < 5:
     map, position, actionName = turn(map, position)
     actions.append(actionName)
     i += 1
