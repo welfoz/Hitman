@@ -4,11 +4,11 @@ import copy
 OBJECTS_INDEX = {
     'empty': 1,
     'wall': 2,
-    'guard': 3,
-    'civil': 4,
-    'target': 5,
-    'rope': 6,
-    'costume': 7
+    'target': 3,
+    'rope': 4,
+    'costume': 5,
+    'guard': [6, 7, 8, 9, 10], # 6 default, 7: north, 8: south, 9: east, 10: west
+    'civil': [11, 12, 13, 14, 15], # 11 default, 12: north, 13: south, 14: east, 15: west
 }
 
 
@@ -73,7 +73,7 @@ def isLookingAtAnImpassableObstacle(position) -> bool:
     elif direction == 'W':
         newPositionValue = GAME_MAP[y][x - 1]
 
-    if newPositionValue == OBJECTS_INDEX['wall'] or newPositionValue == OBJECTS_INDEX['guard']:
+    if newPositionValue == OBJECTS_INDEX['wall'] or newPositionValue in OBJECTS_INDEX['guard']:
         return True
     return False
 
@@ -143,7 +143,7 @@ def createStateTree(map, position):
             # print("newInfo: " + str(newInfo))
             newMap = updateMap(copy.deepcopy(parentMap), newInfo)
 
-            totalInformationGained = stateTree[parentIndex] + informationGained(newInfo)
+            totalInformationGained = stateTree[parentIndex] + informationGained(newMap, newPosition, newInfo)
 
             # améliorable en stockant que la derniere position
             stateTree.append(totalInformationGained)
@@ -177,7 +177,10 @@ def choiceAction(stateTree):
     indexOfTheMaxOfTotal = totalPoints.index(max(totalPoints))
     return indexOfTheMaxOfTotal + 1
 
-def informationGained(newInfo) -> int:
+def howManyGuardsLookingAtUs(map, position) -> int:
+    return 0
+
+def informationGained(map, position, newInfo) -> int:
     """
     return the information gained by doing action to the parent value
     +3 if the action reveals may reveal 3 new cells
@@ -185,7 +188,18 @@ def informationGained(newInfo) -> int:
     +1 if the action reveals may reveal 1 new cells
     0 if we reveal no new cells
     """
-    return len(newInfo)
+    newCases = len(newInfo)
+    
+    # for each guards looking at us, we have a -5 penalty
+    # we have our position 
+    # we know guards can see with 2 cells of vision maximum, they stop at the first obstacle
+    # get all guards positions
+    # reuse get all info function with vision = 2
+    # howManyGuardsLookingAtUs(map, position)
+    penalty = howManyGuardsLookingAtUs(map, position) * 5
+
+
+    return newCases * 2 - penalty
 
 def isInformationAlreadyKnown(map, information) -> bool:
     """
@@ -286,9 +300,9 @@ DEPTH_MAX = 8
 #     [7, 1, 3, 2, 3],
 # ]
 GAME_MAP = [
-    [5, 2, 1, 5, 1],
-    [1, 2, 7, 3, 1],
-    [1, 1, 7, 3, 1],
+    [5, 2, 1, 7, 1],
+    [1, 2, 5, 8, 1],
+    [1, 1, 5, 3, 1],
 ]
 # position = [2, 3, 'N']
 position = [0, 0, 'N']
