@@ -4,7 +4,7 @@
 amélioration choix du déplacement: 
     - la vision d'hitman s'arrete au premier obstacle (premiere case non vide) -> done
     - prise en compte des murs et des gardes (on ne peut pas marcher dessus) -> done
-    - prise en compte des pts (malus si on passe dans le champ de vision d'un garde)
+    - prise en compte des pts (malus si on passe dans le champ de vision d'un garde) -> @Fabien working on it
     - comment les infos de l'ouie peuvent nous servir dans le choix du déplacement ? (pour plus tard)
     - utiliser numpy (et non des tableaux) pour optimiser la recherche (pour plus tard)
 
