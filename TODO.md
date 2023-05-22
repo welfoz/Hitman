@@ -1,5 +1,5 @@
 # TO DO 
-- coder les règles une par une et vérifier qu'elles fonctionnent
+- coder les règles une par une et vérifier qu'elles fonctionnent -> done ??
 - penser à comment faire le choix du déplacement (@Pol tu vois qqchose à faire avant ?)
 - implementer choix de déplacement
 
@@ -33,7 +33,7 @@ S'il voit un garde ou un invité devant lui, X - 1 gardes et invités restants a
 - on peut etre sur la meme case qu'un invité en disant "pardon"
 - on ne peut pas avancer sur un mur
 - la case de départ est forcement une bordure
-- quand on voit une bordure -> en déduire des clauses 
+- quand on voit une bordure -> en déduire des clauses (on en déduit des clauses ou plutot des infos qui servent pour le déplacement ?) 
 - à partir de 5 (gardes + invités) autour de nous on en entend 5+
 
 ### Notes
@@ -116,3 +116,34 @@ n_gar gardes et n_civ civils
 - règle 3 (contraintes sur le nombre de civils) : n_civ parmi (n_col * n_lig)
 
 ...
+
+# Choix de l'action
+Garder à l'esprit que le but est de connaître toutes les cases en un minimum d'actions
+
+3 choix possibles: 
+- avancer
+- tourner 90
+- tourner -90
+
+Afin de faire le meilleur choix, pour chaque choix on va calculer le meilleur choix à faire (ou éviter le pire).
+Le plus de tour d'avancer on calculera le meilleur nos choix seront.
+
+Données pour calculer le meilleur choix: 
+- notre position
+- dans quelle direction on regarde
+- la map (avec les cases qu'on connait déjà, et celles où on a des déductions (grâce à l'ouie))
+
+Pour chaque action possible: 
+    - calculer à quel point elle va nous apporter de l'information
+Choisir l'action qui apporte le plus de points d'informations
+
+Si on regarde en face d'un mur ou d'une bordure:
+- avancer: 0 pts
+- tourner: X pts
+
+Pour chaque nouvelle case potentiellement vue: Y pts
+
+--> Faire une sorte de minimax avec profondeur limitée, et évaluation function 
+--> optimisation: alpha beta pruning
+--> evaluation function --> minimize the number of unknown cases
+
