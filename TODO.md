@@ -42,6 +42,8 @@ S'il voit un garde ou un invité devant lui, X - 1 gardes et invités restants a
 - la case de départ est forcement une bordure
 - quand on voit une bordure -> en déduire des clauses (on en déduit des clauses ou plutot des infos qui servent pour le déplacement ?) 
 - à partir de 5 (gardes + invités) autour de nous on en entend 5+
+- La distance d'audition va passer à 2 au lieu de 1.
+
 
 ### Notes
 - le choix du déplacement + la phase 2 de recherche des états est à faire en python
