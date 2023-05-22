@@ -58,6 +58,25 @@ def isOutsideTheMap(coordinates: Tuple[int, int]) -> bool:
         return True
     return False
 
+def isLookingAtAnImpassableObstacle(position) -> bool:
+    x = position[0]
+    y = position[1]
+    direction = position[2]
+    newPositionValue = None
+
+    if direction == 'N':
+        newPositionValue = GAME_MAP[y - 1][x]
+    elif direction == 'S':
+        newPositionValue = GAME_MAP[y + 1][x]
+    elif direction == 'E':
+        newPositionValue = GAME_MAP[y][x + 1]
+    elif direction == 'W':
+        newPositionValue = GAME_MAP[y][x - 1]
+
+    if newPositionValue == OBJECTS_INDEX['wall'] or newPositionValue == OBJECTS_INDEX['guard']:
+        return True
+    return False
+
 def computePositionBasedOnAction(position, action):
     direction = position[2]
     coordinates = [position[0], position[1]]
@@ -65,7 +84,7 @@ def computePositionBasedOnAction(position, action):
 
     if action == 1:
         # move
-        if isLookingAtABorder(position):
+        if isLookingAtABorder(position) or isLookingAtAnImpassableObstacle(position):
             pass
         elif direction == 'N':
             coordinates[1] -= 1
@@ -251,11 +270,11 @@ def turn(map, position):
 
     newPosition = computePositionBasedOnAction(position, action)
     newInfo = getAllNewInformation(map, newPosition)
-    # print("newPosition: " + str(newPosition))
-    # print("newInfo: " + str(newInfo))
-    # print("Map: " + str(map))
+    print("newPosition: " + str(newPosition))
+    print("newInfo: " + str(newInfo))
+    print("Map: " + str(map))
     map = updateMap(map, newInfo)
-    # print("newMap: " + str(map))
+    print("newMap: " + str(map))
     return map, newPosition, actionName
 
 DEPTH_MAX = 8
@@ -267,14 +286,15 @@ DEPTH_MAX = 8
 #     [7, 1, 3, 2, 3],
 # ]
 GAME_MAP = [
-    [5, 1, 1, 5],
-    [1, 3, 7, 5],
+    [5, 2, 1, 5, 1],
+    [1, 2, 7, 3, 1],
+    [1, 1, 7, 3, 1],
 ]
 # position = [2, 3, 'N']
 position = [0, 0, 'N']
 
 # map = createMap(5, 5)
-map = createMap(2, 4)
+map = createMap(3, 5)
 
 print(map)
 
