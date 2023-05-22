@@ -1,6 +1,16 @@
 from typing import List, Tuple
 import copy
-# no pruning for now
+
+OBJECTS_INDEX = {
+    'empty': 1,
+    'wall': 2,
+    'guard': 3,
+    'civil': 4,
+    'target': 5,
+    'rope': 6,
+    'costume': 7
+}
+
 
 def createMap(n_col : int, n_lig : int):
     """
@@ -204,9 +214,13 @@ def getAllNewInformation(map, position) -> List[Tuple[int, int, int]]:
 
         if isOutsideTheMap(newPosition): continue
         info = [newPosition[0], newPosition[1], GAME_MAP[newPosition[1]][newPosition[0]]] 
-        if isInformationAlreadyKnown(map, info): continue
-        
-        casesSeen.append(info)
+
+        if not isInformationAlreadyKnown(map, info):
+            casesSeen.append(info)
+
+        # if case not empty, vision stops here
+        if info[2] != OBJECTS_INDEX['empty']: 
+            break
     return casesSeen
 
 def updateMap(map, newInfo):
@@ -237,28 +251,30 @@ def turn(map, position):
 
     newPosition = computePositionBasedOnAction(position, action)
     newInfo = getAllNewInformation(map, newPosition)
-    map = updateMap(map, newInfo)
     # print("newPosition: " + str(newPosition))
     # print("newInfo: " + str(newInfo))
+    # print("Map: " + str(map))
+    map = updateMap(map, newInfo)
     # print("newMap: " + str(map))
     return map, newPosition, actionName
 
-DEPTH_MAX = 8 
-GAME_MAP = [
-    [5, 2, 4, 2, 1],
-    [2, 3, 1, 2, 3],
-    [1, 6, 3, 1, 2],
-    [7, 1, 1, 2, 3],
-    [7, 1, 3, 2, 3],
-]
+DEPTH_MAX = 8
 # GAME_MAP = [
-#     [5, 2],
-#     [2, 3],
+#     [5, 2, 4, 2, 1],
+#     [2, 3, 1, 2, 3],
+#     [1, 6, 3, 1, 2],
+#     [7, 1, 1, 2, 3],
+#     [7, 1, 3, 2, 3],
 # ]
-position = [2, 3, 'N']
+GAME_MAP = [
+    [5, 1, 1, 5],
+    [1, 3, 7, 5],
+]
+# position = [2, 3, 'N']
+position = [0, 0, 'N']
 
 # map = createMap(5, 5)
-map = createMap(5, 5)
+map = createMap(2, 4)
 
 print(map)
 
