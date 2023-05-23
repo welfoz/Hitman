@@ -1,7 +1,14 @@
 # TO DO 
 - coder les règles une par une et vérifier qu'elles fonctionnent -> done ??
-- penser à comment faire le choix du déplacement (@Pol tu vois qqchose à faire avant ?)
-- implementer choix de déplacement
+- implémenter l'ouie avec les clauses @Pol
+amélioration choix du déplacement: 
+    - la vision d'hitman s'arrete au premier obstacle (premiere case non vide)
+    - prise en compte des murs et des gardes (on ne peut pas marcher dessus)
+    - prise en compte des pts (malus si on passe dans le champ de vision d'un garde)
+    - comment les infos de l'ouie peuvent nous servir dans le choix du déplacement ? (pour plus tard)
+    - utiliser numpy (et non des tableaux) pour optimiser la recherche (pour plus tard)
+
+
 
 # rules 
 
@@ -35,6 +42,8 @@ S'il voit un garde ou un invité devant lui, X - 1 gardes et invités restants a
 - la case de départ est forcement une bordure
 - quand on voit une bordure -> en déduire des clauses (on en déduit des clauses ou plutot des infos qui servent pour le déplacement ?) 
 - à partir de 5 (gardes + invités) autour de nous on en entend 5+
+- La distance d'audition va passer à 2 au lieu de 1.
+
 
 ### Notes
 - le choix du déplacement + la phase 2 de recherche des états est à faire en python
@@ -143,6 +152,7 @@ Si on regarde en face d'un mur ou d'une bordure:
 
 Pour chaque nouvelle case potentiellement vue: Y pts
 
+Optimisation choix du déplacement:
 --> Faire une sorte de minimax avec profondeur limitée, et évaluation function 
 --> optimisation: alpha beta pruning
 --> evaluation function --> minimize the number of unknown cases
