@@ -220,6 +220,21 @@ def createMap(n_col : int, n_lig : int) -> Grid:
             map[i].append(0)
     return map
 
+# calcule la proba de chaque littéral dans les solutions du solveur
+def probaLitteral(clauses: ClauseBase, dimension : int) -> List[float]:
+    proba = [0] * dimension
+    n = 0
+    sol = solveur(clauses, dimension)
+    while sol[0] & (n < 1001):
+        n += 1
+        for c in sol[1]:
+            if c > 0:
+                proba[c-1] += 1
+            else:
+                proba[-c-1] -= 1
+        sol = solveur(clauses + [[-x for x in sol[1]]], dimension)
+    return [p/(n) for p in proba]
+
 def main():
 
     linesNumber = 3
@@ -264,10 +279,16 @@ def main():
             addInfoVision(clauses, columnsNumber, linesNumber)
         #print(clauses)
         addInfoListening(clauses, columnsNumber, linesNumber)
+        probas = probaLitteral(clauses, dimension)
+        print("Probas : \n", probas)
+        #pour chaque case
+        print(probas)
+        for i in range(columnsNumber * linesNumber + 1):
+            for j in OBJECTS_INDEX.keys():
+                print("Case " + str(i) + " avec " + j + " : " + str(probas[i*len(OBJECTS_INDEX) + OBJECTS_INDEX[j] - 1]))
     
     print("Carte connue : \n")
     print(solveur(clauses, dimension))
-
 
 if __name__ == "__main__":
     main()
