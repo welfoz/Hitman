@@ -1,12 +1,15 @@
 # TO DO 
 - coder les règles une par une et vérifier qu'elles fonctionnent -> done ??
 - implémenter l'ouie avec les clauses @Pol
+- prendre max 1000 solutions solveur à chaque tour, ajouter à la map les déductions
+si on arrive à 1000 --> on peut rien déduire car on n'a pas toutes les solutions
+
 amélioration choix du déplacement: 
-    - la vision d'hitman s'arrete au premier obstacle (premiere case non vide) -> done
-    - prise en compte des murs et des gardes (on ne peut pas marcher dessus) -> done
-    - prise en compte des pts (malus si on passe dans le champ de vision d'un garde) -> @Fabien working on it
-    - comment les infos de l'ouie peuvent nous servir dans le choix du déplacement ? (pour plus tard)
-    - utiliser numpy (et non des tableaux) pour optimiser la recherche (pour plus tard)
+- prise en compte des pts (malus si on passe dans le champ de vision d'un garde) -> @Fabien working on it
+- merge stateTree et main
+- comment les infos de l'ouie peuvent nous servir dans le choix du déplacement ? (pour plus tard)
+- utiliser numpy (et non des tableaux) pour optimiser la recherche (pour plus tard)
+- typer stateTree
 
 
 
