@@ -85,8 +85,8 @@ def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_ind
         for j in range(n_lig):
             litterals.append(i * n_lig * 7 + j * 7 + object_index)
     r = uniqueX(litterals, n_object)
-    print("Clauses pour " + str(n_object) + " " + list(OBJECTS_INDEX.keys())[list(OBJECTS_INDEX.values()).index(object_index)] + " :")
-    print(r)
+    #print("Clauses pour " + str(n_object) + " " + list(OBJECTS_INDEX.keys())[list(OBJECTS_INDEX.values()).index(object_index)] + " :")
+    #print(r)
     return r
 
 # ajout d'une information de vision
@@ -105,6 +105,31 @@ def addInfoVision(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBase:
     clauses.append([x * n_lig * 7 + y * 7 + typeCase])
     return clauses
 
+# ajout d'une information d'écoute
+def addInfoListening(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBase:
+    print("Position d'Hitman : ")
+    x = int(input("x : "))
+    y = int(input("y : "))
+    if x not in range(0,n_col) or y not in range(0,n_lig):
+        raise Exception("Coordonnees invalides")
+    print("Nombre de personnes entendues : ")
+    n = int(input("n : "))
+    if n not in range(0,9):
+        raise Exception("Nombre invalide")
+    if n > 5:
+        return clauses
+    litterals = []
+    #pour toutes les cases autour
+    for i in range(x-1, x+2):
+        for j in range(y-1, y+2):
+            if i < 0 or i >= n_col or j < 0 or j >= n_lig:
+                continue
+            litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'])
+            litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['civil'])
+    clauses += uniqueX(litterals, n)
+    return clauses
+
+
 def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
     filename = "temp.cnf"
     dimacs = clausesToDimacs(clauses, dimension)
@@ -113,8 +138,9 @@ def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
 
 def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
     sol = solveur(clauses, dimension)
-    print(sol)
-    if not sol[0]: return False
+    #print(sol)
+    if not sol[0]:
+        raise Exception("Pas de solution")
 
     #print("Solution : \n")
     #print(sol[1])
@@ -195,9 +221,10 @@ def createMap(n_col : int, n_lig : int) -> Grid:
     return map
 
 def main():
+
     linesNumber = 3
-    columnsNumber = 4
-    guardNumber = 2
+    columnsNumber = 3
+    guardNumber = 1
     civilNumber = 1
     dimension = columnsNumber * linesNumber * len(OBJECTS_INDEX)
 
@@ -210,7 +237,7 @@ def main():
     }
 
     map = createMap(columnsNumber, linesNumber)
-    print(map)
+    # print(map)
     # print(Action.move.value)
 
     # if we 
@@ -230,11 +257,13 @@ def main():
     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['target'])
     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['rope'])
     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['costume'])
-    print(clauses)
 
     while not isSolutionUnique(clauses, dimension):
-        addInfoVision(clauses, columnsNumber, linesNumber)
-        print(clauses)
+        n = input("Nombre de cases vues : ")
+        for _ in range(int(n)):
+            addInfoVision(clauses, columnsNumber, linesNumber)
+        #print(clauses)
+        addInfoListening(clauses, columnsNumber, linesNumber)
     
     print("Carte connue : \n")
     print(solveur(clauses, dimension))
