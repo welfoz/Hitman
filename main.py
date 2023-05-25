@@ -136,11 +136,13 @@ def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
     write_dimacs_file("\n".join(dimacs), filename)
     return exec_gophersat(filename)
 
-def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
+def solutionPossible(clauses: ClauseBase, dimension : int) -> bool:
     sol = solveur(clauses, dimension)
     #print(sol)
-    if not sol[0]:
-        raise Exception("Pas de solution")
+    return sol[0]
+
+def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
+    sol = solveur(clauses, dimension)
 
     #print("Solution : \n")
     #print(sol[1])
@@ -273,7 +275,7 @@ def main():
     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['rope'])
     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['costume'])
 
-    while not isSolutionUnique(clauses, dimension):
+    while (not isSolutionUnique(clauses, dimension)) and solutionPossible(clauses, dimension)):
         n = input("Nombre de cases vues : ")
         for _ in range(int(n)):
             clauses += addInfoVision(columnsNumber, linesNumber)
