@@ -143,7 +143,7 @@ def createStateTree(map, position):
             # print("newInfo: " + str(newInfo))
             newMap = updateMap(copy.deepcopy(parentMap), newInfo)
 
-            totalInformationGained = stateTree[parentIndex] + informationGained(newMap, newPosition, newInfo)
+            totalInformationGained = stateTree[parentIndex] + informationGained(newPosition, newInfo)
 
             # améliorable en stockant que la derniere position
             stateTree.append(totalInformationGained)
@@ -168,7 +168,8 @@ def choiceAction(stateTree):
     @param stateTree: list of the values of the total information gained for each path
     """
     lastLevelLeafs = stateTree[len(stateTree) - pow(3, DEPTH_MAX):]
-    # print(len(lastLevelLeafs))
+    print(len(lastLevelLeafs))
+    print(lastLevelLeafs)
     totalPointsForAction1 = sum(lastLevelLeafs[:pow(3, DEPTH_MAX - 1)])
     totalPointsForAction2 = sum(lastLevelLeafs[pow(3, DEPTH_MAX - 1):2 * pow(3, DEPTH_MAX - 1)])
     totalPointsForAction3 = sum(lastLevelLeafs[2 * pow(3, DEPTH_MAX - 1):])
@@ -177,27 +178,83 @@ def choiceAction(stateTree):
     indexOfTheMaxOfTotal = totalPoints.index(max(totalPoints))
     return indexOfTheMaxOfTotal + 1
 
-def howManyGuardsLookingAtUs(map, position) -> int:
-    return 0
+def getAllCasesSeenByGuard(position) -> List[Tuple[int, int, int]]:
+    vision = 2
+    x = position[0]
+    y = position[1]
+    direction = position[2]
+    computeNewPosition = ["=", "="]
+    if direction == 'N':
+        computeNewPosition[1] = "-"
+    elif direction == 'S':
+        computeNewPosition[1] = "+"
+    elif direction == 'E':
+        computeNewPosition[0] = "+"
+    elif direction == 'W':
+        computeNewPosition[0] = "-"
 
-def informationGained(map, position, newInfo) -> int:
+    casesSeen = []
+    for i in range(vision):
+        newPosition = [x, y]
+        if computeNewPosition[0] == "+":
+            newPosition[0] = x + i + 1
+        elif computeNewPosition[0] == "-":
+            newPosition[0] = x - i - 1
+
+        if computeNewPosition[1] == "+":
+            newPosition[1] = y + i + 1
+        elif computeNewPosition[1] == "-":
+            newPosition[1] = y - i - 1
+
+        if isOutsideTheMap(newPosition): continue
+        info = [newPosition[0], newPosition[1], GAME_MAP[newPosition[1]][newPosition[0]]] 
+
+        casesSeen.append(info)
+
+        # if case not empty, vision stops here
+        if info[2] != OBJECTS_INDEX['empty']: 
+            break
+    return casesSeen
+
+def getAllGuardsPositions() -> List[Tuple[int, int, int]]:
+    guardsPositions = []
+    for y in range(len(GAME_MAP)):
+        for x in range(len(GAME_MAP[y])):
+            if GAME_MAP[y][x] in OBJECTS_INDEX['guard']:
+                guardPositionValue = GAME_MAP[y][x]
+                direction = None
+
+                # can change with the arbitre
+                if guardPositionValue == OBJECTS_INDEX['guard'][1]:
+                    direction = 'N'
+                elif guardPositionValue == OBJECTS_INDEX['guard'][2]:
+                    direction = 'S'
+                elif guardPositionValue == OBJECTS_INDEX['guard'][3]:
+                    direction = 'E'
+                elif guardPositionValue == OBJECTS_INDEX['guard'][4]:
+                    direction = 'W'
+                
+                guardsPositions.append([x, y, direction])
+    return guardsPositions
+
+def howManyGuardsLookingAtUs(position) -> int:
+    guardsPositions = getAllGuardsPositions()
+
+    guardsLookingAtUs = 0
+    for guardPosition in guardsPositions:
+        casesSeen = getAllCasesSeenByGuard(guardPosition)
+        for caseSeen in casesSeen:
+            if caseSeen[0] == position[0] and caseSeen[1] == position[1]:
+                guardsLookingAtUs += 1
+        
+    return guardsLookingAtUs
+
+def informationGained(position, newInfo) -> int:
     """
     return the information gained by doing action to the parent value
-    +3 if the action reveals may reveal 3 new cells
-    +2 if the action reveals may reveal 2 new cells
-    +1 if the action reveals may reveal 1 new cells
-    0 if we reveal no new cells
     """
     newCases = len(newInfo)
-    
-    # for each guards looking at us, we have a -5 penalty
-    # we have our position 
-    # we know guards can see with 2 cells of vision maximum, they stop at the first obstacle
-    # get all guards positions
-    # reuse get all info function with vision = 2
-    # howManyGuardsLookingAtUs(map, position)
-    penalty = howManyGuardsLookingAtUs(map, position) * 5
-
+    penalty = howManyGuardsLookingAtUs(position) * 5
 
     return newCases * 2 - penalty
 
@@ -291,7 +348,7 @@ def turn(map, position):
     print("newMap: " + str(map))
     return map, newPosition, actionName
 
-DEPTH_MAX = 8
+DEPTH_MAX = 6
 # GAME_MAP = [
 #     [5, 2, 4, 2, 1],
 #     [2, 3, 1, 2, 3],
@@ -302,7 +359,7 @@ DEPTH_MAX = 8
 GAME_MAP = [
     [5, 2, 1, 7, 1],
     [1, 2, 5, 8, 1],
-    [1, 1, 5, 3, 1],
+    [7, 1, 5, 3, 1],
 ]
 # position = [2, 3, 'N']
 position = [0, 0, 'N']
