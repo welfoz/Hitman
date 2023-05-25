@@ -117,8 +117,6 @@ def addInfoListening(n_col : int, n_lig : int) -> ClauseBase:
     n = int(input("n : "))
     if n not in range(0,9):
         raise Exception("Nombre invalide")
-    if n > 5:
-        return []
     litterals = []
     #pour toutes les cases autour
     for i in range(x-2, x+3):
@@ -127,6 +125,8 @@ def addInfoListening(n_col : int, n_lig : int) -> ClauseBase:
                 continue
             litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'])
             litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['civil'])
+    if n > 5:
+        return atLeast(5, litterals)
     return uniqueX(litterals, n)
 
 
