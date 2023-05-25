@@ -115,7 +115,7 @@ def addInfoListening(n_col : int, n_lig : int) -> ClauseBase:
         raise Exception("Coordonnees invalides")
     print("Nombre de personnes entendues : ")
     n = int(input("n : "))
-    if n not in range(0,9):
+    if n not in range(0,27):
         raise Exception("Nombre invalide")
     litterals = []
     #pour toutes les cases autour
