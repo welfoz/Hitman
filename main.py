@@ -90,7 +90,7 @@ def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_ind
     return r
 
 # ajout d'une information de vision
-def addInfoVision(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBase:
+def addInfoVision(n_col : int, n_lig : int) -> ClauseBase:
     print("Infos de la case vue : ")
     x = int(input("x : "))
     y = int(input("y : "))
@@ -102,11 +102,12 @@ def addInfoVision(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBase:
     typeCase = int(input("Type de la case : "))
     if typeCase not in OBJECTS_INDEX.values():
         raise Exception("Type invalide")
-    clauses.append([x * n_lig * 7 + y * 7 + typeCase])
-    return clauses
+    result = []
+    result.append([x * n_lig * 7 + y * 7 + typeCase])
+    return result
 
 # ajout d'une information d'écoute
-def addInfoListening(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBase:
+def addInfoListening(n_col : int, n_lig : int) -> ClauseBase:
     print("Position d'Hitman : ")
     x = int(input("x : "))
     y = int(input("y : "))
@@ -117,7 +118,7 @@ def addInfoListening(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBas
     if n not in range(0,9):
         raise Exception("Nombre invalide")
     if n > 5:
-        return clauses
+        return []
     litterals = []
     #pour toutes les cases autour
     for i in range(x-1, x+2):
@@ -126,8 +127,7 @@ def addInfoListening(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBas
                 continue
             litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'])
             litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['civil'])
-    clauses += uniqueX(litterals, n)
-    return clauses
+    return uniqueX(litterals, n)
 
 
 def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
@@ -276,9 +276,9 @@ def main():
     while not isSolutionUnique(clauses, dimension):
         n = input("Nombre de cases vues : ")
         for _ in range(int(n)):
-            addInfoVision(clauses, columnsNumber, linesNumber)
+            clauses += addInfoVision(columnsNumber, linesNumber)
         #print(clauses)
-        addInfoListening(clauses, columnsNumber, linesNumber)
+        clauses += addInfoListening(columnsNumber, linesNumber)
         probas = probaLitteral(clauses, dimension)
         print("Probas : \n", probas)
         #pour chaque case
