@@ -85,12 +85,12 @@ def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_ind
         for j in range(n_lig):
             litterals.append(i * n_lig * 7 + j * 7 + object_index)
     r = uniqueX(litterals, n_object)
-    print("Clauses pour " + str(n_object) + " " + list(OBJECTS_INDEX.keys())[list(OBJECTS_INDEX.values()).index(object_index)] + " :")
-    print(r)
+    #print("Clauses pour " + str(n_object) + " " + list(OBJECTS_INDEX.keys())[list(OBJECTS_INDEX.values()).index(object_index)] + " :")
+    #print(r)
     return r
 
 # ajout d'une information de vision
-def addInfoVision(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBase:
+def addInfoVision(n_col : int, n_lig : int) -> ClauseBase:
     print("Infos de la case vue : ")
     x = int(input("x : "))
     y = int(input("y : "))
@@ -102,8 +102,33 @@ def addInfoVision(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBase:
     typeCase = int(input("Type de la case : "))
     if typeCase not in OBJECTS_INDEX.values():
         raise Exception("Type invalide")
-    clauses.append([x * n_lig * 7 + y * 7 + typeCase])
-    return clauses
+    result = []
+    result.append([x * n_lig * 7 + y * 7 + typeCase])
+    return result
+
+# ajout d'une information d'écoute
+def addInfoListening(n_col : int, n_lig : int) -> ClauseBase:
+    print("Position d'Hitman : ")
+    x = int(input("x : "))
+    y = int(input("y : "))
+    if x not in range(0,n_col) or y not in range(0,n_lig):
+        raise Exception("Coordonnees invalides")
+    print("Nombre de personnes entendues : ")
+    n = int(input("n : "))
+    if n not in range(0,25):
+        raise Exception("Nombre invalide")
+    litterals = []
+    #pour toutes les cases autour
+    for i in range(x-2, x+3):
+        for j in range(y-2, y+3):
+            if i < 0 or i >= n_col or j < 0 or j >= n_lig:
+                continue
+            litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'])
+            litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['civil'])
+    if n > 5:
+        return atLeast(5, litterals)
+    return uniqueX(litterals, n)
+
 
 def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
     filename = "temp.cnf"
@@ -111,10 +136,13 @@ def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
     write_dimacs_file("\n".join(dimacs), filename)
     return exec_gophersat(filename)
 
+def solutionPossible(clauses: ClauseBase, dimension : int) -> bool:
+    sol = solveur(clauses, dimension)
+    #print(sol)
+    return sol[0]
+
 def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
     sol = solveur(clauses, dimension)
-    print(sol)
-    if not sol[0]: return False
 
     #print("Solution : \n")
     #print(sol[1])
@@ -194,10 +222,26 @@ def createMap(n_col : int, n_lig : int) -> Grid:
             map[i].append(0)
     return map
 
+# calcule la proba de chaque littéral dans les solutions du solveur
+def probaLitteral(clauses: ClauseBase, dimension : int) -> List[float]:
+    proba = [0] * dimension
+    n = 0
+    sol = solveur(clauses, dimension)
+    while sol[0] & (n < 1001):
+        n += 1
+        for c in sol[1]:
+            if c > 0:
+                proba[c-1] += 1
+            else:
+                proba[-c-1] -= 1
+        sol = solveur(clauses + [[-x for x in sol[1]]], dimension)
+    return [p/(n) for p in proba]
+
 def main():
+
     linesNumber = 3
-    columnsNumber = 4
-    guardNumber = 2
+    columnsNumber = 3
+    guardNumber = 1
     civilNumber = 1
     dimension = columnsNumber * linesNumber * len(OBJECTS_INDEX)
 
@@ -210,7 +254,7 @@ def main():
     }
 
     map = createMap(columnsNumber, linesNumber)
-    print(map)
+    # print(map)
     # print(Action.move.value)
 
     # if we 
@@ -230,15 +274,23 @@ def main():
     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['target'])
     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['rope'])
     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['costume'])
-    print(clauses)
 
-    while not isSolutionUnique(clauses, dimension):
-        addInfoVision(clauses, columnsNumber, linesNumber)
-        print(clauses)
+    while (not isSolutionUnique(clauses, dimension)) and solutionPossible(clauses, dimension)):
+        n = input("Nombre de cases vues : ")
+        for _ in range(int(n)):
+            clauses += addInfoVision(columnsNumber, linesNumber)
+        #print(clauses)
+        clauses += addInfoListening(columnsNumber, linesNumber)
+        probas = probaLitteral(clauses, dimension)
+        print("Probas : \n", probas)
+        #pour chaque case
+        print(probas)
+        for i in range(columnsNumber * linesNumber + 1):
+            for j in OBJECTS_INDEX.keys():
+                print("Case " + str(i) + " avec " + j + " : " + str(probas[i*len(OBJECTS_INDEX) + OBJECTS_INDEX[j] - 1]))
     
     print("Carte connue : \n")
     print(solveur(clauses, dimension))
-
 
 if __name__ == "__main__":
     main()

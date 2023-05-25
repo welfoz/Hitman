@@ -1,6 +1,4 @@
 # TO DO 
-- coder les règles une par une et vérifier qu'elles fonctionnent -> done ??
-- implémenter l'ouie avec les clauses @Pol
 amélioration choix du déplacement: 
     - la vision d'hitman s'arrete au premier obstacle (premiere case non vide)
     - prise en compte des murs et des gardes (on ne peut pas marcher dessus)
