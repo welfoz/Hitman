@@ -4,6 +4,8 @@ import os
 import platform
 from enum import Enum
 
+from arbitre_gitlab.hitman.hitman.hitman import HC, HitmanReferee, complete_map_example
+
 # alias de types
 Grid = List[List[int]] 
 PropositionnalVariable = int
@@ -79,13 +81,14 @@ def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
     return clauses
 
 # generation des clauses pour un nombre donne d'ojects dans la carte
-def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_index: int) -> ClauseBase:
+def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_first_index: int, n_litterals_per_object : int) -> ClauseBase:
     litterals = []
     for i in range(n_col):
         for j in range(n_lig):
-            litterals.append(i * n_lig * 7 + j * 7 + object_index)
+            for k in range(n_litterals_per_object):
+                litterals.append(i * n_lig * 17 + j * 17 + object_first_index + k)
     r = uniqueX(litterals, n_object)
-    print("Clauses pour " + str(n_object) + " " + list(OBJECTS_INDEX.keys())[list(OBJECTS_INDEX.values()).index(object_index)] + " :")
+    print("Clauses pour " + str(n_object) + " fois l'objet " + str(object_first_index) + " :")
     print(r)
     return r
 
@@ -195,49 +198,65 @@ def createMap(n_col : int, n_lig : int) -> Grid:
     return map
 
 def main():
-    linesNumber = 3
-    columnsNumber = 4
-    guardNumber = 2
-    civilNumber = 1
-    dimension = columnsNumber * linesNumber * len(OBJECTS_INDEX)
-
-    direction = {
-        "nord": "n",
-        "est": "e",
-        "sud": "s",
-        "ouest": "o",
-        "default": "a" # for any
-    }
-
-    map = createMap(columnsNumber, linesNumber)
-    print(map)
-    # print(Action.move.value)
-
-    # if we 
-    # dont know where a guard looks: ga
-    # know where a guard looks: gn, ge, gs, go
-    # for civil: ca, cn, ce, cs, co
+    hr = HitmanReferee()
+    status = hr.start_phase1()
+    print(status)
 
     clauses = []
-    # print(uniqueX([1, 2, 3, 4], 3))
-    # clauses += uniqueX([1, 2, 3, 4], 2)
-    # clauses += uniqueX([1, 2, 3, 4], 1)
-    # print(clauses)
-
-    clauses += generateTypesGrid(columnsNumber, linesNumber)
-    clauses += generateClausesForObject(columnsNumber, linesNumber, guardNumber, OBJECTS_INDEX['guard'])
-    clauses += generateClausesForObject(columnsNumber, linesNumber, civilNumber, OBJECTS_INDEX['civil'])
-    clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['target'])
-    clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['rope'])
-    clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['costume'])
+    clauses += generateTypesGrid(status['n'], status['m'])
+    # clauses += generateClausesForObject(status['n'], status['m'], status['guard_count'], HC.GUARD_N, 4) marche pas le HC.GUARD_N
+    # clauses += generateClausesForObject(status['n'], status['m'], status['civil_count'], HC.CIVIL_N, 4)
+    clauses += generateClausesForObject(status['n'], status['m'], status['guard_count'], 3, 4)
+    clauses += generateClausesForObject(status['n'], status['m'], status['civil_count'], 7, 4)
+    clauses += generateClausesForObject(status['n'], status['m'], 1, status['target'], 1)
+    clauses += generateClausesForObject(status['n'], status['m'], 1, status['rope'], 1)
+    clauses += generateClausesForObject(status['n'], status['m'], 1, status['costume'], 1)
     print(clauses)
 
-    while not isSolutionUnique(clauses, dimension):
-        addInfoVision(clauses, columnsNumber, linesNumber)
-        print(clauses)
+# def main():
+#     linesNumber = 3
+#     columnsNumber = 4
+#     guardNumber = 2
+#     civilNumber = 1
+#     dimension = columnsNumber * linesNumber * len(OBJECTS_INDEX)
+
+#     direction = {
+#         "nord": "n",
+#         "est": "e",
+#         "sud": "s",
+#         "ouest": "o",
+#         "default": "a" # for any
+#     }
+
+#     map = createMap(columnsNumber, linesNumber)
+#     print(map)
+#     # print(Action.move.value)
+
+#     # if we 
+#     # dont know where a guard looks: ga
+#     # know where a guard looks: gn, ge, gs, go
+#     # for civil: ca, cn, ce, cs, co
+
+#     clauses = []
+#     # print(uniqueX([1, 2, 3, 4], 3))
+#     # clauses += uniqueX([1, 2, 3, 4], 2)
+#     # clauses += uniqueX([1, 2, 3, 4], 1)
+#     # print(clauses)
+
+#     clauses += generateTypesGrid(columnsNumber, linesNumber)
+#     clauses += generateClausesForObject(columnsNumber, linesNumber, guardNumber, OBJECTS_INDEX['guard'])
+#     clauses += generateClausesForObject(columnsNumber, linesNumber, civilNumber, OBJECTS_INDEX['civil'])
+#     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['target'])
+#     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['rope'])
+#     clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['costume'])
+#     print(clauses)
+
+#     while not isSolutionUnique(clauses, dimension):
+#         addInfoVision(clauses, columnsNumber, linesNumber)
+#         print(clauses)
     
-    print("Carte connue : \n")
-    print(solveur(clauses, dimension))
+#     print("Carte connue : \n")
+#     print(solveur(clauses, dimension))
 
 
 if __name__ == "__main__":
