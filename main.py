@@ -121,8 +121,8 @@ def addInfoListening(n_col : int, n_lig : int) -> ClauseBase:
         return []
     litterals = []
     #pour toutes les cases autour
-    for i in range(x-1, x+2):
-        for j in range(y-1, y+2):
+    for i in range(x-2, x+3):
+        for j in range(y-2, y+3):
             if i < 0 or i >= n_col or j < 0 or j >= n_lig:
                 continue
             litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'])
