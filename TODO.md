@@ -1,10 +1,10 @@
 # TO DO 
 amélioration choix du déplacement: 
-    - la vision d'hitman s'arrete au premier obstacle (premiere case non vide)
-    - prise en compte des murs et des gardes (on ne peut pas marcher dessus)
-    - prise en compte des pts (malus si on passe dans le champ de vision d'un garde)
-    - comment les infos de l'ouie peuvent nous servir dans le choix du déplacement ? (pour plus tard)
-    - utiliser numpy (et non des tableaux) pour optimiser la recherche (pour plus tard)
+- prise en compte des pts (malus si on passe dans le champ de vision d'un garde) -> @Fabien working on it
+- merge stateTree et main
+- comment les infos de l'ouie peuvent nous servir dans le choix du déplacement ? (pour plus tard)
+- utiliser numpy (et non des tableaux) pour optimiser la recherche (pour plus tard)
+- typer stateTree
 
 
 

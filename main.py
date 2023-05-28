@@ -68,13 +68,13 @@ def clausesToDimacs(clauses: ClauseBase, dimension: int) -> List[str]:
 
 # generation des types possibles pour une case
 def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
-    objectNumer = len(OBJECTS_INDEX)
+    objectNumber = len(OBJECTS_INDEX)
     clauses = []
     for i in range(n_col):
         for j in range(n_lig):
             literals = []
-            for k in range(objectNumer):
-                literals.append(i * n_lig * objectNumer + j * objectNumer + k + 1)
+            for k in range(objectNumber):
+                literals.append(i * n_lig * objectNumber + j * objectNumber + k + 1)
             clauses += uniqueX(literals, 1)
     return clauses
 

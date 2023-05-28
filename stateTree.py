@@ -1,6 +1,16 @@
 from typing import List, Tuple
 import copy
-# no pruning for now
+
+OBJECTS_INDEX = {
+    'empty': 1,
+    'wall': 2,
+    'target': 3,
+    'rope': 4,
+    'costume': 5,
+    'guard': [6, 7, 8, 9, 10], # 6 default, 7: north, 8: south, 9: east, 10: west
+    'civil': [11, 12, 13, 14, 15], # 11 default, 12: north, 13: south, 14: east, 15: west
+}
+
 
 def createMap(n_col : int, n_lig : int):
     """
@@ -48,6 +58,25 @@ def isOutsideTheMap(coordinates: Tuple[int, int]) -> bool:
         return True
     return False
 
+def isLookingAtAnImpassableObstacle(position) -> bool:
+    x = position[0]
+    y = position[1]
+    direction = position[2]
+    newPositionValue = None
+
+    if direction == 'N':
+        newPositionValue = GAME_MAP[y - 1][x]
+    elif direction == 'S':
+        newPositionValue = GAME_MAP[y + 1][x]
+    elif direction == 'E':
+        newPositionValue = GAME_MAP[y][x + 1]
+    elif direction == 'W':
+        newPositionValue = GAME_MAP[y][x - 1]
+
+    if newPositionValue == OBJECTS_INDEX['wall'] or newPositionValue in OBJECTS_INDEX['guard']:
+        return True
+    return False
+
 def computePositionBasedOnAction(position, action):
     direction = position[2]
     coordinates = [position[0], position[1]]
@@ -55,7 +84,7 @@ def computePositionBasedOnAction(position, action):
 
     if action == 1:
         # move
-        if isLookingAtABorder(position):
+        if isLookingAtABorder(position) or isLookingAtAnImpassableObstacle(position):
             pass
         elif direction == 'N':
             coordinates[1] -= 1
@@ -114,7 +143,7 @@ def createStateTree(map, position):
             # print("newInfo: " + str(newInfo))
             newMap = updateMap(copy.deepcopy(parentMap), newInfo)
 
-            totalInformationGained = stateTree[parentIndex] + informationGained(newInfo)
+            totalInformationGained = stateTree[parentIndex] + informationGained(newPosition, newInfo)
 
             # améliorable en stockant que la derniere position
             stateTree.append(totalInformationGained)
@@ -139,7 +168,8 @@ def choiceAction(stateTree):
     @param stateTree: list of the values of the total information gained for each path
     """
     lastLevelLeafs = stateTree[len(stateTree) - pow(3, DEPTH_MAX):]
-    # print(len(lastLevelLeafs))
+    print(len(lastLevelLeafs))
+    print(lastLevelLeafs)
     totalPointsForAction1 = sum(lastLevelLeafs[:pow(3, DEPTH_MAX - 1)])
     totalPointsForAction2 = sum(lastLevelLeafs[pow(3, DEPTH_MAX - 1):2 * pow(3, DEPTH_MAX - 1)])
     totalPointsForAction3 = sum(lastLevelLeafs[2 * pow(3, DEPTH_MAX - 1):])
@@ -148,15 +178,85 @@ def choiceAction(stateTree):
     indexOfTheMaxOfTotal = totalPoints.index(max(totalPoints))
     return indexOfTheMaxOfTotal + 1
 
-def informationGained(newInfo) -> int:
+def getAllCasesSeenByGuard(position) -> List[Tuple[int, int, int]]:
+    vision = 2
+    x = position[0]
+    y = position[1]
+    direction = position[2]
+    computeNewPosition = ["=", "="]
+    if direction == 'N':
+        computeNewPosition[1] = "-"
+    elif direction == 'S':
+        computeNewPosition[1] = "+"
+    elif direction == 'E':
+        computeNewPosition[0] = "+"
+    elif direction == 'W':
+        computeNewPosition[0] = "-"
+
+    casesSeen = []
+    for i in range(vision):
+        newPosition = [x, y]
+        if computeNewPosition[0] == "+":
+            newPosition[0] = x + i + 1
+        elif computeNewPosition[0] == "-":
+            newPosition[0] = x - i - 1
+
+        if computeNewPosition[1] == "+":
+            newPosition[1] = y + i + 1
+        elif computeNewPosition[1] == "-":
+            newPosition[1] = y - i - 1
+
+        if isOutsideTheMap(newPosition): continue
+        info = [newPosition[0], newPosition[1], GAME_MAP[newPosition[1]][newPosition[0]]] 
+
+        casesSeen.append(info)
+
+        # if case not empty, vision stops here
+        if info[2] != OBJECTS_INDEX['empty']: 
+            break
+    return casesSeen
+
+def getAllGuardsPositions() -> List[Tuple[int, int, int]]:
+    guardsPositions = []
+    for y in range(len(GAME_MAP)):
+        for x in range(len(GAME_MAP[y])):
+            if GAME_MAP[y][x] in OBJECTS_INDEX['guard']:
+                guardPositionValue = GAME_MAP[y][x]
+                direction = None
+
+                # can change with the arbitre
+                if guardPositionValue == OBJECTS_INDEX['guard'][1]:
+                    direction = 'N'
+                elif guardPositionValue == OBJECTS_INDEX['guard'][2]:
+                    direction = 'S'
+                elif guardPositionValue == OBJECTS_INDEX['guard'][3]:
+                    direction = 'E'
+                elif guardPositionValue == OBJECTS_INDEX['guard'][4]:
+                    direction = 'W'
+                
+                guardsPositions.append([x, y, direction])
+    return guardsPositions
+
+def howManyGuardsLookingAtUs(position) -> int:
+    guardsPositions = getAllGuardsPositions()
+
+    guardsLookingAtUs = 0
+    for guardPosition in guardsPositions:
+        casesSeen = getAllCasesSeenByGuard(guardPosition)
+        for caseSeen in casesSeen:
+            if caseSeen[0] == position[0] and caseSeen[1] == position[1]:
+                guardsLookingAtUs += 1
+        
+    return guardsLookingAtUs
+
+def informationGained(position, newInfo) -> int:
     """
     return the information gained by doing action to the parent value
-    +3 if the action reveals may reveal 3 new cells
-    +2 if the action reveals may reveal 2 new cells
-    +1 if the action reveals may reveal 1 new cells
-    0 if we reveal no new cells
     """
-    return len(newInfo)
+    newCases = len(newInfo)
+    penalty = howManyGuardsLookingAtUs(position) * 5
+
+    return newCases * 2 - penalty
 
 def isInformationAlreadyKnown(map, information) -> bool:
     """
@@ -204,9 +304,13 @@ def getAllNewInformation(map, position) -> List[Tuple[int, int, int]]:
 
         if isOutsideTheMap(newPosition): continue
         info = [newPosition[0], newPosition[1], GAME_MAP[newPosition[1]][newPosition[0]]] 
-        if isInformationAlreadyKnown(map, info): continue
-        
-        casesSeen.append(info)
+
+        if not isInformationAlreadyKnown(map, info):
+            casesSeen.append(info)
+
+        # if case not empty, vision stops here
+        if info[2] != OBJECTS_INDEX['empty']: 
+            break
     return casesSeen
 
 def updateMap(map, newInfo):
@@ -237,28 +341,31 @@ def turn(map, position):
 
     newPosition = computePositionBasedOnAction(position, action)
     newInfo = getAllNewInformation(map, newPosition)
+    print("newPosition: " + str(newPosition))
+    print("newInfo: " + str(newInfo))
+    print("Map: " + str(map))
     map = updateMap(map, newInfo)
-    # print("newPosition: " + str(newPosition))
-    # print("newInfo: " + str(newInfo))
-    # print("newMap: " + str(map))
+    print("newMap: " + str(map))
     return map, newPosition, actionName
 
-DEPTH_MAX = 8 
-GAME_MAP = [
-    [5, 2, 4, 2, 1],
-    [2, 3, 1, 2, 3],
-    [1, 6, 3, 1, 2],
-    [7, 1, 1, 2, 3],
-    [7, 1, 3, 2, 3],
-]
+DEPTH_MAX = 6
 # GAME_MAP = [
-#     [5, 2],
-#     [2, 3],
+#     [5, 2, 4, 2, 1],
+#     [2, 3, 1, 2, 3],
+#     [1, 6, 3, 1, 2],
+#     [7, 1, 1, 2, 3],
+#     [7, 1, 3, 2, 3],
 # ]
-position = [2, 3, 'N']
+GAME_MAP = [
+    [5, 2, 1, 7, 1],
+    [1, 2, 5, 8, 1],
+    [7, 1, 5, 3, 1],
+]
+# position = [2, 3, 'N']
+position = [0, 0, 'N']
 
 # map = createMap(5, 5)
-map = createMap(5, 5)
+map = createMap(3, 5)
 
 print(map)
 
