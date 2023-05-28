@@ -1,9 +1,4 @@
 # TO DO 
-- coder les règles une par une et vérifier qu'elles fonctionnent -> done ??
-- implémenter l'ouie avec les clauses @Pol
-- prendre max 1000 solutions solveur à chaque tour, ajouter à la map les déductions
-si on arrive à 1000 --> on peut rien déduire car on n'a pas toutes les solutions
-
 amélioration choix du déplacement: 
 - prise en compte des pts (malus si on passe dans le champ de vision d'un garde) -> @Fabien working on it
 - merge stateTree et main
@@ -45,6 +40,8 @@ S'il voit un garde ou un invité devant lui, X - 1 gardes et invités restants a
 - la case de départ est forcement une bordure
 - quand on voit une bordure -> en déduire des clauses (on en déduit des clauses ou plutot des infos qui servent pour le déplacement ?) 
 - à partir de 5 (gardes + invités) autour de nous on en entend 5+
+- La distance d'audition va passer à 2 au lieu de 1.
+
 
 ### Notes
 - le choix du déplacement + la phase 2 de recherche des états est à faire en python
