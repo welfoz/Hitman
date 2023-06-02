@@ -70,7 +70,7 @@ def clausesToDimacs(clauses: ClauseBase, dimension: int) -> List[str]:
 
 # generation des types possibles pour une case
 def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
-    objectNumer = len(HC)
+    objectNumer = len(OBJECTS_INDEX)
     clauses = []
     for i in range(n_col):
         for j in range(n_lig):
