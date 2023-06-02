@@ -118,12 +118,50 @@ def addInfoVision(clauses: ClauseBase, n_col : int, n_lig : int, infos_vision : 
         x = info[0][0]
         y = info[0][1]
         typeCase = HCInfoToObjectIndex(info[1].value)
-        print("Infos de la case vue : ")
-        print(f"x : {x}")
-        print(f"y : {y}")
-        print(f"type : {typeCase}")
+        # print("Infos de la case vue : ")
+        # print(f"x : {x}")
+        # print(f"y : {y}")
+        # print(f"type : {typeCase}")
         clauses.append([x * n_lig * 7 + y * 7 + typeCase])
     return clauses
+
+def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int) -> ClauseBase:
+    x = position[0]
+    y = position[1]
+    litterals = []
+    #pour toutes les cases autour
+    for i in range(x-2, x+3):
+        for j in range(y-2, y+3):
+            if i < 0 or i >= n_col or j < 0 or j >= n_lig:
+                continue
+            litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'])
+            litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['civil'])
+    if nb_heard > 4:
+        return atLeast(5, litterals)
+    return uniqueX(litterals, nb_heard)
+
+# ajout d'une information d'écoute
+# def addInfoListening(n_col : int, n_lig : int) -> ClauseBase:
+#     print("Position d'Hitman : ")
+#     x = int(input("x : "))
+#     y = int(input("y : "))
+#     if x not in range(0,n_col) or y not in range(0,n_lig):
+#         raise Exception("Coordonnees invalides")
+#     print("Nombre de personnes entendues : ")
+#     n = int(input("n : "))
+#     if n not in range(0,25):
+#         raise Exception("Nombre invalide")
+#     litterals = []
+#     #pour toutes les cases autour
+#     for i in range(x-2, x+3):
+#         for j in range(y-2, y+3):
+#             if i < 0 or i >= n_col or j < 0 or j >= n_lig:
+#                 continue
+#             litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'])
+#             litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['civil'])
+#     if n > 5:
+#         return atLeast(5, litterals)
+#     return uniqueX(litterals, n)
 
 def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
     filename = "temp.cnf"
@@ -237,6 +275,9 @@ def main():
     while not isSolutionUnique(clauses, dimension):
         addInfoVision(clauses, status['n'], status['m'], status['vision'])
         print(len(clauses))
+        clauses += addInfoListening(status['n'], status['m'], status['position'], status['hear'])
+        print(len(clauses))
+        # action à prendre ici
 
     print("Carte connue : \n")
     print(solveur(clauses, dimension))
