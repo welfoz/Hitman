@@ -100,6 +100,7 @@ def HCInfoToObjectIndex(i : int) -> int:
     return i
         
 def addInfoVision(n_col : int, n_lig : int, infos_vision : List) -> ClauseBase:
+    result = []
     for info in infos_vision:
         x = info[0][0]
         y = info[0][1]
@@ -108,10 +109,8 @@ def addInfoVision(n_col : int, n_lig : int, infos_vision : List) -> ClauseBase:
         # print(f"x : {x}")
         # print(f"y : {y}")
         # print(f"type : {typeCase}")
-    result = []
-    result.append([x * n_lig * 7 + y * 7 + typeCase])
+        result.append([x * n_lig * 7 + y * 7 + typeCase])
     return result
-
 
 def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int) -> ClauseBase:
     x = position[0]
@@ -242,7 +241,7 @@ def main():
     hr = HitmanReferee()
     status = hr.start_phase1()
     print(status)
-    input("Press Enter to continue...")
+    # input("Press Enter to continue...")
     clauses = []
     clauses += generateTypesGrid(status['n'], status['m'])
     # print(len(clauses))
@@ -256,13 +255,28 @@ def main():
     clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['costume'])
     print(len(clauses))
 
+    # case 0,0 est vide
+    clauses.append([(OBJECTS_INDEX['empty'])])
+
     dimension = status['n'] * status['m'] * len(OBJECTS_INDEX)
     while not isSolutionUnique(clauses, dimension):
-        addInfoVision(clauses, status['n'], status['m'], status['vision'])
+        clauses += addInfoVision(status['n'], status['m'], status['vision'])
         print(len(clauses))
         clauses += addInfoListening(status['n'], status['m'], status['position'], status['hear'])
         print(len(clauses))
         # action à prendre ici
+        c = input("Choix déplacement (0 = move, 1 = clockwise, 2 = anti) : ")
+        if c == '0':
+            status = hr.move()
+        elif c == '1':
+            status = hr.turn_clockwise()
+        elif c == '2':
+            status = hr.turn_anti_clockwise()
+        else:
+            print("Mauvais choix")
+            continue
+        print(status)
+        # input("Press Enter to continue...")
 
     print("Carte connue : \n")
     print(solveur(clauses, dimension))

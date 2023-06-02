@@ -6,6 +6,8 @@ amélioration choix du déplacement:
 - utiliser numpy (et non des tableaux) pour optimiser la recherche (pour plus tard)
 - typer stateTree
 
+- si info déjà dans clause, ne pas rajouter (gestion dans la couche python des infos)
+- utiliser is_in_guard_range
 
 
 # rules 
