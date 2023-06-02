@@ -87,8 +87,7 @@ def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_ind
         for j in range(n_lig):
             litterals.append(i * n_lig * 7 + j * 7 + object_index)
     r = uniqueX(litterals, n_object)
-    # print("Clauses pour " + str(n_object) + " fois l'objet " + str(object_first_index) + " :")
-    # print(r)
+    # print("Clauses pour " + str(n_object) + " " + list(OBJECTS_INDEX.keys())[list(OBJECTS_INDEX.values()).index(object_index)] + " :")
     return r
 
 # ajout d'une information de vision
