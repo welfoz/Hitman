@@ -70,7 +70,7 @@ def clausesToDimacs(clauses: ClauseBase, dimension: int) -> List[str]:
 
 # generation des types possibles pour une case
 def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
-    objectNumer = len(OBJECTS_INDEX)
+    objectNumer = len(HC)
     clauses = []
     for i in range(n_col):
         for j in range(n_lig):
@@ -81,15 +81,14 @@ def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
     return clauses
 
 # generation des clauses pour un nombre donne d'ojects dans la carte
-def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_first_index: int, n_litterals_per_object : int) -> ClauseBase:
+def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_index: int) -> ClauseBase:
     litterals = []
     for i in range(n_col):
         for j in range(n_lig):
-            for k in range(n_litterals_per_object):
-                litterals.append(i * n_lig * 17 + j * 17 + object_first_index + k)
+            litterals.append(i * n_lig * 7 + j * 7 + object_index)
     r = uniqueX(litterals, n_object)
-    print("Clauses pour " + str(n_object) + " fois l'objet " + str(object_first_index) + " :")
-    print(r)
+    # print("Clauses pour " + str(n_object) + " fois l'objet " + str(object_first_index) + " :")
+    # print(r)
     return r
 
 # ajout d'une information de vision
@@ -201,17 +200,22 @@ def main():
     hr = HitmanReferee()
     status = hr.start_phase1()
     print(status)
-
+    input("Press Enter to continue...")
     clauses = []
     clauses += generateTypesGrid(status['n'], status['m'])
+    print(len(clauses))
+    input("Press Enter to continue...")
     # clauses += generateClausesForObject(status['n'], status['m'], status['guard_count'], HC.GUARD_N, 4) marche pas le HC.GUARD_N
     # clauses += generateClausesForObject(status['n'], status['m'], status['civil_count'], HC.CIVIL_N, 4)
-    clauses += generateClausesForObject(status['n'], status['m'], status['guard_count'], 3, 4)
-    clauses += generateClausesForObject(status['n'], status['m'], status['civil_count'], 7, 4)
-    clauses += generateClausesForObject(status['n'], status['m'], 1, status['target'], 1)
-    clauses += generateClausesForObject(status['n'], status['m'], 1, status['rope'], 1)
-    clauses += generateClausesForObject(status['n'], status['m'], 1, status['costume'], 1)
-    print(clauses)
+    clauses += generateClausesForObject(status['n'], status['m'], status['guard_count'], OBJECTS_INDEX['guard'])
+    print(len(clauses))
+    input("Press Enter to continue...")
+    clauses += generateClausesForObject(status['n'], status['m'], status['civil_count'], OBJECTS_INDEX['civil'])
+    clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['target'])
+    clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['rope'])
+    clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['costume'])
+    print(len(clauses))
+    print("ok")
 
 # def main():
 #     linesNumber = 3
