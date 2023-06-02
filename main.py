@@ -91,19 +91,38 @@ def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_ind
     return r
 
 # ajout d'une information de vision
-def addInfoVision(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBase:
-    print("Infos de la case vue : ")
-    x = int(input("x : "))
-    y = int(input("y : "))
-    if x not in range(0,n_col) or y not in range(0,n_lig):
-        raise Exception("Coordonnees invalides")
-    print("Types possibles : ")
-    for key, value in OBJECTS_INDEX.items():
-        print(f"'{key}' : {value}")
-    typeCase = int(input("Type de la case : "))
-    if typeCase not in OBJECTS_INDEX.values():
-        raise Exception("Type invalide")
-    clauses.append([x * n_lig * 7 + y * 7 + typeCase])
+# def addInfoVision(clauses: ClauseBase, n_col : int, n_lig : int) -> ClauseBase:
+#     print("Infos de la case vue : ")
+#     x = int(input("x : "))
+#     y = int(input("y : "))
+#     if x not in range(0,n_col) or y not in range(0,n_lig):
+#         raise Exception("Coordonnees invalides")
+#     print("Types possibles : ")
+#     for key, value in OBJECTS_INDEX.items():
+#         print(f"'{key}' : {value}")
+#     typeCase = int(input("Type de la case : "))
+#     if typeCase not in OBJECTS_INDEX.values():
+#         raise Exception("Type invalide")
+#     clauses.append([x * n_lig * 7 + y * 7 + typeCase])
+#     return clauses
+
+def HCInfoToObjectIndex(i : int) -> int:
+    if i in range(3,7):
+        return 3
+    if i in range(7,11):
+        return 4
+    return i
+        
+def addInfoVision(clauses: ClauseBase, n_col : int, n_lig : int, infos_vision : List) -> ClauseBase:
+    for info in infos_vision:
+        x = info[0][0]
+        y = info[0][1]
+        typeCase = HCInfoToObjectIndex(info[1].value)
+        print("Infos de la case vue : ")
+        print(f"x : {x}")
+        print(f"y : {y}")
+        print(f"type : {typeCase}")
+        clauses.append([x * n_lig * 7 + y * 7 + typeCase])
     return clauses
 
 def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
@@ -114,17 +133,17 @@ def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
 
 def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
     sol = solveur(clauses, dimension)
-    print(sol)
+    # print(sol)
     if not sol[0]: return False
 
     #print("Solution : \n")
     #print(sol[1])
     sol2 = solveur(clauses + [[-x for x in sol[1]]], dimension)
     if sol2[0]:
-        print("Pas d'unicite")
+        # print("Pas d'unicite")
         return False
     else:
-        print("Solution unique")
+        # print("Solution unique")
         return True
 
 def atMost(atMostNumber: int, literals: List[Literal], result: List[Literal] = []) -> ClauseBase:
@@ -196,25 +215,31 @@ def createMap(n_col : int, n_lig : int) -> Grid:
     return map
 
 def main():
+
     hr = HitmanReferee()
     status = hr.start_phase1()
     print(status)
     input("Press Enter to continue...")
     clauses = []
     clauses += generateTypesGrid(status['n'], status['m'])
-    print(len(clauses))
-    input("Press Enter to continue...")
-    # clauses += generateClausesForObject(status['n'], status['m'], status['guard_count'], HC.GUARD_N, 4) marche pas le HC.GUARD_N
-    # clauses += generateClausesForObject(status['n'], status['m'], status['civil_count'], HC.CIVIL_N, 4)
+    # print(len(clauses))
+    # input("Press Enter to continue...")
     clauses += generateClausesForObject(status['n'], status['m'], status['guard_count'], OBJECTS_INDEX['guard'])
-    print(len(clauses))
-    input("Press Enter to continue...")
+    # print(len(clauses))
+    # input("Press Enter to continue...")
     clauses += generateClausesForObject(status['n'], status['m'], status['civil_count'], OBJECTS_INDEX['civil'])
     clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['target'])
     clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['rope'])
     clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['costume'])
     print(len(clauses))
-    print("ok")
+
+    dimension = status['n'] * status['m'] * len(OBJECTS_INDEX)
+    while not isSolutionUnique(clauses, dimension):
+        addInfoVision(clauses, status['n'], status['m'], status['vision'])
+        print(len(clauses))
+
+    print("Carte connue : \n")
+    print(solveur(clauses, dimension))
 
 # def main():
 #     linesNumber = 3
