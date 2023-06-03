@@ -168,22 +168,7 @@ def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
         # print("Solution unique")
         return True
 
-def atMost(atMostNumber: int, literals: List[Literal], result: List[Literal] = []) -> ClauseBase:
-    """
-    Generate clauses to express that at most atMostNumber literals in literals are true
-    @param atMostNumber: the number of literals that are allowed to be true
-    @param literals: the literals that are concerned by the constraint
-    @param result: needs to be empty, used for recursion
-    """
-    if len(result) > atMostNumber:
-        return [[-l for l in result]]
-    
-    clauses = []
-    for i in range(len(literals)):
-        clauses += atMost(atMostNumber, literals[i+1:], result + [literals[i]])
-    return clauses
-
-def newAtMost(atMostNumber: int, literals: List[Literal]) -> ClauseBase:
+def atMost(atMostNumber: int, literals: List[Literal]) -> ClauseBase:
     """
     Generate clauses to express that at most atMostNumber literals in literals are true
     @param atMostNumber: the number of literals that are allowed to be true
@@ -194,18 +179,16 @@ def newAtMost(atMostNumber: int, literals: List[Literal]) -> ClauseBase:
         clauses.append([-l for l in comb])
     return clauses
     
-def atLeast(atLeastNumber: int, literals: List[Literal], result: List[Literal] = []) -> ClauseBase:
+
+def atLeast(atLeastNumber: int, literals: List[Literal]) -> ClauseBase:
     """
     Generate clauses to express that at least atLeastNumber literals in literals are true
     @param atLeastNumber: the number of literals that are required to be true
     @param literals: the literals that are concerned by the constraint
-    @param result: needs to be empty, used for recursion
     """
-    atMostResult = atMost(atLeastNumber - 2, literals, result)
-
     clauses = []
-    for i in range(len(atMostResult)):
-        clauses.append(atMostResult[i] + [l for l in literals if -l not in atMostResult[i]])
+    for comb in combinations(literals, len(literals) - atLeastNumber + 1):
+        clauses.append([l for l in comb])
     return clauses
 
 def uniqueX(literals: List[Literal], x: int) -> ClauseBase:
