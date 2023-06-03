@@ -1,8 +1,11 @@
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 import subprocess
 import os
 import platform
 from enum import Enum
+from pprint import pprint
+
+from arbitre_gitlab.hitman.hitman import HC, HitmanReferee, complete_map_example
 
 # alias de types
 Grid = List[List[int]] 
@@ -89,34 +92,42 @@ def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_ind
     #print(r)
     return r
 
-# ajout d'une information de vision
-def addInfoVision(n_col : int, n_lig : int) -> ClauseBase:
-    print("Infos de la case vue : ")
-    x = int(input("x : "))
-    y = int(input("y : "))
-    if x not in range(0,n_col) or y not in range(0,n_lig):
-        raise Exception("Coordonnees invalides")
-    print("Types possibles : ")
-    for key, value in OBJECTS_INDEX.items():
-        print(f"'{key}' : {value}")
-    typeCase = int(input("Type de la case : "))
-    if typeCase not in OBJECTS_INDEX.values():
-        raise Exception("Type invalide")
+def HCInfoToObjectIndex(value : int) -> int:
+    if value in range(HC.GUARD_N._value_, HC.GUARD_W._value_ + 1):
+        return OBJECTS_INDEX['guard']
+    if value in range(HC.CIVIL_N._value_, HC.CIVIL_W._value_ + 1):
+        return OBJECTS_INDEX['civil']
+    if value == HC.EMPTY._value_:
+        return OBJECTS_INDEX['empty']
+    if value == HC.WALL._value_:
+        return OBJECTS_INDEX['wall']
+    if value == HC.TARGET._value_:
+        return OBJECTS_INDEX['target']
+    if value == HC.SUIT._value_:
+        return OBJECTS_INDEX['costume']
+    if value == HC.PIANO_WIRE._value_:
+        return OBJECTS_INDEX['rope']
+
+        
+def addInfoVision(n_col : int, n_lig : int, infos_vision : List) -> ClauseBase:
     result = []
-    result.append([x * n_lig * 7 + y * 7 + typeCase])
+    for info in infos_vision:
+        x = info[0][0]
+        y = info[0][1]
+        typeCase = HCInfoToObjectIndex(info[1].value)
+        # print("Infos de la case vue : ")
+        # print(f"x : {x}")
+        # print(f"y : {y}")
+        # print(f"type : {typeCase}")
+        result.append([x * n_lig * 7 + y * 7 + typeCase])
+    # print("Clauses pour les infos de vision : ")
+    # print(result)
     return result
 
-# ajout d'une information d'écoute
-def addInfoListening(n_col : int, n_lig : int) -> ClauseBase:
-    print("Position d'Hitman : ")
-    x = int(input("x : "))
-    y = int(input("y : "))
-    if x not in range(0,n_col) or y not in range(0,n_lig):
-        raise Exception("Coordonnees invalides")
-    print("Nombre de personnes entendues : ")
-    n = int(input("n : "))
-    if n not in range(0,25):
-        raise Exception("Nombre invalide")
+# est ce juste pour nb_heard = 0 ?
+def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int) -> ClauseBase:
+    x = position[0]
+    y = position[1]
     litterals = []
     #pour toutes les cases autour
     for i in range(x-2, x+3):
@@ -125,10 +136,9 @@ def addInfoListening(n_col : int, n_lig : int) -> ClauseBase:
                 continue
             litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'])
             litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['civil'])
-    if n > 5:
+    if nb_heard > 4:
         return atLeast(5, litterals)
-    return uniqueX(litterals, n)
-
+    return uniqueX(litterals, nb_heard)
 
 def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
     filename = "temp.cnf"
@@ -143,15 +153,18 @@ def solutionPossible(clauses: ClauseBase, dimension : int) -> bool:
 
 def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
     sol = solveur(clauses, dimension)
+    # print(sol)
+    solutionToMap(sol[1], 3, 3)
+    if not sol[0]: return False
 
-    #print("Solution : \n")
-    #print(sol[1])
+    # print("Solution : \n")
+    # print(sol[1])
     sol2 = solveur(clauses + [[-x for x in sol[1]]], dimension)
     if sol2[0]:
-        print("Pas d'unicite")
+        # print("Pas d'unicite")
         return False
     else:
-        print("Solution unique")
+        # print("Solution unique")
         return True
 
 def atMost(atMostNumber: int, literals: List[Literal], result: List[Literal] = []) -> ClauseBase:
@@ -189,8 +202,10 @@ def uniqueX(literals: List[Literal], x: int) -> ClauseBase:
     @param literals: the literals that are concerned by the constraint
     @param x: the number of literals that are required to be true
     """
-
     clauses = []
+
+    if x == 0:
+        return atMost(x, literals)
     
     # at least x, least x-1, x-2, ... 1
     for i in range(1, x):
@@ -237,60 +252,94 @@ def probaLitteral(clauses: ClauseBase, dimension : int) -> List[float]:
         sol = solveur(clauses + [[-x for x in sol[1]]], dimension)
     return [p/(n) for p in proba]
 
+def getKeyFromValue(obj: Dict[str, int], value: int) -> str:
+    for key, v in obj.items():
+        if v == value:
+            return key
+
+def solutionToMap(solution: List[int], n_col : int, n_lig : int) -> Dict[Tuple[int, int], HC]:
+    objectNumber = len(OBJECTS_INDEX)
+    map_info: Dict[Tuple[int, int], HC] = {}
+    map_info_readable: Dict[Tuple[int, int], HC] = {}
+
+    for i in range(n_col):
+        for j in range(n_lig):
+            for k in range(objectNumber):
+                if solution[i * n_lig * objectNumber + j * objectNumber + k] > 0:
+                    map_info_readable[(i, j)] = getKeyFromValue(OBJECTS_INDEX, k + 1)
+                    ## need to keep the map with guard N ...
+                    map_info[(i, j)] = k + 1
+    pprint(map_info_readable)
+    return map_info
+
 def main():
 
-    linesNumber = 3
-    columnsNumber = 3
-    guardNumber = 1
-    civilNumber = 1
-    dimension = columnsNumber * linesNumber * len(OBJECTS_INDEX)
-
-    direction = {
-        "nord": "n",
-        "est": "e",
-        "sud": "s",
-        "ouest": "o",
-        "default": "a" # for any
-    }
-
-    map = createMap(columnsNumber, linesNumber)
-    # print(map)
-    # print(Action.move.value)
-
-    # if we 
-    # dont know where a guard looks: ga
-    # know where a guard looks: gn, ge, gs, go
-    # for civil: ca, cn, ce, cs, co
-
+    referee = HitmanReferee()
+    status = referee.start_phase1()
+    pprint(status)
+    # input("Press Enter to continue...")
     clauses = []
-    # print(uniqueX([1, 2, 3, 4], 3))
-    # clauses += uniqueX([1, 2, 3, 4], 2)
-    # clauses += uniqueX([1, 2, 3, 4], 1)
-    # print(clauses)
+    clauses += generateTypesGrid(status['n'], status['m'])
+    # print(len(clauses))
+    # input("Press Enter to continue...")
+    clauses += generateClausesForObject(status['n'], status['m'], status['guard_count'], OBJECTS_INDEX['guard'])
+    # print(len(clauses))
+    # input("Press Enter to continue...")
+    clauses += generateClausesForObject(status['n'], status['m'], status['civil_count'], OBJECTS_INDEX['civil'])
+    clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['target'])
+    clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['rope'])
+    clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['costume'])
+    print(len(clauses))
 
-    clauses += generateTypesGrid(columnsNumber, linesNumber)
-    clauses += generateClausesForObject(columnsNumber, linesNumber, guardNumber, OBJECTS_INDEX['guard'])
-    clauses += generateClausesForObject(columnsNumber, linesNumber, civilNumber, OBJECTS_INDEX['civil'])
-    clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['target'])
-    clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['rope'])
-    clauses += generateClausesForObject(columnsNumber, linesNumber, 1, OBJECTS_INDEX['costume'])
+    # case 0,0 est vide
+    # on est sûr de ca ?
+    clauses.append([(OBJECTS_INDEX['empty'])])
 
-    while (not isSolutionUnique(clauses, dimension)) and solutionPossible(clauses, dimension)):
-        n = input("Nombre de cases vues : ")
-        for _ in range(int(n)):
-            clauses += addInfoVision(columnsNumber, linesNumber)
-        #print(clauses)
-        clauses += addInfoListening(columnsNumber, linesNumber)
-        probas = probaLitteral(clauses, dimension)
-        print("Probas : \n", probas)
-        #pour chaque case
-        print(probas)
-        for i in range(columnsNumber * linesNumber + 1):
-            for j in OBJECTS_INDEX.keys():
-                print("Case " + str(i) + " avec " + j + " : " + str(probas[i*len(OBJECTS_INDEX) + OBJECTS_INDEX[j] - 1]))
-    
+    clauses += addInfoVision(status['n'], status['m'], status['vision'])
+    clauses += addInfoListening(status['n'], status['m'], status['position'], status['hear'])
+
+    dimension = status['n'] * status['m'] * len(OBJECTS_INDEX)
+    while not isSolutionUnique(clauses, dimension):
+        print()
+        print("------------------")        
+
+
+        # action à prendre ici
+        c = input("Choix déplacement (0 = move, 1 = clockwise, 2 = anti) : ")
+        if c == '0':
+            status = referee.move()
+        elif c == '1':
+            status = referee.turn_clockwise()
+        elif c == '2':
+            status = referee.turn_anti_clockwise()
+        else:
+            print("Mauvais choix")
+            continue
+
+        pprint({
+            "vision": status['vision'],
+            "hear": status['hear'],
+            "position": status['position'],
+            "orientation": status['orientation'],
+            "is_in_guard_range": status['is_in_guard_range'],
+            "penalties": status['penalties'],
+            "status": status['status']
+        })
+        # input("Press Enter to continue...")
+        # attention, addInfoVision que si on n'a pas déjà l'info
+        clauses += addInfoVision(status['n'], status['m'], status['vision'])
+        print(len(clauses))
+        # faire gaffe on doit ajouter plein de fois les memes infos
+        # voir comment facilement ne pas les ajouter plusieurs fois
+        clauses += addInfoListening(status['n'], status['m'], status['position'], status['hear'])
+        print(len(clauses))
+
     print("Carte connue : \n")
     print(solveur(clauses, dimension))
+    map_info = solutionToMap(solveur(clauses, dimension)[1], status['n'], status['m'])
+    print("is good solution for referee")
+    # ne fonctionne pas pour le moment car on ne met pas les infos des orientations des civils & gardes
+    print(referee.send_content(map_info))
 
 if __name__ == "__main__":
     main()

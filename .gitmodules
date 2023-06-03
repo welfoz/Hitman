@@ -1,0 +1,3 @@
+[submodule "arbitre_gitlab"]
+	path = arbitre_gitlab
+	url = https://gitlab.utc.fr/ia02/hitman.git
