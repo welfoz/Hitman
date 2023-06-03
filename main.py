@@ -108,7 +108,6 @@ def HCInfoToObjectIndex(value : int) -> int:
     if value == HC.PIANO_WIRE._value_:
         return OBJECTS_INDEX['rope']
 
-        
 def addInfoVision(n_col : int, n_lig : int, infos_vision : List) -> ClauseBase:
     result = []
     for info in infos_vision:
@@ -145,11 +144,6 @@ def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
     dimacs = clausesToDimacs(clauses, dimension)
     write_dimacs_file("\n".join(dimacs), filename)
     return exec_gophersat(filename)
-
-def solutionPossible(clauses: ClauseBase, dimension : int) -> bool:
-    sol = solveur(clauses, dimension)
-    #print(sol)
-    return sol[0]
 
 def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
     sol = solveur(clauses, dimension)
