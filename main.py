@@ -140,6 +140,23 @@ def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int)
         return atLeast(5, litterals)
     return uniqueX(litterals, nb_heard)
 
+# prise en compte du is_in_guard_range
+def addInfoIsInGuardRange(n_col : int, n_lig : int, position : Tuple) -> ClauseBase:
+    x = position[0]
+    y = position[1]
+    litterals = []
+    # cases horizontales
+    for i in range(x-2, x+3):
+        if i < 0 or i >= n_col:
+            continue
+        litterals.append(i * n_lig * 7 + y * 7 + OBJECTS_INDEX['guard'])
+    # cases verticales
+    for j in range(y-2, y+3):
+        if j < 0 or j >= n_lig:
+            continue
+        litterals.append(x * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'])
+    return atLeast(litterals, 1)
+
 def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
     filename = "temp.cnf"
     dimacs = clausesToDimacs(clauses, dimension)
@@ -333,6 +350,8 @@ def main():
         # voir comment facilement ne pas les ajouter plusieurs fois
         clauses += addInfoListening(status['n'], status['m'], status['position'], status['hear'])
         print(len(clauses))
+        if status['is_in_guard_range']:
+            clauses += addInfoIsInGuardRange(status['n'], status['m'], status['position'])
 
     print("Carte connue : \n")
     print(solveur(clauses, dimension))
