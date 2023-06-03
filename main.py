@@ -156,7 +156,8 @@ def addInfoIsInGuardRange(n_col : int, n_lig : int, position : Tuple) -> ClauseB
         if j < 0 or j >= n_lig:
             continue
         litterals.append(x * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'])
-    return atLeast(litterals, 1)
+    print(litterals)
+    return atLeast(1, litterals)
 
 def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
     filename = "temp.cnf"
