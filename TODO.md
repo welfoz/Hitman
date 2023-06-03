@@ -8,6 +8,8 @@ amélioration choix du déplacement:
 
 - si info déjà dans clause, ne pas rajouter (gestion dans la couche python des infos)
 - utiliser is_in_guard_range
+- send_content du referee à besoin de l'orientation des gardes et des civils ??
+- on est sûr de connaitre la premiere case ?
 
 
 # rules 
