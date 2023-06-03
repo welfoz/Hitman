@@ -5,6 +5,7 @@ amélioration choix du déplacement:
 - comment les infos de l'ouie peuvent nous servir dans le choix du déplacement ? (pour plus tard)
 - utiliser numpy (et non des tableaux) pour optimiser la recherche (pour plus tard)
 - typer stateTree
+- il y a moyen mon stateTree soit completement faux, j'y ai mis des coms, à voir au moment de merge avec l'arbitre
 
 
 

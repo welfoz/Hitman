@@ -1,5 +1,6 @@
 from typing import List, Tuple
 import copy
+import random
 
 OBJECTS_INDEX = {
     'empty': 1,
@@ -65,6 +66,7 @@ def isLookingAtAnImpassableObstacle(position) -> bool:
     newPositionValue = None
 
     if direction == 'N':
+        # same, we cant know
         newPositionValue = GAME_MAP[y - 1][x]
     elif direction == 'S':
         newPositionValue = GAME_MAP[y + 1][x]
@@ -139,11 +141,15 @@ def createStateTree(map, position):
             action = ((len(stateTree) - 1) % 3) + 1
 
             newPosition = computePositionBasedOnAction(parentPosition, action)
+            # we can't use this function because we don't know the new map, the referee doesn't give us the information
+            # we just can hope the amount of new information we have
             newInfo = getAllNewInformation(parentMap, newPosition)
             # print("newInfo: " + str(newInfo))
             newMap = updateMap(copy.deepcopy(parentMap), newInfo)
 
-            totalInformationGained = stateTree[parentIndex] + informationGained(newPosition, newInfo)
+            # we don't know the new map by computing the new position
+            # l'arbitre ne nous donne pas l'info
+            totalInformationGained = stateTree[parentIndex] + informationGained(newPosition, newInfo, map)
 
             # améliorable en stockant que la derniere position
             stateTree.append(totalInformationGained)
@@ -162,21 +168,55 @@ def createStateTree(map, position):
         depthCount += 1
     return stateTree
 
-def choiceAction(stateTree):
+def choiceAction(stateTree: List[int]):
     """
     return the best action to do according to the best path, which maximizes the total information gained
     @param stateTree: list of the values of the total information gained for each path
     """
     lastLevelLeafs = stateTree[len(stateTree) - pow(3, DEPTH_MAX):]
-    print(len(lastLevelLeafs))
-    print(lastLevelLeafs)
-    totalPointsForAction1 = sum(lastLevelLeafs[:pow(3, DEPTH_MAX - 1)])
-    totalPointsForAction2 = sum(lastLevelLeafs[pow(3, DEPTH_MAX - 1):2 * pow(3, DEPTH_MAX - 1)])
-    totalPointsForAction3 = sum(lastLevelLeafs[2 * pow(3, DEPTH_MAX - 1):])
-    totalPoints = [totalPointsForAction1, totalPointsForAction2, totalPointsForAction3]
+    # print(len(lastLevelLeafs))
+    # print(lastLevelLeafs)
 
-    indexOfTheMaxOfTotal = totalPoints.index(max(totalPoints))
-    return indexOfTheMaxOfTotal + 1
+    lastLevelLeafsMAX = max(lastLevelLeafs)
+    howManyMax = lastLevelLeafs.count(lastLevelLeafsMAX)
+
+    # print("lastLevelLeafsMAX: " + str(lastLevelLeafsMAX))
+
+    count1 = 0
+    count2 = 0
+    count3 = 0
+    # lastLevelLeafs1 = lastLevelLeafs[:pow(3, DEPTH_MAX - 1)]
+    # lastLevelLeafs2 = lastLevelLeafs[pow(3, DEPTH_MAX - 1):2 * pow(3, DEPTH_MAX - 1)]
+    # lastLevelLeafs3 = lastLevelLeafs[2 * pow(3, DEPTH_MAX - 1):]
+    # print("lastLevelLeafs1: " + str(lastLevelLeafs1))
+    # print("lastLevelLeafs2: " + str(lastLevelLeafs2))
+    # print("lastLevelLeafs3: " + str(lastLevelLeafs3))
+    while lastLevelLeafs.count(lastLevelLeafsMAX) > 0:
+        firstIndexMax = lastLevelLeafs.index(lastLevelLeafsMAX)
+        # print("firstIndexMax: " + str(firstIndexMax))
+        if firstIndexMax < pow(3, DEPTH_MAX - 1):
+            count1 += 1
+        elif firstIndexMax < 2 * pow(3, DEPTH_MAX - 1):
+            count2 += 1
+        else:
+            count3 += 1
+        lastLevelLeafs[firstIndexMax] = -1000
+    # print("count1: " + str(count1))
+    # print("count2: " + str(count2))
+    # print("count3: " + str(count3))
+
+    proba1 = count1 / howManyMax
+    proba2 = count2 / howManyMax
+    proba3 = count3 / howManyMax
+
+    # print("proba1: " + str(proba1))
+    # print("proba2: " + str(proba2))
+    # print("proba3: " + str(proba3))
+
+
+    # test this for now
+    # lets see how it goes
+    return random.choices([1, 2, 3], [proba1, proba2, proba3])[0]
 
 def getAllCasesSeenByGuard(position) -> List[Tuple[int, int, int]]:
     vision = 2
@@ -216,12 +256,12 @@ def getAllCasesSeenByGuard(position) -> List[Tuple[int, int, int]]:
             break
     return casesSeen
 
-def getAllGuardsPositions() -> List[Tuple[int, int, int]]:
+def getAllGuardsPositions(map: List[List[int]]) -> List[Tuple[int, int, int]]:
     guardsPositions = []
-    for y in range(len(GAME_MAP)):
-        for x in range(len(GAME_MAP[y])):
-            if GAME_MAP[y][x] in OBJECTS_INDEX['guard']:
-                guardPositionValue = GAME_MAP[y][x]
+    for y in range(len(map)):
+        for x in range(len(map[y])):
+            if map[y][x] in OBJECTS_INDEX['guard']:
+                guardPositionValue = map[y][x]
                 direction = None
 
                 # can change with the arbitre
@@ -237,9 +277,10 @@ def getAllGuardsPositions() -> List[Tuple[int, int, int]]:
                 guardsPositions.append([x, y, direction])
     return guardsPositions
 
-def howManyGuardsLookingAtUs(position) -> int:
-    guardsPositions = getAllGuardsPositions()
+def howManyGuardsLookingAtUs(position, map) -> int:
+    guardsPositions = getAllGuardsPositions(map)
 
+    # false, we don't know yet
     guardsLookingAtUs = 0
     for guardPosition in guardsPositions:
         casesSeen = getAllCasesSeenByGuard(guardPosition)
@@ -249,12 +290,12 @@ def howManyGuardsLookingAtUs(position) -> int:
         
     return guardsLookingAtUs
 
-def informationGained(position, newInfo) -> int:
+def informationGained(position, newInfo, map) -> int:
     """
     return the information gained by doing action to the parent value
     """
     newCases = len(newInfo)
-    penalty = howManyGuardsLookingAtUs(position) * 5
+    penalty = howManyGuardsLookingAtUs(position, map) * 5
 
     return newCases * 2 - penalty
 
@@ -348,7 +389,7 @@ def turn(map, position):
     print("newMap: " + str(map))
     return map, newPosition, actionName
 
-DEPTH_MAX = 6
+DEPTH_MAX = 4
 # GAME_MAP = [
 #     [5, 2, 4, 2, 1],
 #     [2, 3, 1, 2, 3],
@@ -358,7 +399,7 @@ DEPTH_MAX = 6
 # ]
 GAME_MAP = [
     [5, 2, 1, 7, 1],
-    [1, 2, 5, 8, 1],
+    [1, 1, 5, 8, 1],
     [7, 1, 5, 3, 1],
 ]
 # position = [2, 3, 'N']
@@ -366,15 +407,17 @@ position = [0, 0, 'N']
 
 # map = createMap(5, 5)
 map = createMap(3, 5)
+# do we have this ?
+map[0][0] = 5
 
 print(map)
 
 i = 0
 solutionFound = False
 actions = []
-while i < 35 and not solutionFound:
+while i < 40 and not solutionFound:
     map, position, actionName = turn(map, position)
-    actions.append(actionName)
+    actions.append([actionName, position])
     i += 1
 
     found = False
@@ -384,5 +427,6 @@ while i < 35 and not solutionFound:
                 found = True
     if not found:
         solutionFound = True
-print(actions)
+for a in actions:
+    print(a)
 print("solutionFound in " + str(i) + " turns: " + str(solutionFound))
