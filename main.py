@@ -4,6 +4,7 @@ import os
 import platform
 from enum import Enum
 from pprint import pprint
+from itertools import combinations
 
 from arbitre_gitlab.hitman.hitman import HC, HitmanReferee, complete_map_example
 
@@ -180,6 +181,17 @@ def atMost(atMostNumber: int, literals: List[Literal], result: List[Literal] = [
     clauses = []
     for i in range(len(literals)):
         clauses += atMost(atMostNumber, literals[i+1:], result + [literals[i]])
+    return clauses
+
+def newAtMost(atMostNumber: int, literals: List[Literal]) -> ClauseBase:
+    """
+    Generate clauses to express that at most atMostNumber literals in literals are true
+    @param atMostNumber: the number of literals that are allowed to be true
+    @param literals: the literals that are concerned by the constraint
+    """
+    clauses = []
+    for comb in combinations(literals, atMostNumber + 1):
+        clauses.append([-l for l in comb])
     return clauses
     
 def atLeast(atLeastNumber: int, literals: List[Literal], result: List[Literal] = []) -> ClauseBase:
