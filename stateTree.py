@@ -9,7 +9,7 @@ class ActionChoice:
     def __init__(self, n_col, n_lig):
         self.n_col = n_col 
         self.n_lig = n_lig
-        self.depth_max = 2
+        self.depth_max = 6
 
     def isLookingAtABorder(self, position) -> bool:
         """

@@ -204,6 +204,9 @@ def getKeyFromValue(obj: Dict[str, int], value: int) -> str:
     for key, v in obj.items():
         if v == value:
             return key
+        # check if v is a list
+        if isinstance(v, list) and value in v:
+            return key
 
 def solutionToMap(solution: List[int], n_col : int, n_lig : int) -> Dict[Tuple[int, int], HC]:
     objectNumber = len(OBJECTS_INDEX)
