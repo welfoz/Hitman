@@ -6,6 +6,9 @@ amélioration choix du déplacement:
 - utiliser numpy (et non des tableaux) pour optimiser la recherche (pour plus tard)
 - typer stateTree
 
+- stateTree optimisation, evaluation function, ---> when max = 0 --> means with the current depth we didn't find any ways to gain informations (without guards penalties) ---> select X nearest cases and applies A* algo to go there
+- make it work for n_lig & n_col
+
 - si info déjà dans clause, ne pas rajouter (gestion dans la couche python des infos)
 - utiliser is_in_guard_range
 - send_content du referee à besoin de l'orientation des gardes et des civils ??

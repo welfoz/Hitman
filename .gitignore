@@ -1,3 +1,4 @@
 gophersat
 *.cnf
 .vscode
+__pycache__/
