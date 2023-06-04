@@ -19,7 +19,6 @@ class ActionChoice:
         """
         direction = position[2]
         if direction == 'N':
-            # to test
             if position[1] == self.n_lig - 1:
                 return True 
         elif direction == 'S':
@@ -40,7 +39,6 @@ class ActionChoice:
         """
         if coordinates[0] < 0 or coordinates[1] < 0:
             return True
-        # to test!
         if coordinates[0] >= self.n_col or coordinates[1] >= self.n_lig:
             return True
         return False
