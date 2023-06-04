@@ -323,7 +323,8 @@ def main():
     # case 0,0 est vide
     # on est sûr de ca ?
     clauses.append([(OBJECTS_INDEX['empty'])])
-
+    map[0][0] = OBJECTS_INDEX['empty']
+    
     addTurnInfo(status, heardMap, map, clauses)
 
     dimension = status['n'] * status['m'] * len(OBJECTS_INDEX)
