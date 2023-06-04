@@ -4,6 +4,7 @@ import os
 import platform
 from enum import Enum
 from pprint import pprint
+from itertools import combinations
 
 from arbitre_gitlab.hitman.hitman import HC, HitmanReferee, complete_map_example
 
@@ -140,6 +141,24 @@ def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int)
         return atLeast(5, litterals)
     return uniqueX(litterals, nb_heard)
 
+# prise en compte du is_in_guard_range
+def addInfoIsInGuardRange(n_col : int, n_lig : int, position : Tuple) -> ClauseBase:
+    x = position[0]
+    y = position[1]
+    litterals = []
+    # cases horizontales
+    for i in range(x-2, x+3):
+        if i < 0 or i >= n_col:
+            continue
+        litterals.append(i * n_lig * 7 + y * 7 + OBJECTS_INDEX['guard'])
+    # cases verticales
+    for j in range(y-2, y+3):
+        if j < 0 or j >= n_lig:
+            continue
+        litterals.append(x * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'])
+    print(litterals)
+    return atLeast(1, litterals)
+
 def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
     filename = "temp.cnf"
     dimacs = clausesToDimacs(clauses, dimension)
@@ -167,33 +186,27 @@ def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
         # print("Solution unique")
         return True
 
-def atMost(atMostNumber: int, literals: List[Literal], result: List[Literal] = []) -> ClauseBase:
+def atMost(atMostNumber: int, literals: List[Literal]) -> ClauseBase:
     """
     Generate clauses to express that at most atMostNumber literals in literals are true
     @param atMostNumber: the number of literals that are allowed to be true
     @param literals: the literals that are concerned by the constraint
-    @param result: needs to be empty, used for recursion
     """
-    if len(result) > atMostNumber:
-        return [[-l for l in result]]
-    
     clauses = []
-    for i in range(len(literals)):
-        clauses += atMost(atMostNumber, literals[i+1:], result + [literals[i]])
+    for comb in combinations(literals, atMostNumber + 1):
+        clauses.append([-l for l in comb])
     return clauses
     
-def atLeast(atLeastNumber: int, literals: List[Literal], result: List[Literal] = []) -> ClauseBase:
+
+def atLeast(atLeastNumber: int, literals: List[Literal]) -> ClauseBase:
     """
     Generate clauses to express that at least atLeastNumber literals in literals are true
     @param atLeastNumber: the number of literals that are required to be true
     @param literals: the literals that are concerned by the constraint
-    @param result: needs to be empty, used for recursion
     """
-    atMostResult = atMost(atLeastNumber - 2, literals, result)
-
     clauses = []
-    for i in range(len(atMostResult)):
-        clauses.append(atMostResult[i] + [l for l in literals if -l not in atMostResult[i]])
+    for comb in combinations(literals, len(literals) - atLeastNumber + 1):
+        clauses.append([l for l in comb])
     return clauses
 
 def uniqueX(literals: List[Literal], x: int) -> ClauseBase:
@@ -333,6 +346,8 @@ def main():
         # voir comment facilement ne pas les ajouter plusieurs fois
         clauses += addInfoListening(status['n'], status['m'], status['position'], status['hear'])
         print(len(clauses))
+        if status['is_in_guard_range']:
+            clauses += addInfoIsInGuardRange(status['n'], status['m'], status['position'])
 
     print("Carte connue : \n")
     print(solveur(clauses, dimension))
