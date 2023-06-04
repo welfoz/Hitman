@@ -125,7 +125,7 @@ def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
 def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
     sol = solveur(clauses, dimension)
     # print(sol)
-    solutionToMap(sol[1], 3, 3)
+    # solutionToMap(sol[1], 3, 3)
     if not sol[0]: return False
 
     # print("Solution : \n")
