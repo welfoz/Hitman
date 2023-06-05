@@ -103,20 +103,29 @@ def addInfoVision(n_col : int, n_lig : int, info_vision : Information) -> Clause
     return [[x * n_lig * 7 + y * 7 + value]]
 
 # est ce juste pour nb_heard = 0 ?
-def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int) -> ClauseBase:
+def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int, map) -> ClauseBase:
     x = position[0]
     y = position[1]
     litterals = []
+    guardsOrCivils = nb_heard
     #pour toutes les cases autour
     for i in range(x-2, x+3):
         for j in range(y-2, y+3):
             if i < 0 or i >= n_col or j < 0 or j >= n_lig:
                 continue
+            if map[j][i] != -1:
+                if map[j][i] == HCInfoToObjectIndex(HC.GUARD_N.value):
+                    guardsOrCivils -= 1
+                if map[j][i] == HCInfoToObjectIndex(HC.CIVIL_N.value):
+                    guardsOrCivils -= 1
+                # print("Case deja connue", i, j, map[j][i], guardsOrCivils)
+                continue
+            
             litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'][0])
             litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['civil'][0])
     if nb_heard > 4:
-        return atLeast(5, litterals)
-    return uniqueX(litterals, nb_heard)
+        return atLeast(guardsOrCivils, litterals)
+    return uniqueX(litterals, guardsOrCivils)
 
 # prise en compte du is_in_guard_range
 def addInfoIsInGuardRange(n_col : int, n_lig : int, position : Tuple) -> ClauseBase:
@@ -261,14 +270,6 @@ def printMaps(maps, reverse = True):
 
 
 def addTurnInfo(status, heardMap, map, clauses):
-    heardInfo: Information = [status["position"][0], status["position"][1], status["hear"]]
-    if (not isInformationAlreadyKnown(heardMap, heardInfo)):
-        print("add info listening")
-        print(len(clauses))
-        clauses += addInfoListening(status['n'], status['m'], status['position'], status['hear'])
-        print(len(clauses))
-        heardMap = updateMap(heardMap, [heardInfo])
-
     print()
     visions = getVisionsFromStatus(status["vision"])
     print("visions", visions)
@@ -283,6 +284,14 @@ def addTurnInfo(status, heardMap, map, clauses):
 
     if status['is_in_guard_range']:
         clauses += addInfoIsInGuardRange(status['n'], status['m'], status['position'])
+
+    heardInfo: Information = [status["position"][0], status["position"][1], status["hear"]]
+    if (not isInformationAlreadyKnown(heardMap, heardInfo)):
+        print("add info listening")
+        print(len(clauses))
+        clauses += addInfoListening(status['n'], status['m'], status['position'], status['hear'], map)
+        print(len(clauses))
+        heardMap = updateMap(heardMap, [heardInfo])
 
     print()
     
