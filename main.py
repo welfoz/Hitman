@@ -5,6 +5,7 @@ import platform
 from enum import Enum
 from pprint import pprint
 from itertools import combinations
+import time
 
 from arbitre_gitlab.hitman.hitman import HC, HitmanReferee, complete_map_example
 
@@ -142,6 +143,7 @@ def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
     return exec_gophersat(filename)
 
 def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
+    start_time = time.time()
     sol = solveur(clauses, dimension)
     # print(sol)
     # solutionToMap(sol[1], 3, 3)
@@ -150,6 +152,8 @@ def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
     # print("Solution : \n")
     # print(sol[1])
     sol2 = solveur(clauses + [[-x for x in sol[1]]], dimension)
+    end_time = time.time()
+    print("solveur time: ", end_time - start_time)
     if sol2[0]:
         # print("Pas d'unicite")
         return False
@@ -283,7 +287,7 @@ def addTurnInfo(status, heardMap, map, clauses):
     print()
     
     printMaps([map, heardMap])
-    input("Press Enter to continue...")
+    #input("Press Enter to continue...")
     return
 
 def fromHCDirectionToOrientation(direction: HC) -> Orientation:
@@ -298,6 +302,8 @@ def fromHCDirectionToOrientation(direction: HC) -> Orientation:
     raise Exception("Unknown direction")
 
 def main():
+
+    start_time = time.time()
 
     referee = HitmanReferee()
     status = referee.start_phase1()
@@ -364,6 +370,8 @@ def main():
     print(solveur(clauses, dimension))
     map_info = solutionToMap(solveur(clauses, dimension)[1], status['n'], status['m'])
     print("is good solution for referee")
+    end_time = time.time()
+    print("total time: ", end_time - start_time)
     # ne fonctionne pas pour le moment car on ne met pas les infos des orientations des civils & gardes
     print(referee.send_content(map_info))
 

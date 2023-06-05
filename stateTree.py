@@ -1,6 +1,7 @@
 from typing import List, Tuple
 import copy
 import random
+import time
 
 from aliases import Position, OBJECTS_INDEX, Information
 
@@ -158,6 +159,7 @@ class ActionChoice:
         return the best action to do according to the best path, which maximizes the total information gained
         @param stateTree: list of the values of the total information gained for each path
         """
+        start_time = time.time()
         stateTree = self.createStateTree(map, position)
         beforeLastLevelLeafs = stateTree[:len(stateTree) - pow(3, self.depth_max)]
         lastLevelLeafs = stateTree[len(stateTree) - pow(3, self.depth_max):]
@@ -217,6 +219,8 @@ class ActionChoice:
 
         # test this for now
         # lets see how it goes
+        end_time = time.time()
+        print("choosing time: " + str(end_time - start_time))
         return random.choices([1, 2, 3], [proba1, proba2, proba3])[0]
 
     def getAllCasesSeenByGuard(self, position, map) -> List[Tuple[int, int, int]]:
