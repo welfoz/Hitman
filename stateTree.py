@@ -159,7 +159,7 @@ class ActionChoice:
         @param stateTree: list of the values of the total information gained for each path
         """
         stateTree = self.createStateTree(map, position)
-        beforeLastLevelLeafs = stateTree[:len(stateTree) - pow(3, self.depth_max)]
+        # beforeLastLevelLeafs = stateTree[:len(stateTree) - pow(3, self.depth_max)]
         lastLevelLeafs = stateTree[len(stateTree) - pow(3, self.depth_max):]
         # print(len(lastLevelLeafs))
         # print(lastLevelLeafs)
@@ -171,8 +171,8 @@ class ActionChoice:
         # indexOfTheMaxOfTotal = totalPoints.index(max(totalPoints))
         # return indexOfTheMaxOfTotal + 1
         # print(len(lastLevelLeafs))
-        print(beforeLastLevelLeafs)
-        print(lastLevelLeafs)
+        # print(beforeLastLevelLeafs)
+        # print(lastLevelLeafs)
 
         lastLevelLeafsMAX = max(lastLevelLeafs)
         howManyMax = lastLevelLeafs.count(lastLevelLeafsMAX)
@@ -181,43 +181,53 @@ class ActionChoice:
         print("evaluation funciton: ")
         print("lastLevelLeafsMAX: " + str(lastLevelLeafsMAX))
 
-        count1 = 0
-        count2 = 0
-        count3 = 0
-        # lastLevelLeafs1 = lastLevelLeafs[:pow(3, DEPTH_MAX - 1)]
-        # lastLevelLeafs2 = lastLevelLeafs[pow(3, DEPTH_MAX - 1):2 * pow(3, DEPTH_MAX - 1)]
-        # lastLevelLeafs3 = lastLevelLeafs[2 * pow(3, DEPTH_MAX - 1):]
-        # print("lastLevelLeafs1: " + str(lastLevelLeafs1))
-        # print("lastLevelLeafs2: " + str(lastLevelLeafs2))
-        # print("lastLevelLeafs3: " + str(lastLevelLeafs3))
-        while lastLevelLeafs.count(lastLevelLeafsMAX) > 0:
-            firstIndexMax = lastLevelLeafs.index(lastLevelLeafsMAX)
-            # print("firstIndexMax: " + str(firstIndexMax))
-            if firstIndexMax < pow(3, self.depth_max - 1):
-                count1 += 1
-            elif firstIndexMax < 2 * pow(3, self.depth_max - 1):
-                count2 += 1
-            else:
-                count3 += 1
-            lastLevelLeafs[firstIndexMax] = -1000
-        print("count1: " + str(count1), end=" ")
-        print("count2: " + str(count2), end=" ")
-        print("count3: " + str(count3))
+        if lastLevelLeafsMAX != 0:
+            count1 = 0
+            count2 = 0
+            count3 = 0
+            # lastLevelLeafs1 = lastLevelLeafs[:pow(3, DEPTH_MAX - 1)]
+            # lastLevelLeafs2 = lastLevelLeafs[pow(3, DEPTH_MAX - 1):2 * pow(3, DEPTH_MAX - 1)]
+            # lastLevelLeafs3 = lastLevelLeafs[2 * pow(3, DEPTH_MAX - 1):]
+            # print("lastLevelLeafs1: " + str(lastLevelLeafs1))
+            # print("lastLevelLeafs2: " + str(lastLevelLeafs2))
+            # print("lastLevelLeafs3: " + str(lastLevelLeafs3))
+            while lastLevelLeafs.count(lastLevelLeafsMAX) > 0:
+                firstIndexMax = lastLevelLeafs.index(lastLevelLeafsMAX)
+                # print("firstIndexMax: " + str(firstIndexMax))
+                if firstIndexMax < pow(3, self.depth_max - 1):
+                    count1 += 1
+                elif firstIndexMax < 2 * pow(3, self.depth_max - 1):
+                    count2 += 1
+                else:
+                    count3 += 1
+                lastLevelLeafs[firstIndexMax] = -1000
+            print("count1: " + str(count1), end=" ")
+            print("count2: " + str(count2), end=" ")
+            print("count3: " + str(count3))
 
 
-        proba1 = count1 / howManyMax
-        proba2 = count2 / howManyMax
-        proba3 = count3 / howManyMax
+            proba1 = count1 / howManyMax
+            proba2 = count2 / howManyMax
+            proba3 = count3 / howManyMax
 
-        print("proba1: " + str(proba1), end=" ")
-        print("proba2: " + str(proba2), end=" ")
-        print("proba3: " + str(proba3), end=" ")
-        print()
-        print()
+            print("proba1: " + str(proba1), end=" ")
+            print("proba2: " + str(proba2), end=" ")
+            print("proba3: " + str(proba3), end=" ")
+            print()
+            print()
 
-        # test this for now
-        # lets see how it goes
-        return random.choices([1, 2, 3], [proba1, proba2, proba3])[0]
+            # test this for now
+            # lets see how it goes
+            # return random.choices([1, 2, 3], [proba1, proba2, proba3])[0]
+
+            # return max proba 
+            probas = [proba1, proba2, proba3]
+            return probas.index(max(probas)) + 1
+        else: 
+            # A* or dijkstra to go to the nearest case with new information
+            nearestCaseWithNewInformation = self.nearestCaseWithNewInformation(position, map)
+            print("nearestCaseWithNewInformation: " + str(nearestCaseWithNewInformation))
+            return 1
 
     def getAllCasesSeenByGuard(self, position, map) -> List[Tuple[int, int, int]]:
         vision = 2
@@ -302,6 +312,7 @@ class ActionChoice:
         return newCases
 
     def getAllNewInformation(self, map, position) -> List[Tuple[int, int, int]]:
+
         """
         return all new information the position reveals compared to the map
         @param map: the map of the game
@@ -347,6 +358,40 @@ class ActionChoice:
                     break
 
         return casesSeen
+    
+    def nearestCaseWithNewInformation(self, position, map) -> Tuple[int, int]:
+        """
+        return the nearest case with new information
+        @param map: the map of the game
+        @param position: the position of the agent [x, y, direction]
+        """
+        # new information is the case with value -1
+        allUnkownCases = []
+        for y in range(len(map)):
+            for x in range(len(map[y])):
+                if map[y][x] == -1:
+                    allUnkownCases.append([x, y])
+        
+        nearestCase = None
+        nearestDistance = 1000000
+        for case in allUnkownCases:
+            distance = self.distanceBetweenTwoCases(position, case)
+            if distance < nearestDistance:
+                nearestCase = case
+                nearestDistance = distance
+        if nearestCase == None:
+            raise Exception("No nearest case found")
+
+        return nearestCase
+    
+    def distanceBetweenTwoCases(self, case1, case2) -> int:
+        """
+        return the distance between two cases
+        @param case1: the first case [x, y]
+        @param case2: the second case [x, y]
+        """
+        return abs(case1[0] - case2[0]) + abs(case1[1] - case2[1])
+
 
 def isInformationAlreadyKnown(map, information: Information) -> bool:
     """
