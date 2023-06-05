@@ -1,19 +1,17 @@
 # TO DO 
-amélioration choix du déplacement: 
+### phase 1 todo 
 - prise en compte des pts (malus si on passe dans le champ de vision d'un garde) -> @Fabien working on it
-- merge stateTree et main
 - comment les infos de l'ouie peuvent nous servir dans le choix du déplacement ? (pour plus tard)
 - utiliser numpy (et non des tableaux) pour optimiser la recherche (pour plus tard)
 - typer stateTree
 
 - stateTree optimisation, evaluation function, ---> when max = 0 --> means with the current depth we didn't find any ways to gain informations (without guards penalties) ---> select X nearest cases and applies A* algo to go there
-- make it work for n_lig & n_col
 
-- si info déjà dans clause, ne pas rajouter (gestion dans la couche python des infos)
-- utiliser is_in_guard_range
 - send_content du referee à besoin de l'orientation des gardes et des civils ??
 - on est sûr de connaitre la premiere case ?
-
+### phase 2 TODO 
+- modélisation STRIPS
+- prg exploitant la modélisation
 
 # rules 
 
