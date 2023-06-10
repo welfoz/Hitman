@@ -4,7 +4,7 @@ import random
 from pprint import pprint
 
 from aliases import Position, OBJECTS_INDEX, Information
-from ex import a_star_search, SquareGrid, reconstruct_path, draw_grid
+from ex import a_star_search, SquareGrid, reconstruct_path, draw_grid, PriorityQueue, GridLocation, GridLocationDirection, Optional
 
 
 class ActionChoice:
@@ -32,17 +32,6 @@ class ActionChoice:
         elif direction == 'W':
             if position[0] == 0:
                 return True 
-        return False
-
-    def isOutsideTheMap(self, coordinates: Tuple[int, int]) -> bool:
-        """
-        return true if the coordinates are outside the map
-        @param coordinates: the coordinates of the cell [x, y]
-        """
-        if coordinates[0] < 0 or coordinates[1] < 0:
-            return True
-        if coordinates[0] >= self.n_col or coordinates[1] >= self.n_lig:
-            return True
         return False
 
     def isLookingAtAnImpassableObstacle(self, position, map) -> bool:
@@ -127,7 +116,7 @@ class ActionChoice:
 
                 newPosition = self.computePositionBasedOnAction(parentPosition, action, parentMap)
 
-                newInfo = self.getAllNewInformation(parentMap, newPosition)
+                newInfo = getAllNewInformation(self.n_col, self.n_lig, parentMap, newPosition)
                 # print("newPosition: " + str(newPosition))
                 # print("newInfo: " + str(newInfo))
                 newMap = updateMap(copy.deepcopy(parentMap), newInfo)
@@ -256,7 +245,6 @@ class ActionChoice:
             else: 
                 raise Exception("Error: action not found")
 
-
     def getAllCasesSeenByGuard(self, position, map) -> List[Tuple[int, int, int]]:
         vision = 2
         x = position[0]
@@ -285,7 +273,7 @@ class ActionChoice:
             elif computeNewPosition[1] == "-":
                 newPosition[1] = y - i - 1
 
-            if self.isOutsideTheMap(newPosition): continue
+            if isOutsideTheMap(self.n_col, self.n_lig, newPosition): continue
             info = [newPosition[0], newPosition[1], map[newPosition[1]][newPosition[0]]] 
 
             casesSeen.append(info)
@@ -339,54 +327,6 @@ class ActionChoice:
         # return newCases * 2 - penalty
         return newCases
 
-    def getAllNewInformation(self, map, position) -> List[Tuple[int, int, int]]:
-
-        """
-        return all new information the position reveals compared to the map
-        @param map: the map of the game
-        @param position: the position of the agent [x, y, direction]
-        """
-        vision = 3
-        x = position[0]
-        y = position[1]
-        direction = position[2]
-        computeNewPosition = ["=", "="]
-        if direction == 'N':
-            computeNewPosition[1] = "+"
-        elif direction == 'S':
-            computeNewPosition[1] = "-"
-        elif direction == 'E':
-            computeNewPosition[0] = "+"
-        elif direction == 'W':
-            computeNewPosition[0] = "-"
-
-        casesSeen = []
-        for i in range(vision):
-            newPosition = [x, y]
-            if computeNewPosition[0] == "+":
-                newPosition[0] = x + i + 1
-            elif computeNewPosition[0] == "-":
-                newPosition[0] = x - i - 1
-
-            if computeNewPosition[1] == "+":
-                newPosition[1] = y + i + 1
-            elif computeNewPosition[1] == "-":
-                newPosition[1] = y - i - 1
-
-
-            if self.isOutsideTheMap(newPosition): continue
-            # info = [newPosition[0], newPosition[1], map[newPosition[1]][newPosition[0]]] 
-            info = [newPosition[0], newPosition[1], 1] 
-
-            # if not isInformationAlreadyKnown(map, info):
-            if map[newPosition[1]][newPosition[0]] == -1:
-                casesSeen.append(info)
-            else:
-                if map[newPosition[1]][newPosition[0]] != OBJECTS_INDEX['empty']:
-                    break
-
-        return casesSeen
-    
     def nearestCaseWithNewInformation(self, position, map) -> Tuple[int, int]:
         """
         return the nearest case with new information
@@ -461,7 +401,9 @@ def astar(n_col, n_lig, map, start, goal):
     # pprint(map)
     diagram = SquareGrid(n_col, n_lig, map)
 
-    came_from, cost_so_far = a_star_search(diagram, tuple(start), tuple(goal))
+    # came_from, cost_so_far = a_star_search(diagram, tuple(start), tuple(goal))
+    # test a* to find the best path to see all the map
+    came_from, cost_so_far = a_star_search_points(diagram, tuple(start), tuple(goal))
 
     new_came_from = {}
     for key, value in came_from.items():
@@ -552,3 +494,129 @@ def fromPathToActions(path):
             elif path[i - 1][2] == 'S':
                 actions.append('turn 90')
     return actions 
+
+def isOutsideTheMap(n_col, n_lig, coordinates: Tuple[int, int]) -> bool:
+    """
+    return true if the coordinates are outside the map
+    @param coordinates: the coordinates of the cell [x, y]
+    """
+    if coordinates[0] < 0 or coordinates[1] < 0:
+        return True
+    if coordinates[0] >= n_col or coordinates[1] >= n_lig:
+        return True
+    return False
+
+def getAllNewInformation(n_col, n_lig, map, position) -> List[Tuple[int, int, int]]:
+    """
+    return all new information the position reveals compared to the map
+    @param map: the map of the game
+    @param position: the position of the agent [x, y, direction]
+    """
+    vision = 3
+    x = position[0]
+    y = position[1]
+    direction = position[2]
+    computeNewPosition = ["=", "="]
+    if direction == 'N':
+        computeNewPosition[1] = "+"
+    elif direction == 'S':
+        computeNewPosition[1] = "-"
+    elif direction == 'E':
+        computeNewPosition[0] = "+"
+    elif direction == 'W':
+        computeNewPosition[0] = "-"
+
+    casesSeen = []
+    for i in range(vision):
+        newPosition = [x, y]
+        if computeNewPosition[0] == "+":
+            newPosition[0] = x + i + 1
+        elif computeNewPosition[0] == "-":
+            newPosition[0] = x - i - 1
+
+        if computeNewPosition[1] == "+":
+            newPosition[1] = y + i + 1
+        elif computeNewPosition[1] == "-":
+            newPosition[1] = y - i - 1
+
+
+        if isOutsideTheMap(n_col, n_lig, newPosition): continue
+        # info = [newPosition[0], newPosition[1], map[newPosition[1]][newPosition[0]]] 
+        info = [newPosition[0], newPosition[1], 1] 
+
+        # if not isInformationAlreadyKnown(map, info):
+        if map[newPosition[1]][newPosition[0]] == -1:
+            casesSeen.append(info)
+        else:
+            if map[newPosition[1]][newPosition[0]] != OBJECTS_INDEX['empty']:
+                break
+
+    return casesSeen
+
+def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, goal = 0):
+    '''
+    goal: see all the map
+    '''
+    startCount = howManyUnknown(graph.map)
+    print("startCount", startCount)
+
+    openList = PriorityQueue()
+    openList.put(start, 0)
+    came_from: dict[GridLocationDirection, Optional[GridLocationDirection]] = {}
+    cost_so_far: dict[GridLocationDirection, float] = {}
+    came_from[start] = None
+    cost_so_far[start] = 0
+    state_map: dict[GridLocationDirection, List[List[int]]] = {}
+    state_map[start] = graph.map
+    
+    while not openList.empty():
+        current: GridLocationDirection = openList.get()
+        # print("current", current)
+        
+        # if current[0] == goal[0] and current[1] == goal[1]:
+        #     break
+
+        if howManyUnknown(graph.map) == 0:
+            print("all map seen")
+            break
+
+        for next in graph.neighbors(current):
+            # print("next", next)
+            new_cost = cost_so_far[current] + graph.cost(current, next) # every move costs 1 for now
+            if next not in cost_so_far or new_cost < cost_so_far[next]:
+                # ok on a trouvé une nouvelle route pour aller à next moins chere
+                cost_so_far[next] = new_cost
+                # update or create nextMap
+                # according to next action, new position & potential vision of 3
+                newInfos = getAllNewInformation(graph.width, graph.height, state_map[current], next)
+                nextMap = updateMap(copy.deepcopy(state_map[current]), newInfos)
+
+                state_map[next] = nextMap
+
+                priority = new_cost + heuristic_pts((next[0], next[1]), goal, nextMap)
+                
+                openList.put(next, priority)
+                came_from[next] = current
+    return came_from, cost_so_far
+
+
+def heuristic_pts(a: GridLocation, goal_pts, map) -> float:
+    """
+    heuristic for points
+    compute new cases
+    return howManyCasesLeftToSee
+
+    moins il y a de cases à découvrir, plus la valeur est petite
+
+    attention favoriser les cases dans le meme secteur
+    ne pas avoir des coins et bordures non vues
+    """
+    return howManyUnknown(map)
+
+def howManyUnknown(map: List[List[int]]) -> int:
+    unknown = 0
+    for i in range(len(map)):
+        for j in range(len(map[i])):
+            if map[i][j] == -1:
+                unknown += 1
+    return unknown

@@ -10,6 +10,8 @@ from typing import Protocol, Iterator, Tuple, TypeVar, Optional, List, Dict
 T = TypeVar('T')
 from pprint import pprint
 from aliases import Position, OBJECTS_INDEX, Information
+# import copy
+# from stateTree import updateMap, isInformationAlreadyKnown, getAllNewInformation
 
 # Location = TypeVar('Location')
 Location = str 
@@ -251,7 +253,7 @@ def heuristic(a: GridLocation, b: GridLocation) -> float:
     # manhattan distance
     # return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
-def heuristic_pts(a: GridLocation) -> float:
+def heuristic_pts(a: GridLocation, goal_pts, map) -> float:
     """
     heuristic for points
     compute new cases
@@ -262,8 +264,7 @@ def heuristic_pts(a: GridLocation) -> float:
     attention favoriser les cases dans le meme secteur
     ne pas avoir des coins et bordures non vues
     """
-    map = [[]]
-    return howManyCasesLeftToSee(map)
+    return howManyUnknown(map)
 
 # def a_star_search(graph: GridWithWeights, start: GridLocationDirection, goal: GridLocation):
 #     openList = PriorityQueue()
@@ -339,41 +340,13 @@ def breadth_first_search(graph: Graph, start: Location, goal: Location):
     
     return came_from
 
-def howManyCasesLeftToSee(graph: GridWithWeights):
-    return 5
-
-def a_star_search_points(graph: GridWithWeights, start: GridLocationDirection):
-    '''
-    goal: see all the map
-    '''
-    openList = PriorityQueue()
-    openList.put(start, 0)
-    came_from: dict[GridLocationDirection, Optional[GridLocationDirection]] = {}
-    cost_so_far: dict[GridLocationDirection, float] = {}
-    came_from[start] = None
-    cost_so_far[start] = 0
-    
-    while not openList.empty():
-        current: GridLocationDirection = openList.get()
-        # print("current", current)
-        
-        if current[0] == goal[0] and current[1] == goal[1]:
-            break
-
-        if howManyCasesLeftToSee(graph) == 0:
-            break
-
-        for next in graph.neighbors(current):
-            # print("next", next)
-            new_cost = cost_so_far[current] + graph.cost(current, next) # every move costs 1 for now
-            if next not in cost_so_far or new_cost < cost_so_far[next]:
-                # ok on a trouvé une nouvelle route pour aller à next moins chere
-                cost_so_far[next] = new_cost
-                priority = new_cost + heuristic_pts((next[0], next[1]))
-                openList.put(next, priority)
-                came_from[next] = current
-    return came_from, cost_so_far
-
+def howManyUnknown(map: List[List[int]]) -> int:
+    unknown = 0
+    for i in range(len(map)):
+        for j in range(len(map[i])):
+            if map[i][j] == -1:
+                unknown += 1
+    return unknown
 
 
 """TODO : 
