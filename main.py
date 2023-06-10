@@ -1,3 +1,4 @@
+import datetime
 from typing import List, Tuple, Dict
 import subprocess
 import os
@@ -5,6 +6,7 @@ import platform
 from enum import Enum
 from pprint import pprint
 from itertools import combinations
+import time
 
 from arbitre_gitlab.hitman.hitman import HC, HitmanReferee, complete_map_example
 
@@ -151,6 +153,7 @@ def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
     return exec_gophersat(filename)
 
 def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
+    start_time = time.time()
     sol = solveur(clauses, dimension)
     # print(sol)
     # solutionToMap(sol[1], 3, 3)
@@ -159,6 +162,8 @@ def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
     # print("Solution : \n")
     # print(sol[1])
     sol2 = solveur(clauses + [[-x for x in sol[1]]], dimension)
+    end_time = time.time()
+    print("solveur time: ", end_time - start_time)
     if sol2[0]:
         # print("Pas d'unicite")
         return False
@@ -273,26 +278,26 @@ def addTurnInfo(status, heardMap, map, clauses):
     for vision in visions: 
         if (not isInformationAlreadyKnown(map, vision)):
             print("add info vision")
-            print(len(clauses))
-            clauses += addInfoVision(status['n'], status['m'], vision)
-            print(len(clauses))
+            # print(len(clauses))
+            # clauses += addInfoVision(status['n'], status['m'], vision)
+            # print(len(clauses))
             map = updateMap(map, [vision])
 
-    if status['is_in_guard_range']:
-        clauses += addInfoIsInGuardRange(status['n'], status['m'], status['position'])
+    # if status['is_in_guard_range']:
+    #     clauses += addInfoIsInGuardRange(status['n'], status['m'], status['position'])
 
     heardInfo: Information = [status["position"][0], status["position"][1], status["hear"]]
     if (not isInformationAlreadyKnown(heardMap, heardInfo)):
         print("add info listening")
-        print(len(clauses))
-        clauses += addInfoListening(status['n'], status['m'], status['position'], status['hear'], map)
-        print(len(clauses))
+        # print(len(clauses))
+        # clauses += addInfoListening(status['n'], status['m'], status['position'], status['hear'], map)
+        # print(len(clauses))
         heardMap = updateMap(heardMap, [heardInfo])
 
     print()
     
     printMaps([map, heardMap])
-    # input("Press Enter to continue...")
+    #input("Press Enter to continue...")
     return
 
 def fromHCDirectionToOrientation(direction: HC) -> Orientation:
@@ -306,7 +311,24 @@ def fromHCDirectionToOrientation(direction: HC) -> Orientation:
         return "W"
     raise Exception("Unknown direction")
 
+def isMapComplete(map: List[List[HC]]) -> bool:
+    for i in range(len(map)):
+        for j in range(len(map[i])):
+            if map[i][j] == -1:
+                return False
+    return True
+
+def howManyUnknown(map: List[List[HC]]) -> int:
+    unknown = 0
+    for i in range(len(map)):
+        for j in range(len(map[i])):
+            if map[i][j] == -1:
+                unknown += 1
+    return unknown
+
 def main():
+
+    start_time = time.time()
 
     referee = HitmanReferee()
     status = referee.start_phase1()
@@ -321,23 +343,26 @@ def main():
     heardMap = createMap(n_col, n_lig)
 
     clauses = []
-    clauses += generateTypesGrid(status['n'], status['m'])
-    clauses += generateClausesForObject(status['n'], status['m'], status['guard_count'], OBJECTS_INDEX['guard'][0])
-    clauses += generateClausesForObject(status['n'], status['m'], status['civil_count'], OBJECTS_INDEX['civil'][0])
-    clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['target'])
-    clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['rope'])
-    clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['costume'])
-    print(len(clauses))
+    # clauses += generateTypesGrid(status['n'], status['m'])
+    # clauses += generateClausesForObject(status['n'], status['m'], status['guard_count'], OBJECTS_INDEX['guard'][0])
+    # clauses += generateClausesForObject(status['n'], status['m'], status['civil_count'], OBJECTS_INDEX['civil'][0])
+    # clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['target'])
+    # clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['rope'])
+    # clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['costume'])
+    # print(len(clauses))
 
     # case 0,0 est vide
     # on est sûr de ca ?
-    clauses.append([(OBJECTS_INDEX['empty'])])
+    # clauses.append([(OBJECTS_INDEX['empty'])])
     map[0][0] = OBJECTS_INDEX['empty']
     
     addTurnInfo(status, heardMap, map, clauses)
 
     dimension = status['n'] * status['m'] * len(OBJECTS_INDEX)
-    while not isSolutionUnique(clauses, dimension):
+    MAX = 100
+    count = 0
+    actions = []
+    while count < MAX and not isMapComplete(map):
         print()
         print("------------------")        
 
@@ -348,14 +373,18 @@ def main():
         action = actionChooser.choose(map, position)
 
         print("action: ", end="")
+        unknown = howManyUnknown(map)
         if action == 1:
             print("move")
+            actions.append(('move', position, unknown))
             status = referee.move()
         elif action == 2:
             print("turn 90")
+            actions.append(("turn 90", position, unknown))
             status = referee.turn_clockwise()
         elif action == 3:
             print("turn -90")
+            actions.append(("turn -90", position, unknown))
             status = referee.turn_anti_clockwise()
 
         pprint({
@@ -367,14 +396,27 @@ def main():
             "penalties": status['penalties'],
             "status": status['status']
         })
+        print(map)
         addTurnInfo(status, heardMap, map, clauses)
+        count += 1
+    print("count: ", count)
 
-    print("Carte connue : \n")
-    print(solveur(clauses, dimension))
-    map_info = solutionToMap(solveur(clauses, dimension)[1], status['n'], status['m'])
+    # print("Carte connue : \n")
+    # print(solveur(clauses, dimension))
+    # map_info = solutionToMap(solveur(clauses, dimension)[1], status['n'], status['m'])
+    print(map)
     print("is good solution for referee")
+    end_time = time.time()
+    print("total time: ", end_time - start_time)
     # ne fonctionne pas pour le moment car on ne met pas les infos des orientations des civils & gardes
-    print(referee.send_content(map_info))
+    # print(referee.send_content(map_info))
+    pprint(actions)
+    with open("actions_bfs.txt", "w") as f:
+        f.write('---------------' + "\n")
+        f.write("date: " + str(datetime.datetime.now()) + "\n")
+        f.write(str(len(actions)) + "\n")
+        for action in actions:
+            f.write(str(action) + "\n")
 
 if __name__ == "__main__":
     main()

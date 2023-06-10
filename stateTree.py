@@ -1,8 +1,10 @@
 from typing import List, Tuple
 import copy
 import random
+from pprint import pprint
 
 from aliases import Position, OBJECTS_INDEX, Information
+from ex import a_star_search, SquareGrid, reconstruct_path, draw_grid
 
 
 class ActionChoice:
@@ -158,6 +160,22 @@ class ActionChoice:
         return the best action to do according to the best path, which maximizes the total information gained
         @param stateTree: list of the values of the total information gained for each path
         """
+        # return result[0]
+        # A* or dijkstra to go to the nearest case with new information
+        nearestCaseWithNewInformation = self.nearestCaseWithNewInformation(position, map)
+        # a* goal
+        print("nearestCaseWithNewInformation: " + str(nearestCaseWithNewInformation))
+        result = astar(self.n_col, self.n_lig, map, position, nearestCaseWithNewInformation)
+        if result[0] == "move":
+            return 1
+        elif result[0] == "turn 90":
+            return 2
+        elif result[0] == "turn -90":
+            return 3
+        else: 
+            raise Exception("Error: action not found")
+
+
         stateTree = self.createStateTree(map, position)
         # beforeLastLevelLeafs = stateTree[:len(stateTree) - pow(3, self.depth_max)]
         lastLevelLeafs = stateTree[len(stateTree) - pow(3, self.depth_max):]
@@ -226,8 +244,18 @@ class ActionChoice:
         else: 
             # A* or dijkstra to go to the nearest case with new information
             nearestCaseWithNewInformation = self.nearestCaseWithNewInformation(position, map)
+            # a* goal
             print("nearestCaseWithNewInformation: " + str(nearestCaseWithNewInformation))
-            return 1
+            result = astar(self.n_col, self.n_lig, map, position, nearestCaseWithNewInformation)
+            if result[0] == "move":
+                return 1
+            elif result[0] == "turn 90":
+                return 2
+            elif result[0] == "turn -90":
+                return 3
+            else: 
+                raise Exception("Error: action not found")
+
 
     def getAllCasesSeenByGuard(self, position, map) -> List[Tuple[int, int, int]]:
         vision = 2
@@ -427,3 +455,100 @@ def createMap(n_col, n_lig):
     print(map)
     return map
 
+def astar(n_col, n_lig, map, start, goal):
+    print("start", start)
+    print("goal", goal)
+    # pprint(map)
+    diagram = SquareGrid(n_col, n_lig, map)
+
+    came_from, cost_so_far = a_star_search(diagram, tuple(start), tuple(goal))
+
+    new_came_from = {}
+    for key, value in came_from.items():
+        if value is not None:
+            if key[0] != value[0] or key[1] != value[1]:
+                new_came_from[(key[0], key[1])] = (value[0], value[1])
+        else: 
+            new_came_from[(key[0], key[1])] = None
+    path = reconstruct_path_real(came_from, start=tuple(start), goal=tuple(goal))
+    # print(path)
+    # print(fromPathToActions(path))
+
+    draw_grid(diagram, path=reconstruct_path(new_came_from, start=(start[0], start[1]), goal=tuple(goal)))
+    return fromPathToActions(path) 
+
+def reconstruct_path_real(came_from: dict[str, str],
+                    start: str, goal: str) -> list[str]:
+
+    currentCoord: str = goal
+    current = goal
+
+
+    path: list[str] = []
+    print("begin reconstruct_path real")
+
+    goalFound = False
+    for key, value in came_from.items():
+        if key[0] == goal[0] and key[1] == goal[1]:
+            goalFound = True
+            break
+    if not goalFound:
+        return []
+
+    if came_from.get((currentCoord[0], currentCoord[1], "N"), -1) != -1:
+        current = (currentCoord[0], currentCoord[1], "N")
+    elif came_from.get((currentCoord[0], currentCoord[1], "S"), -1) != -1:
+        current = (currentCoord[0], currentCoord[1], "S")
+    elif came_from.get((currentCoord[0], currentCoord[1], "E"), -1) != -1:
+        current = (currentCoord[0], currentCoord[1], "E")
+    elif came_from.get((currentCoord[0], currentCoord[1], "W"), -1) != -1:
+        current = (currentCoord[0], currentCoord[1], "W")
+
+
+    startCoord = (start[0], start[1])
+    while current != start:
+        path.append(current)
+        current = came_from[current]
+        currentCoord = (current[0], current[1])
+    path.append(start) # optional
+    path.reverse() # optional
+    # print('path: ', path)
+    return path
+
+
+def fromPathToActions(path):
+    """
+    input: [(0, 0, 'N'), (0, 0, 'E'), (1, 0, 'E')]
+    output: ['move', 'turn 90', 'move']
+    """
+    if len(path) == 0:
+        return []
+    actions = []
+    for i in range(1, len(path)):
+        if path[i][0] != path[i - 1][0] or path[i][1] != path[i - 1][1]:
+            actions.append('move')
+        
+        if path[i][2] == 'N':
+            if path[i - 1][2] == 'E':
+                actions.append('turn -90')
+            elif path[i - 1][2] == 'W':
+                actions.append('turn 90')
+        
+        if path[i][2] == 'S':
+            if path[i - 1][2] == 'E':
+                actions.append('turn 90')
+            elif path[i - 1][2] == 'W':
+                actions.append('turn -90')
+        
+        if path[i][2] == 'E':
+            if path[i - 1][2] == 'N':
+                actions.append('turn 90')
+            elif path[i - 1][2] == 'S':
+                actions.append('turn -90')
+            
+        if path[i][2] == 'W':
+            if path[i - 1][2] == 'N':
+                actions.append('turn -90')
+            elif path[i - 1][2] == 'S':
+                actions.append('turn 90')
+    return actions 
