@@ -152,7 +152,9 @@ class ActionChoice:
         # return result[0]
         # A* or dijkstra to go to the nearest case with new information
         # nearestCaseWithNewInformation = self.nearestCaseWithNewInformation(position, map)
-        nearestCases = self.nearestCasesWithNewInformation(position, map, 5)
+        # nearestCases = self.nearestCasesWithNewInformation(position, map, 5)
+        farthestCases = self.farthestCasesWithNewInformation(position, map, 50)
+        nearestCases = farthestCases
         print(nearestCases)
         # a* goal
         # print("nearestCaseWithNewInformation: " + str(nearestCases[0]))
@@ -164,8 +166,15 @@ class ActionChoice:
         bestPath = None
         diagram = SquareGrid(self.n_col, self.n_lig, map)
         for case in nearestCases:
-            path, howManyUnknownVariable = astar(self.n_col, self.n_lig, map, position, case, diagram)
+            path, howManyUnknownVariable, clusteringScore = astar(self.n_col, self.n_lig, map, position, case, diagram)
             result = fromPathToActions(path)
+            # if len(result) == 1 and score > 0:
+            #     bestScore = score
+            #     bestResult = result
+            #     bestHowManyUnknown = howManyUnknownVariable
+            #     bestPath = path
+            #     break
+
             # draw_grid(diagram, start=(position[0], position[1], position[2]), path=path)
             # on favorise les chemins courts
             score = (howManyUnknownBefore - howManyUnknownVariable) / len(result)
@@ -176,9 +185,12 @@ class ActionChoice:
                 bestResult = result
                 bestHowManyUnknown = howManyUnknownVariable
                 bestPath = path
-            # print("case: " + str(case))
-            # print("result: " + str(result))
-            # print("howManyUnknownVariable: " + str(howManyUnknownVariable))
+            print("----")
+            print("case: " + str(case))
+            print("result: " + str(result))
+            print("howManyUnknownVariable: " + str(howManyUnknownVariable))
+            print("score: " + str(score))
+            print("clusteringScore: " + str(clusteringScore))
 
         print("bestResult: " + str(bestResult))
         print("bestHowManyUnknown: " + str(bestHowManyUnknown))
@@ -384,6 +396,35 @@ class ActionChoice:
 
         return nearestCases
     
+    def farthestCasesWithNewInformation(self, position, map, numberOfCasesWanted: int) -> List[Tuple[int, int]]:
+        """
+        return the farthest case with new information
+        @param map: the map of the game
+        @param position: the position of the agent [x, y, direction]
+        """
+        # new information is the case with value -1
+        allUnkownCases = []
+        for y in range(len(map)):
+            for x in range(len(map[y])):
+                if map[y][x] == -1:
+                    allUnkownCases.append([x, y])
+        
+        farthestCases = []
+        while len(farthestCases) < numberOfCasesWanted and len(allUnkownCases) > 0:
+            farthestDistance = 0
+            farthestCase = None
+            for case in allUnkownCases:
+                distance = self.distanceBetweenTwoCases(position, case)
+                if distance > farthestDistance:
+                    farthestCase = case
+                    farthestDistance = distance
+            if farthestCase == None:
+                raise Exception("No nearest case found")
+            farthestCases.append(farthestCase)
+            allUnkownCases.remove(farthestCase)
+
+        return farthestCases
+    
     def distanceBetweenTwoCases(self, case1, case2) -> int:
         """
         return the distance between two cases
@@ -435,7 +476,7 @@ def astar(n_col, n_lig, map, start, goal, diagram):
 
     # came_from, cost_so_far = a_star_search(diagram, tuple(start), tuple(goal))
     # test a* to find the best path to see all the map
-    came_from, cost_so_far, new_goal, howManyUnknown = a_star_search_points(diagram, tuple(start), tuple(goal))
+    came_from, cost_so_far, new_goal, howManyUnknown, clusteringScore = a_star_search_points(diagram, tuple(start), tuple(goal))
 
     if howManyUnknown == None:
         raise Exception("No new goal found")
@@ -471,7 +512,7 @@ def astar(n_col, n_lig, map, start, goal, diagram):
     # print("cost_so_far", new_cost)
     # draw_grid(diagram, number=new_cost, start=(start[0], start[1]), goal=goal)
     # draw_grid(diagram, start=(start[0], start[1], start[2]), path=path)
-    return path, howManyUnknown
+    return path, howManyUnknown, clusteringScore
 
 def reconstruct_path_real(came_from: dict[str, str],
                     start: str, goal: Tuple[int, int, str]) -> list[str]:
@@ -608,12 +649,34 @@ def getAllNewInformation(n_col, n_lig, map, position) -> List[Tuple[int, int, in
 
     return casesSeen
 
+def getClusteringScore(map):
+    """
+    return the clustering score of the map
+    """
+    # compute the distance between each unknown cell
+    allUnkownCases = []
+    for y in range(len(map)):
+        for x in range(len(map[y])):
+            if map[y][x] == -1:
+                allUnkownCases.append([x, y])
+    
+    if len(allUnkownCases) == 0 or len(allUnkownCases) == 1:
+        return 0
+    
+    distances = []
+    for i in range(len(allUnkownCases)):
+        for j in range(i + 1, len(allUnkownCases)):
+            distances.append(abs(allUnkownCases[i][0] - allUnkownCases[j][0]) + abs(allUnkownCases[i][1] - allUnkownCases[j][1]))
+
+    return sum(distances) / len(distances)
+
+
 def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, goal):
     '''
     but: voir la case goal en gagnant le plus de nouvelles cases possible
     '''
-    startCount = howManyUnknown(graph.map)
-    print("startCount", startCount)
+    # startCount = howManyUnknown(graph.map)
+    # print("startCount", startCount)
 
     openList = PriorityQueue()
     openList.put(start, 0)
@@ -655,7 +718,7 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, goal):
                         # print("goal reached")
                         # print("info win", info)
                         # print(next)
-                        return came_from, cost_so_far, next, howManyUnknown(nextMap)
+                        return came_from, cost_so_far, next, howManyUnknown(nextMap), getClusteringScore(nextMap)
     return came_from, cost_so_far, None, None
 
 
