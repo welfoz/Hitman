@@ -311,7 +311,7 @@ class ActionChooser:
         @param stateTree: list of the values of the total information gained for each path
         """
         farthestCases = self.farthestCasesWithNewInformation(position, map, 50)
-        print(farthestCases)
+        # print(farthestCases)
 
         diagram = SquareGrid(self.n_col, self.n_lig, map)
 
@@ -345,7 +345,7 @@ class ActionChooser:
             # print("clusteringScore: " + str(clusteringScore))
 
         print("bestResult: " + str(bestResult))
-        print("bestHowManyUnknown: " + str(bestHowManyUnknown))
+        # print("bestHowManyUnknown: " + str(bestHowManyUnknown))
         draw_grid(diagram, start=(position[0], position[1], position[2]), path=bestPath)
 
         if bestResult[0] == "move":

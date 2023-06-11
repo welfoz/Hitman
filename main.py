@@ -289,7 +289,6 @@ def main():
     count = 0
     actions = []
     while count < MAX and not isMapComplete(map):
-        print()
         print("------------------")        
 
         orientation = fromHCDirectionToOrientation(status["orientation"])
@@ -298,18 +297,14 @@ def main():
 
         action = actionChooser.choose(map, position)
 
-        print("action: ", end="")
         unknown = howManyUnknown(map)
         if action == 1:
-            print("move")
             actions.append(('move', position, unknown))
             status = referee.move()
         elif action == 2:
-            print("turn 90")
             actions.append(("turn 90", position, unknown))
             status = referee.turn_clockwise()
         elif action == 3:
-            print("turn -90")
             actions.append(("turn -90", position, unknown))
             status = referee.turn_anti_clockwise()
 
