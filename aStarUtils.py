@@ -117,7 +117,6 @@ class SquareGrid:
     def __init__(self, width: int, height: int, map):
         self.width = width
         self.height = height
-        # self.walls: list[GridLocation] = []
         self.map = map
     
     def in_bounds(self, id: GridLocationDirection) -> bool:
@@ -126,7 +125,6 @@ class SquareGrid:
     
     def passable(self, id: GridLocationDirection) -> bool:
         (x, y, direction) = id
-        # return (x, y) not in self.walls
         newPositionValue = self.map[y][x]
         
         if newPositionValue == OBJECTS_INDEX['wall'] or newPositionValue in OBJECTS_INDEX['guard']:
