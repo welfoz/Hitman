@@ -81,20 +81,77 @@ def draw_tile(graph: SquareGrid, id, style):
         # if y2 == y1 + 1: r = " v "
         # if y2 == y1 - 1: r = " ^ "
         r = " " + d + " " 
-    if 'path' in style and id in style['path']:   r = " @ "
-    if 'start' in style and id == style['start']: r = " A "
-    if 'goal' in style and id == style['goal']:   r = " Z "
     # if id in graph.walls: r = "###"
     if graph.map[id[1]][id[0]] == OBJECTS_INDEX['wall']: r = "###"
     if graph.map[id[1]][id[0]] in OBJECTS_INDEX['guard']: r = " G "
+    
+    if graph.map[id[1]][id[0]] == OBJECTS_INDEX['target']: r = " T "
+    if graph.map[id[1]][id[0]] == OBJECTS_INDEX['rope']: r = " R "
+    if graph.map[id[1]][id[0]] == OBJECTS_INDEX['costume']: r = " S "
+    if graph.map[id[1]][id[0]] in OBJECTS_INDEX['civil']: r = " C "
+
+    if graph.map[id[1]][id[0]] == -1 : r = " ? "
+
+    indexes = {
+        "N": -1,
+        "S": -1,
+        "E": -1,
+        "W": -1,
+    }
+    found = False
+    if 'path' in style and (id[0], id[1], "N") in style['path']:   
+        indexes["N"] = style['path'].index((id[0], id[1], "N"))
+        found = True
+    if 'path' in style and (id[0], id[1], "S") in style['path']:   
+        indexes["S"] = style['path'].index((id[0], id[1], "S"))
+        found = True
+    if 'path' in style and (id[0], id[1], "E") in style['path']:   
+        indexes["E"] = style['path'].index((id[0], id[1], "E"))
+        found = True
+    if 'path' in style and (id[0], id[1], "W") in style['path']:   
+        indexes["W"] = style['path'].index((id[0], id[1], "W"))
+        found = True
+    if found == True:
+        # return the maximim index direction
+        values = list(indexes.values())
+        indexOfMax = values.index(max(values))
+
+        # get key of max
+        keys = list(indexes.keys())
+        direction = keys[indexOfMax]
+        r = " " + direction + " "
+
+    if 'start' in style and (id[0], id[1], "N") == style['start']:   
+        r = "ANA"
+    if 'start' in style and (id[0], id[1], "S") == style['start']:   
+        r = "ASA"
+    if 'start' in style and (id[0], id[1], "E") == style['start']:   
+        r = "AEA"
+    if 'start' in style and (id[0], id[1], "W") == style['start']:   
+        r = "AWA"
+
+    # if 'start' in style and id == style['start']: r = " A "
+    if 'goal' in style and id == style['goal']:   r = " Z "
+    # print(style)
     return r
 
 def draw_grid(graph, **style):
-    print("___" * graph.width)
+    # print("grid")
+    # print(graph.map)
+    pprint("___" * graph.width)
+    map = []
     for y in range(graph.height):
+        line = []
         for x in range(graph.width):
-            print("%s" % draw_tile(graph, (x, y), style), end="")
-        print()
+            # print("%s" % draw_tile(graph, (x, y), style), end="")
+            line.append("%s" % draw_tile(graph, (x, y), style))
+        map.append(line)
+        # print()
+    
+    map.reverse()
+    for line in map:
+        print("".join(line))
+
     print("~~~" * graph.width)
 
 # data from main article
@@ -231,13 +288,15 @@ def dijkstra_search(graph: GridWithWeights, start: Location, goal: Location):
 def reconstruct_path(came_from: dict[Location, Location],
                      start: Location, goal: Location) -> list[Location]:
 
+    goal = (goal[0], goal[1])
     current: Location = goal
     path: list[Location] = []
-    print("begin reconstruct_path")
+
+    # print("begin reconstruct_path")
     if goal not in came_from: # no path was found
         return []
     while current != start:
-        print("current: ", current)
+        # print("current: ", current)
         path.append(current)
         current = came_from[current]
     path.append(start) # optional

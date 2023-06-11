@@ -251,7 +251,7 @@ def solutionToMap(solution: List[int], n_col : int, n_lig : int) -> Dict[Tuple[i
     return map_info
 
 def getVisionsFromStatus(status_vision: List[Tuple[Tuple[int, int], HC]]) -> List[Information]:
-    print("status vision", status_vision)
+    # print("status vision", status_vision)
     visions = []
     for vision in status_vision:
         visionValue = HCInfoToObjectIndex(vision[1].value)
@@ -271,13 +271,13 @@ def printMaps(maps, reverse = True):
 
 
 def addTurnInfo(status, heardMap, map, clauses):
-    print()
+    # print()
     visions = getVisionsFromStatus(status["vision"])
-    print("visions", visions)
+    # print("visions", visions)
 
     for vision in visions: 
         if (not isInformationAlreadyKnown(map, vision)):
-            print("add info vision")
+            # print("add info vision")
             # print(len(clauses))
             # clauses += addInfoVision(status['n'], status['m'], vision)
             # print(len(clauses))
@@ -288,7 +288,7 @@ def addTurnInfo(status, heardMap, map, clauses):
 
     heardInfo: Information = [status["position"][0], status["position"][1], status["hear"]]
     if (not isInformationAlreadyKnown(heardMap, heardInfo)):
-        print("add info listening")
+        # print("add info listening")
         # print(len(clauses))
         # clauses += addInfoListening(status['n'], status['m'], status['position'], status['hear'], map)
         # print(len(clauses))
@@ -296,7 +296,7 @@ def addTurnInfo(status, heardMap, map, clauses):
 
     print()
     
-    printMaps([map, heardMap])
+    # printMaps([map, heardMap])
     #input("Press Enter to continue...")
     return
 
@@ -368,7 +368,7 @@ def main():
 
         orientation = fromHCDirectionToOrientation(status["orientation"])
         position: Position = [status["position"][0], status["position"][1], orientation]
-        print("position: ", position)
+        # print("position: ", position)
 
         action = actionChooser.choose(map, position)
 
@@ -387,16 +387,15 @@ def main():
             actions.append(("turn -90", position, unknown))
             status = referee.turn_anti_clockwise()
 
-        pprint({
-            "vision": status['vision'],
-            "hear": status['hear'],
-            "position": status['position'],
-            "orientation": status['orientation'],
-            "is_in_guard_range": status['is_in_guard_range'],
-            "penalties": status['penalties'],
-            "status": status['status']
-        })
-        print(map)
+        # pprint({
+        #     "vision": status['vision'],
+        #     "hear": status['hear'],
+        #     "position": status['position'],
+        #     "orientation": status['orientation'],
+        #     "is_in_guard_range": status['is_in_guard_range'],
+        #     "penalties": status['penalties'],
+        #     "status": status['status']
+        # })
         addTurnInfo(status, heardMap, map, clauses)
         count += 1
     print("count: ", count)

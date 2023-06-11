@@ -396,14 +396,21 @@ def createMap(n_col, n_lig):
     return map
 
 def astar(n_col, n_lig, map, start, goal):
-    print("start", start)
-    print("goal", goal)
+    # print("start", start)
+    # print("goal", goal)
     # pprint(map)
     diagram = SquareGrid(n_col, n_lig, map)
 
     # came_from, cost_so_far = a_star_search(diagram, tuple(start), tuple(goal))
     # test a* to find the best path to see all the map
-    came_from, cost_so_far = a_star_search_points(diagram, tuple(start), tuple(goal))
+    came_from, cost_so_far, new_goal = a_star_search_points(diagram, tuple(start), tuple(goal))
+
+    if new_goal != None:
+        goal = new_goal
+        print("new_goal", new_goal)
+    else: 
+        raise Exception("No new goal found")
+    # print("came_from", came_from)
 
     new_came_from = {}
     for key, value in came_from.items():
@@ -415,19 +422,19 @@ def astar(n_col, n_lig, map, start, goal):
     path = reconstruct_path_real(came_from, start=tuple(start), goal=tuple(goal))
     # print(path)
     # print(fromPathToActions(path))
-
-    draw_grid(diagram, path=reconstruct_path(new_came_from, start=(start[0], start[1]), goal=tuple(goal)))
+    # draw_grid(diagram, start=(start[0], start[1]), path=reconstruct_path(new_came_from, start=(start[0], start[1]), goal=tuple(goal)))
+    draw_grid(diagram, start=(start[0], start[1], start[2]), path=path)
     return fromPathToActions(path) 
 
 def reconstruct_path_real(came_from: dict[str, str],
-                    start: str, goal: str) -> list[str]:
+                    start: str, goal: Tuple[int, int, str]) -> list[str]:
 
-    currentCoord: str = goal
+    # currentCoord: str = goal
     current = goal
 
 
     path: list[str] = []
-    print("begin reconstruct_path real")
+    # print("begin reconstruct_path real")
 
     goalFound = False
     for key, value in came_from.items():
@@ -437,17 +444,19 @@ def reconstruct_path_real(came_from: dict[str, str],
     if not goalFound:
         return []
 
-    if came_from.get((currentCoord[0], currentCoord[1], "N"), -1) != -1:
-        current = (currentCoord[0], currentCoord[1], "N")
-    elif came_from.get((currentCoord[0], currentCoord[1], "S"), -1) != -1:
-        current = (currentCoord[0], currentCoord[1], "S")
-    elif came_from.get((currentCoord[0], currentCoord[1], "E"), -1) != -1:
-        current = (currentCoord[0], currentCoord[1], "E")
-    elif came_from.get((currentCoord[0], currentCoord[1], "W"), -1) != -1:
-        current = (currentCoord[0], currentCoord[1], "W")
+    # if came_from.get((currentCoord[0], currentCoord[1], "N"), -1) != -1:
+    #     current = (currentCoord[0], currentCoord[1], "N")
+    # elif came_from.get((currentCoord[0], currentCoord[1], "S"), -1) != -1:
+    #     current = (currentCoord[0], currentCoord[1], "S")
+    # elif came_from.get((currentCoord[0], currentCoord[1], "E"), -1) != -1:
+    #     current = (currentCoord[0], currentCoord[1], "E")
+    # elif came_from.get((currentCoord[0], currentCoord[1], "W"), -1) != -1:
+    #     current = (currentCoord[0], currentCoord[1], "W")
 
 
     startCoord = (start[0], start[1])
+    # print("currnet", current)
+    # print("start", start)
     while current != start:
         path.append(current)
         current = came_from[current]
@@ -553,7 +562,7 @@ def getAllNewInformation(n_col, n_lig, map, position) -> List[Tuple[int, int, in
 
     return casesSeen
 
-def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, goal = 0):
+def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, goal):
     '''
     goal: see all the map
     '''
@@ -580,6 +589,7 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, goal =
             print("all map seen")
             break
 
+        # print('goal', goal)
         for next in graph.neighbors(current):
             # print("next", next)
             new_cost = cost_so_far[current] + graph.cost(current, next) # every move costs 1 for now
@@ -597,7 +607,14 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, goal =
                 
                 openList.put(next, priority)
                 came_from[next] = current
-    return came_from, cost_so_far
+                for info in newInfos:
+                    # print("info", info)
+                    if info[0] == goal[0] and info[1] == goal[1]:
+                        # print("goal reached")
+                        # print("info win", info)
+                        # print(next)
+                        return came_from, cost_so_far, next
+    return came_from, cost_so_far, None
 
 
 def heuristic_pts(a: GridLocation, goal_pts, map) -> float:
@@ -611,6 +628,7 @@ def heuristic_pts(a: GridLocation, goal_pts, map) -> float:
     attention favoriser les cases dans le meme secteur
     ne pas avoir des coins et bordures non vues
     """
+    # return howManyUnknown(map) + abs(a[0] - goal_pts[0]) + abs(a[1] - goal_pts[1])
     return howManyUnknown(map)
 
 def howManyUnknown(map: List[List[int]]) -> int:
