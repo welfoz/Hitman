@@ -1,10 +1,9 @@
 from typing import List, Tuple
 import copy
-import random
 from pprint import pprint
 
 from aliases import Position, OBJECTS_INDEX, Information
-from ex import a_star_search, SquareGrid, reconstruct_path, draw_grid, PriorityQueue, GridLocation, GridLocationDirection, Optional
+from aStar import a_star_search, SquareGrid, reconstruct_path, draw_grid, PriorityQueue, GridLocation, GridLocationDirection, Optional
 
 
 class ActionChoice:
@@ -149,38 +148,24 @@ class ActionChoice:
         return the best action to do according to the best path, which maximizes the total information gained
         @param stateTree: list of the values of the total information gained for each path
         """
-        # return result[0]
-        # A* or dijkstra to go to the nearest case with new information
-        # nearestCaseWithNewInformation = self.nearestCaseWithNewInformation(position, map)
-        # nearestCases = self.nearestCasesWithNewInformation(position, map, 5)
         farthestCases = self.farthestCasesWithNewInformation(position, map, 50)
         nearestCases = farthestCases
         print(nearestCases)
-        # a* goal
-        # print("nearestCaseWithNewInformation: " + str(nearestCases[0]))
         bestResult = []
         howManyUnknownBefore = howManyUnknown(map)
         bestHowManyUnknown = 100000
-        lenBestResult = 100000
         bestScore = 0
         bestPath = None
         diagram = SquareGrid(self.n_col, self.n_lig, map)
         for case in nearestCases:
             path, howManyUnknownVariable, clusteringScore = astar(self.n_col, self.n_lig, map, position, case, diagram)
             result = fromPathToActions(path)
-            # if len(result) == 1 and score > 0:
-            #     bestScore = score
-            #     bestResult = result
-            #     bestHowManyUnknown = howManyUnknownVariable
-            #     bestPath = path
-            #     break
 
-            # draw_grid(diagram, start=(position[0], position[1], position[2]), path=path)
             # on favorise les chemins courts
             score = (howManyUnknownBefore - howManyUnknownVariable) / len(result)
-            # if len(result) < lenBestResult:
-            if score > bestScore:
+
             # if howManyUnknownVariable < bestHowManyUnknown: # favorise la découverte
+            if score > bestScore:
                 bestScore = score
                 bestResult = result
                 bestHowManyUnknown = howManyUnknownVariable
@@ -203,87 +188,6 @@ class ActionChoice:
             return 3
         else: 
             raise Exception("Error: action not found")
-
-
-        stateTree = self.createStateTree(map, position)
-        # beforeLastLevelLeafs = stateTree[:len(stateTree) - pow(3, self.depth_max)]
-        lastLevelLeafs = stateTree[len(stateTree) - pow(3, self.depth_max):]
-        # print(len(lastLevelLeafs))
-        # print(lastLevelLeafs)
-        # totalPointsForAction1 = sum(lastLevelLeafs[:pow(3, self.depth_max - 1)])
-        # totalPointsForAction2 = sum(lastLevelLeafs[pow(3, self.depth_max - 1):2 * pow(3, self.depth_max - 1)])
-        # totalPointsForAction3 = sum(lastLevelLeafs[2 * pow(3, self.depth_max - 1):])
-        # totalPoints = [totalPointsForAction1, totalPointsForAction2, totalPointsForAction3]
-
-        # indexOfTheMaxOfTotal = totalPoints.index(max(totalPoints))
-        # return indexOfTheMaxOfTotal + 1
-        # print(len(lastLevelLeafs))
-        # print(beforeLastLevelLeafs)
-        # print(lastLevelLeafs)
-
-        lastLevelLeafsMAX = max(lastLevelLeafs)
-        howManyMax = lastLevelLeafs.count(lastLevelLeafsMAX)
-
-        print()
-        print("evaluation funciton: ")
-        print("lastLevelLeafsMAX: " + str(lastLevelLeafsMAX))
-
-        if lastLevelLeafsMAX != 0:
-            count1 = 0
-            count2 = 0
-            count3 = 0
-            # lastLevelLeafs1 = lastLevelLeafs[:pow(3, DEPTH_MAX - 1)]
-            # lastLevelLeafs2 = lastLevelLeafs[pow(3, DEPTH_MAX - 1):2 * pow(3, DEPTH_MAX - 1)]
-            # lastLevelLeafs3 = lastLevelLeafs[2 * pow(3, DEPTH_MAX - 1):]
-            # print("lastLevelLeafs1: " + str(lastLevelLeafs1))
-            # print("lastLevelLeafs2: " + str(lastLevelLeafs2))
-            # print("lastLevelLeafs3: " + str(lastLevelLeafs3))
-            while lastLevelLeafs.count(lastLevelLeafsMAX) > 0:
-                firstIndexMax = lastLevelLeafs.index(lastLevelLeafsMAX)
-                # print("firstIndexMax: " + str(firstIndexMax))
-                if firstIndexMax < pow(3, self.depth_max - 1):
-                    count1 += 1
-                elif firstIndexMax < 2 * pow(3, self.depth_max - 1):
-                    count2 += 1
-                else:
-                    count3 += 1
-                lastLevelLeafs[firstIndexMax] = -1000
-            print("count1: " + str(count1), end=" ")
-            print("count2: " + str(count2), end=" ")
-            print("count3: " + str(count3))
-
-
-            proba1 = count1 / howManyMax
-            proba2 = count2 / howManyMax
-            proba3 = count3 / howManyMax
-
-            print("proba1: " + str(proba1), end=" ")
-            print("proba2: " + str(proba2), end=" ")
-            print("proba3: " + str(proba3), end=" ")
-            print()
-            print()
-
-            # test this for now
-            # lets see how it goes
-            # return random.choices([1, 2, 3], [proba1, proba2, proba3])[0]
-
-            # return max proba 
-            probas = [proba1, proba2, proba3]
-            return probas.index(max(probas)) + 1
-        else: 
-            # A* or dijkstra to go to the nearest case with new information
-            nearestCaseWithNewInformation = self.nearestCaseWithNewInformation(position, map)
-            # a* goal
-            print("nearestCaseWithNewInformation: " + str(nearestCaseWithNewInformation))
-            result = astar(self.n_col, self.n_lig, map, position, nearestCaseWithNewInformation)
-            if result[0] == "move":
-                return 1
-            elif result[0] == "turn 90":
-                return 2
-            elif result[0] == "turn -90":
-                return 3
-            else: 
-                raise Exception("Error: action not found")
 
     def getAllCasesSeenByGuard(self, position, map) -> List[Tuple[int, int, int]]:
         vision = 2
@@ -433,7 +337,6 @@ class ActionChoice:
         """
         return abs(case1[0] - case2[0]) + abs(case1[1] - case2[1])
 
-
 def isInformationAlreadyKnown(map, information: Information) -> bool:
     """
     return true if the information is already known
@@ -469,13 +372,6 @@ def createMap(n_col, n_lig):
     return map
 
 def astar(n_col, n_lig, map, start, goal, diagram):
-    # print("start", start)
-    # print("goal", goal)
-    # pprint(map)
-    # diagram = SquareGrid(n_col, n_lig, map)
-
-    # came_from, cost_so_far = a_star_search(diagram, tuple(start), tuple(goal))
-    # test a* to find the best path to see all the map
     came_from, cost_so_far, new_goal, howManyUnknown, clusteringScore = a_star_search_points(diagram, tuple(start), tuple(goal))
 
     if howManyUnknown == None:
@@ -495,21 +391,16 @@ def astar(n_col, n_lig, map, start, goal, diagram):
                 new_came_from[(key[0], key[1])] = (value[0], value[1])
         else: 
             new_came_from[(key[0], key[1])] = None
-    # new_cost = {}
-    # for key, value in cost_so_far.items():
-    #     if value is not None:
-    #         new_cost[(key[0], key[1])] = value
-    #         # if key[0] != value[0] or key[1] != value[1]:
-    #         #     new_cost[(key[0], key[1])] = (value[0], value[1])
-    #     else: 
-    #         new_cost[(key[0], key[1])] = None
-    # print("came_from ", came_from)
+    new_cost = {}
+    for key, value in cost_so_far.items():
+        if value is not None:
+            new_cost[(key[0], key[1])] = value
+            # if key[0] != value[0] or key[1] != value[1]:
+            #     new_cost[(key[0], key[1])] = (value[0], value[1])
+        else: 
+            new_cost[(key[0], key[1])] = None
     path = reconstruct_path_real(came_from, start=tuple(start), goal=tuple(goal))
     
-    # print(path)
-    # print(fromPathToActions(path))
-    # draw_grid(diagram, start=(start[0], start[1]), path=reconstruct_path(new_came_from, start=(start[0], start[1]), goal=tuple(goal)))
-    # print("cost_so_far", new_cost)
     # draw_grid(diagram, number=new_cost, start=(start[0], start[1]), goal=goal)
     # draw_grid(diagram, start=(start[0], start[1], start[2]), path=path)
     return path, howManyUnknown, clusteringScore
@@ -517,12 +408,9 @@ def astar(n_col, n_lig, map, start, goal, diagram):
 def reconstruct_path_real(came_from: dict[str, str],
                     start: str, goal: Tuple[int, int, str]) -> list[str]:
 
-    currentCoord: str = goal
     current = goal
 
-
     path: list[str] = []
-    # print("begin reconstruct_path real")
 
     goalFound = False
     for key, value in came_from.items():
@@ -532,27 +420,12 @@ def reconstruct_path_real(came_from: dict[str, str],
     if not goalFound:
         return []
 
-    # if came_from.get((currentCoord[0], currentCoord[1], "N"), -1) != -1:
-    #     current = (currentCoord[0], currentCoord[1], "N")
-    # elif came_from.get((currentCoord[0], currentCoord[1], "S"), -1) != -1:
-    #     current = (currentCoord[0], currentCoord[1], "S")
-    # elif came_from.get((currentCoord[0], currentCoord[1], "E"), -1) != -1:
-    #     current = (currentCoord[0], currentCoord[1], "E")
-    # elif came_from.get((currentCoord[0], currentCoord[1], "W"), -1) != -1:
-    #     current = (currentCoord[0], currentCoord[1], "W")
-
-
-    # print("currnet", current)
-    # print("start", start)
     while current != start:
         path.append(current)
         current = came_from[current]
-        currentCoord = (current[0], current[1])
     path.append(start) # optional
     path.reverse() # optional
-    # print('path: ', path)
     return path
-
 
 def fromPathToActions(path):
     """
@@ -713,10 +586,8 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, goal):
                 openList.put(next, priority)
                 came_from[next] = current
                 for info in newInfos:
-                    # print("info", info)
                     if info[0] == goal[0] and info[1] == goal[1]:
                         # print("goal reached")
-                        # print("info win", info)
                         # print(next)
                         return came_from, cost_so_far, next, howManyUnknown(nextMap), getClusteringScore(nextMap)
     return came_from, cost_so_far, None, None
@@ -725,13 +596,7 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, goal):
 def heuristic_pts(a: GridLocation, goal_pts, map) -> float:
     """
     heuristic for points
-    compute new cases
-    return howManyCasesLeftToSee
-
     moins il y a de cases à découvrir, plus la valeur est petite
-
-    attention favoriser les cases dans le meme secteur
-    ne pas avoir des coins et bordures non vues
     """
     # return howManyUnknown(map) + abs(a[0] - goal_pts[0]) + abs(a[1] - goal_pts[1])
     return howManyUnknown(map)
