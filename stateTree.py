@@ -151,15 +151,43 @@ class ActionChoice:
         """
         # return result[0]
         # A* or dijkstra to go to the nearest case with new information
-        nearestCaseWithNewInformation = self.nearestCaseWithNewInformation(position, map)
+        # nearestCaseWithNewInformation = self.nearestCaseWithNewInformation(position, map)
+        nearestCases = self.nearestCasesWithNewInformation(position, map, 5)
+        print(nearestCases)
         # a* goal
-        print("nearestCaseWithNewInformation: " + str(nearestCaseWithNewInformation))
-        result = astar(self.n_col, self.n_lig, map, position, nearestCaseWithNewInformation)
-        if result[0] == "move":
+        # print("nearestCaseWithNewInformation: " + str(nearestCases[0]))
+        bestResult = []
+        howManyUnknownBefore = howManyUnknown(map)
+        bestHowManyUnknown = 100000
+        lenBestResult = 100000
+        bestScore = 0
+        bestPath = None
+        diagram = SquareGrid(self.n_col, self.n_lig, map)
+        for case in nearestCases:
+            path, howManyUnknownVariable = astar(self.n_col, self.n_lig, map, position, case, diagram)
+            result = fromPathToActions(path)
+            # draw_grid(diagram, start=(position[0], position[1], position[2]), path=path)
+            # on favorise les chemins courts
+            score = (howManyUnknownBefore - howManyUnknownVariable) / len(result)
+            # if len(result) < lenBestResult:
+            if score > bestScore:
+            # if howManyUnknownVariable < bestHowManyUnknown: # favorise la découverte
+                bestScore = score
+                bestResult = result
+                bestHowManyUnknown = howManyUnknownVariable
+                bestPath = path
+            # print("case: " + str(case))
+            # print("result: " + str(result))
+            # print("howManyUnknownVariable: " + str(howManyUnknownVariable))
+
+        print("bestResult: " + str(bestResult))
+        print("bestHowManyUnknown: " + str(bestHowManyUnknown))
+        draw_grid(diagram, start=(position[0], position[1], position[2]), path=bestPath)
+        if bestResult[0] == "move":
             return 1
-        elif result[0] == "turn 90":
+        elif bestResult[0] == "turn 90":
             return 2
-        elif result[0] == "turn -90":
+        elif bestResult[0] == "turn -90":
             return 3
         else: 
             raise Exception("Error: action not found")
@@ -327,7 +355,7 @@ class ActionChoice:
         # return newCases * 2 - penalty
         return newCases
 
-    def nearestCaseWithNewInformation(self, position, map) -> Tuple[int, int]:
+    def nearestCasesWithNewInformation(self, position, map, numberOfCasesWanted: int) -> List[Tuple[int, int]]:
         """
         return the nearest case with new information
         @param map: the map of the game
@@ -340,17 +368,21 @@ class ActionChoice:
                 if map[y][x] == -1:
                     allUnkownCases.append([x, y])
         
-        nearestCase = None
-        nearestDistance = 1000000
-        for case in allUnkownCases:
-            distance = self.distanceBetweenTwoCases(position, case)
-            if distance < nearestDistance:
-                nearestCase = case
-                nearestDistance = distance
-        if nearestCase == None:
-            raise Exception("No nearest case found")
+        nearestCases = []
+        while len(nearestCases) < numberOfCasesWanted and len(allUnkownCases) > 0:
+            nearestDistance = 1000000
+            nearestCase = None
+            for case in allUnkownCases:
+                distance = self.distanceBetweenTwoCases(position, case)
+                if distance < nearestDistance:
+                    nearestCase = case
+                    nearestDistance = distance
+            if nearestCase == None:
+                raise Exception("No nearest case found")
+            nearestCases.append(nearestCase)
+            allUnkownCases.remove(nearestCase)
 
-        return nearestCase
+        return nearestCases
     
     def distanceBetweenTwoCases(self, case1, case2) -> int:
         """
@@ -395,21 +427,24 @@ def createMap(n_col, n_lig):
     print(map)
     return map
 
-def astar(n_col, n_lig, map, start, goal):
+def astar(n_col, n_lig, map, start, goal, diagram):
     # print("start", start)
     # print("goal", goal)
     # pprint(map)
-    diagram = SquareGrid(n_col, n_lig, map)
+    # diagram = SquareGrid(n_col, n_lig, map)
 
-    came_from, cost_so_far = a_star_search(diagram, tuple(start), tuple(goal))
+    # came_from, cost_so_far = a_star_search(diagram, tuple(start), tuple(goal))
     # test a* to find the best path to see all the map
-    # came_from, cost_so_far, new_goal = a_star_search_points(diagram, tuple(start), tuple(goal))
+    came_from, cost_so_far, new_goal, howManyUnknown = a_star_search_points(diagram, tuple(start), tuple(goal))
 
-    # if new_goal != None:
-    #     goal = new_goal
-    #     print("new_goal", new_goal)
-    # else: 
-    #     raise Exception("No new goal found")
+    if howManyUnknown == None:
+        raise Exception("No new goal found")
+
+    if new_goal != None:
+        goal = new_goal
+        # print("new_goal", new_goal)
+    else: 
+        raise Exception("No new goal found")
     # print("came_from", came_from)
 
     new_came_from = {}
@@ -419,13 +454,24 @@ def astar(n_col, n_lig, map, start, goal):
                 new_came_from[(key[0], key[1])] = (value[0], value[1])
         else: 
             new_came_from[(key[0], key[1])] = None
-    print("came_from ", came_from)
+    # new_cost = {}
+    # for key, value in cost_so_far.items():
+    #     if value is not None:
+    #         new_cost[(key[0], key[1])] = value
+    #         # if key[0] != value[0] or key[1] != value[1]:
+    #         #     new_cost[(key[0], key[1])] = (value[0], value[1])
+    #     else: 
+    #         new_cost[(key[0], key[1])] = None
+    # print("came_from ", came_from)
     path = reconstruct_path_real(came_from, start=tuple(start), goal=tuple(goal))
+    
     # print(path)
     # print(fromPathToActions(path))
     # draw_grid(diagram, start=(start[0], start[1]), path=reconstruct_path(new_came_from, start=(start[0], start[1]), goal=tuple(goal)))
-    draw_grid(diagram, start=(start[0], start[1], start[2]), path=path)
-    return fromPathToActions(path) 
+    # print("cost_so_far", new_cost)
+    # draw_grid(diagram, number=new_cost, start=(start[0], start[1]), goal=goal)
+    # draw_grid(diagram, start=(start[0], start[1], start[2]), path=path)
+    return path, howManyUnknown
 
 def reconstruct_path_real(came_from: dict[str, str],
                     start: str, goal: Tuple[int, int, str]) -> list[str]:
@@ -445,18 +491,18 @@ def reconstruct_path_real(came_from: dict[str, str],
     if not goalFound:
         return []
 
-    if came_from.get((currentCoord[0], currentCoord[1], "N"), -1) != -1:
-        current = (currentCoord[0], currentCoord[1], "N")
-    elif came_from.get((currentCoord[0], currentCoord[1], "S"), -1) != -1:
-        current = (currentCoord[0], currentCoord[1], "S")
-    elif came_from.get((currentCoord[0], currentCoord[1], "E"), -1) != -1:
-        current = (currentCoord[0], currentCoord[1], "E")
-    elif came_from.get((currentCoord[0], currentCoord[1], "W"), -1) != -1:
-        current = (currentCoord[0], currentCoord[1], "W")
+    # if came_from.get((currentCoord[0], currentCoord[1], "N"), -1) != -1:
+    #     current = (currentCoord[0], currentCoord[1], "N")
+    # elif came_from.get((currentCoord[0], currentCoord[1], "S"), -1) != -1:
+    #     current = (currentCoord[0], currentCoord[1], "S")
+    # elif came_from.get((currentCoord[0], currentCoord[1], "E"), -1) != -1:
+    #     current = (currentCoord[0], currentCoord[1], "E")
+    # elif came_from.get((currentCoord[0], currentCoord[1], "W"), -1) != -1:
+    #     current = (currentCoord[0], currentCoord[1], "W")
 
 
-    print("currnet", current)
-    print("start", start)
+    # print("currnet", current)
+    # print("start", start)
     while current != start:
         path.append(current)
         current = came_from[current]
@@ -564,7 +610,7 @@ def getAllNewInformation(n_col, n_lig, map, position) -> List[Tuple[int, int, in
 
 def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, goal):
     '''
-    goal: see all the map
+    but: voir la case goal en gagnant le plus de nouvelles cases possible
     '''
     startCount = howManyUnknown(graph.map)
     print("startCount", startCount)
@@ -582,11 +628,7 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, goal):
         current: GridLocationDirection = openList.get()
         # print("current", current)
         
-        # if current[0] == goal[0] and current[1] == goal[1]:
-        #     break
-
-        if howManyUnknown(graph.map) == 0:
-            print("all map seen")
+        if current[0] == goal[0] and current[1] == goal[1]:
             break
 
         # print('goal', goal)
@@ -613,8 +655,8 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, goal):
                         # print("goal reached")
                         # print("info win", info)
                         # print(next)
-                        return came_from, cost_so_far, next
-    return came_from, cost_so_far, None
+                        return came_from, cost_so_far, next, howManyUnknown(nextMap)
+    return came_from, cost_so_far, None, None
 
 
 def heuristic_pts(a: GridLocation, goal_pts, map) -> float:
