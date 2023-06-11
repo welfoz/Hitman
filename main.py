@@ -1,59 +1,13 @@
-import datetime
 from typing import List, Tuple, Dict
-import subprocess
-import os
-import platform
-from enum import Enum
 from pprint import pprint
 from itertools import combinations
 import time
 
-from arbitre_gitlab.hitman.hitman import HC, HitmanReferee, complete_map_example
+from arbitre_gitlab.hitman.hitman import HC, HitmanReferee
 
-from stateTree import ActionChoice, createMap, isInformationAlreadyKnown, updateMap
+from actionChooser import ActionChooser, createMap, isInformationAlreadyKnown, updateMap
 from aliases import  Literal, ClauseBase, Orientation, Information, Position, OBJECTS_INDEX
-
-#### fonctions fournies
-def write_dimacs_file(dimacs: str, filename: str):
-    with open(filename, "w", newline="") as cnf:
-        cnf.write(dimacs)
-
-# l'executable gophersat soit etre dans le cwd
-def exec_gophersat(
-    filename: str, cmd: str = "", encoding: str = "utf8"
-) -> Tuple[bool, List[int]]:
-    # Vérifier si l'OS est macOS
-    if platform.system() == 'Darwin':
-        cmd = os.getcwd() + "/gophersat"
-    # Vérifier si l'OS est Windows
-    if platform.system() == 'Windows':
-        cmd = os.getcwd() + "\gophersat\gophersat.exe"
-
-    result = subprocess.run(
-        [cmd, filename], capture_output=True, check=True, encoding=encoding
-    )
-    string = str(result.stdout)
-    lines = string.splitlines()
-
-    if lines[1] != "s SATISFIABLE":
-        return False, []
-
-    model = lines[2][2:-2].split(" ")
-
-    return True, [int(x) for x in model]
-
-def clausesToDimacs(clauses: ClauseBase, dimension: int) -> List[str]:
-    # dimacs = "p cnf " + str(pow(dimension, 3)) + ' ' + str(len(clauses)) pas compris pk c'est dim^3
-    dimacs = "p cnf " + str(dimension) + ' ' + str(len(clauses))
-    result = [dimacs]
-    for clause in clauses:
-        line = ""
-        for literal in clause:
-            line += str(literal) + " "
-        line += "0"
-        result.append(line)
-    result.append("")
-    return result
+from utils import createMap, howManyUnknown, isInformationAlreadyKnown, updateMap, clausesToDimacs, exec_gophersat, isMapComplete, write_dimacs_file
 
 # generation des types possibles pour une case
 def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
@@ -182,7 +136,6 @@ def atMost(atMostNumber: int, literals: List[Literal]) -> ClauseBase:
         clauses.append([-l for l in comb])
     return clauses
     
-
 def atLeast(atLeastNumber: int, literals: List[Literal]) -> ClauseBase:
     """
     Generate clauses to express that at least atLeastNumber literals in literals are true
@@ -258,18 +211,6 @@ def getVisionsFromStatus(status_vision: List[Tuple[Tuple[int, int], HC]]) -> Lis
         visions.append([vision[0][0], vision[0][1], visionValue])
     return visions
 
-def printMaps(maps, reverse = True):
-    print("maps")
-    for map in maps:
-        if reverse:
-            for i in range(len(map) - 1, -1, -1):
-                print(map[i])
-        else:
-            for i in range(len(map)):
-                print(map[i])
-        print()
-
-
 def addTurnInfo(status, heardMap, map, clauses):
     # print()
     visions = getVisionsFromStatus(status["vision"])
@@ -311,21 +252,6 @@ def fromHCDirectionToOrientation(direction: HC) -> Orientation:
         return "W"
     raise Exception("Unknown direction")
 
-def isMapComplete(map: List[List[HC]]) -> bool:
-    for i in range(len(map)):
-        for j in range(len(map[i])):
-            if map[i][j] == -1:
-                return False
-    return True
-
-def howManyUnknown(map: List[List[HC]]) -> int:
-    unknown = 0
-    for i in range(len(map)):
-        for j in range(len(map[i])):
-            if map[i][j] == -1:
-                unknown += 1
-    return unknown
-
 def main():
 
     start_time = time.time()
@@ -337,7 +263,7 @@ def main():
     n_col = status['n']
     n_lig = status['m']
 
-    actionChooser = ActionChoice(n_col, n_lig)
+    actionChooser = ActionChooser(n_col, n_lig)
 
     map = createMap(n_col, n_lig)
     heardMap = createMap(n_col, n_lig)
