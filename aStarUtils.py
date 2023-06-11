@@ -22,9 +22,6 @@ def draw_tile(graph: SquareGrid, id, style):
         style['point_to'].get((id[0], id[1], "S"), None) is not None or 
         style['point_to'].get((id[0], id[1], "E"), None) is not None or 
         style['point_to'].get((id[0], id[1], "W"), None) is not None):
-        (x1, y1) = id
-        # (x2, y2, direction) = style['point_to'][id]
-        x2, y2 = -1, -1
         d = " 1 "
         if style['point_to'].get((id[0], id[1], "N"), None) is not None:
             x2, y2, d = style['point_to'][(id[0], id[1], "N")]
@@ -34,16 +31,9 @@ def draw_tile(graph: SquareGrid, id, style):
             x2, y2, d = style['point_to'][(id[0], id[1], "E")]
         if style['point_to'].get((id[0], id[1], "W"), None) is not None:
             x2, y2, d = style['point_to'][(id[0], id[1], "W")]
-        # print(x1, y1, x2, y2)
-        # if x2 == x1 + 1: r = " > "
-        # if x2 == x1 - 1: r = " < "
-        # if y2 == y1 + 1: r = " v "
-        # if y2 == y1 - 1: r = " ^ "
         r = " " + d + " " 
-    # if id in graph.walls: r = "###"
     if graph.map[id[1]][id[0]] == OBJECTS_INDEX['wall']: r = "###"
     if graph.map[id[1]][id[0]] in OBJECTS_INDEX['guard']: r = " G "
-    
     if graph.map[id[1]][id[0]] == OBJECTS_INDEX['target']: r = " T "
     if graph.map[id[1]][id[0]] == OBJECTS_INDEX['rope']: r = " R "
     if graph.map[id[1]][id[0]] == OBJECTS_INDEX['costume']: r = " S "
@@ -51,6 +41,7 @@ def draw_tile(graph: SquareGrid, id, style):
 
     if graph.map[id[1]][id[0]] == -1 : r = " ? "
 
+    # get last direction on this case
     indexes = {
         "N": -1,
         "S": -1,
@@ -71,11 +62,8 @@ def draw_tile(graph: SquareGrid, id, style):
         indexes["W"] = style['path'].index((id[0], id[1], "W"))
         found = True
     if found == True:
-        # return the maximim index direction
         values = list(indexes.values())
         indexOfMax = values.index(max(values))
-
-        # get key of max
         keys = list(indexes.keys())
         direction = keys[indexOfMax]
         r = " " + direction + " "
@@ -89,28 +77,21 @@ def draw_tile(graph: SquareGrid, id, style):
     if 'start' in style and (id[0], id[1], "W") == style['start']:   
         r = "AWA"
 
-    # if 'start' in style and id == style['start']: r = " A "
     if 'goal' in style and id == style['goal']:   r = " Z "
-    # print(style)
     return r
 
 def draw_grid(graph, **style):
-    # print("grid")
-    # print(graph.map)
     pprint("___" * graph.width)
     map = []
     for y in range(graph.height):
         line = []
         for x in range(graph.width):
-            # print("%s" % draw_tile(graph, (x, y), style), end="")
             line.append("%s" % draw_tile(graph, (x, y), style))
         map.append(line)
-        # print()
     
     map.reverse()
     for line in map:
         print("".join(line))
-
     print("~~~" * graph.width)
 
 class SquareGrid:
