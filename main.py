@@ -238,7 +238,7 @@ def addTurnInfo(status, heardMap, map, clauses):
     print()
     
     # printMaps([map, heardMap])
-    #input("Press Enter to continue...")
+    # input("Press Enter to continue...")
     return
 
 def fromHCDirectionToOrientation(direction: HC) -> Orientation:
