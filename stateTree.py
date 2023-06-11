@@ -3,7 +3,7 @@ import copy
 from pprint import pprint
 
 from aliases import Position, OBJECTS_INDEX, Information
-from aStar import a_star_search, SquareGrid, reconstruct_path, draw_grid, PriorityQueue, GridLocation, GridLocationDirection, Optional
+from aStarUtils import SquareGrid, draw_grid, PriorityQueue, GridLocation, GridLocationDirection, Optional
 
 
 class ActionChoice:
@@ -543,7 +543,6 @@ def getClusteringScore(map):
 
     return sum(distances) / len(distances)
 
-
 def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, goal):
     '''
     but: voir la case goal en gagnant le plus de nouvelles cases possible
@@ -591,7 +590,6 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, goal):
                         # print(next)
                         return came_from, cost_so_far, next, howManyUnknown(nextMap), getClusteringScore(nextMap)
     return came_from, cost_so_far, None, None
-
 
 def heuristic_pts(a: GridLocation, goal_pts, map) -> float:
     """

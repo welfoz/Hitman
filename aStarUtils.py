@@ -5,13 +5,14 @@
 # License: Apache v2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
 
 from __future__ import annotations
-# some of these types are deprecated: https://www.python.org/dev/peps/pep-0585/
-from typing import Protocol, Iterator, Tuple, TypeVar, Optional, List, Dict
+from typing import Iterator, Tuple, TypeVar, Optional, List, Dict
 T = TypeVar('T')
 from pprint import pprint
 from aliases import Position, OBJECTS_INDEX, Information
+import heapq
 
-Location = str 
+GridLocation = Tuple[int, int]
+GridLocationDirection = Tuple[int, int, str]
 
 def draw_tile(graph: SquareGrid, id, style):
     r = " . "
@@ -112,9 +113,6 @@ def draw_grid(graph, **style):
 
     print("~~~" * graph.width)
 
-GridLocation = Tuple[int, int]
-GridLocationDirection = Tuple[int, int, str]
-
 class SquareGrid:
     def __init__(self, width: int, height: int, map):
         self.width = width
@@ -136,20 +134,11 @@ class SquareGrid:
         return True
     
     def cost(self, from_node: GridLocationDirection, to_node: GridLocationDirection) -> float:
+        # each action costs 1
         return 1
     
-    # def neighbors(self, id: GridLocation) -> Iterator[GridLocation]:
-    #     (x, y) = id
-    #     neighbors = [(x+1, y), (x-1, y), (x, y-1), (x, y+1)] # E W N S
-    #     # see "Ugly paths" section for an explanation:
-    #     if (x + y) % 2 == 0: neighbors.reverse() # S N W E
-    #     results = filter(self.in_bounds, neighbors)
-    #     results = filter(self.passable, results)
-    #     return results
-
     def neighbors(self, id: GridLocationDirection) -> Iterator[GridLocationDirection]:
         (x, y, direction) = id
-        # to test
         neighbors = []
         if direction == 'N':
             # move, turn 90, turn -90
@@ -163,14 +152,9 @@ class SquareGrid:
         else:
             raise ValueError('Invalid direction')
         
-        # neighbors = [(x+1, y), (x-1, y), (x, y-1), (x, y+1)] # E W N S
-        # see "Ugly paths" section for an explanation:
-        # if (x + y) % 2 == 0: neighbors.reverse() # S N W E
         results = filter(self.in_bounds, neighbors)
         results = filter(self.passable, results)
         return results
-
-import heapq
 
 class PriorityQueue:
     def __init__(self):
@@ -188,44 +172,15 @@ class PriorityQueue:
         """
         return heapq.heappop(self.elements)[1]
 
-def reconstruct_path(came_from: dict[Location, Location],
-                     start: Location, goal: Location) -> list[Location]:
-
-    goal = (goal[0], goal[1])
-    current: Location = goal
-    path: list[Location] = []
-
-    # print("begin reconstruct_path")
-    if goal not in came_from: # no path was found
-        return []
-    while current != start:
-        # print("current: ", current)
-        path.append(current)
-        current = came_from[current]
-    path.append(start) # optional
-    path.reverse() # optional
-    # print('path: ', path)
-    return path
-
 def heuristic(a: GridLocation, b: GridLocation) -> float:
     (x1, y1) = a
     (x2, y2) = b
     return abs(x1 - x2) + abs(y1 - y2)
 
-def heuristic_pts(a: GridLocation, goal_pts, map) -> float:
-    """
-    heuristic for points
-    compute new cases
-    return howManyCasesLeftToSee
-
-    moins il y a de cases à découvrir, plus la valeur est petite
-
-    attention favoriser les cases dans le meme secteur
-    ne pas avoir des coins et bordures non vues
-    """
-    return howManyUnknown(map)
-
 def a_star_search(graph: SquareGrid, start: GridLocationDirection, goal: GridLocation):
+    """basic a star search
+    to go from start to goal
+    """
     openList = PriorityQueue()
     openList.put(start, 0)
     came_from: dict[GridLocationDirection, Optional[GridLocationDirection]] = {}
@@ -251,11 +206,3 @@ def a_star_search(graph: SquareGrid, start: GridLocationDirection, goal: GridLoc
                 openList.put(next, priority)
                 came_from[next] = current
     return came_from, cost_so_far
-
-def howManyUnknown(map: List[List[int]]) -> int:
-    unknown = 0
-    for i in range(len(map)):
-        for j in range(len(map[i])):
-            if map[i][j] == -1:
-                unknown += 1
-    return unknown

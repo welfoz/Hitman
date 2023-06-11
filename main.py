@@ -410,12 +410,6 @@ def main():
     # ne fonctionne pas pour le moment car on ne met pas les infos des orientations des civils & gardes
     # print(referee.send_content(map_info))
     pprint(actions)
-    with open("actions_bfs.txt", "w") as f:
-        f.write('---------------' + "\n")
-        f.write("date: " + str(datetime.datetime.now()) + "\n")
-        f.write(str(len(actions)) + "\n")
-        for action in actions:
-            f.write(str(action) + "\n")
 
 if __name__ == "__main__":
     main()
