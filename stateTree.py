@@ -401,15 +401,15 @@ def astar(n_col, n_lig, map, start, goal):
     # pprint(map)
     diagram = SquareGrid(n_col, n_lig, map)
 
-    # came_from, cost_so_far = a_star_search(diagram, tuple(start), tuple(goal))
+    came_from, cost_so_far = a_star_search(diagram, tuple(start), tuple(goal))
     # test a* to find the best path to see all the map
-    came_from, cost_so_far, new_goal = a_star_search_points(diagram, tuple(start), tuple(goal))
+    # came_from, cost_so_far, new_goal = a_star_search_points(diagram, tuple(start), tuple(goal))
 
-    if new_goal != None:
-        goal = new_goal
-        print("new_goal", new_goal)
-    else: 
-        raise Exception("No new goal found")
+    # if new_goal != None:
+    #     goal = new_goal
+    #     print("new_goal", new_goal)
+    # else: 
+    #     raise Exception("No new goal found")
     # print("came_from", came_from)
 
     new_came_from = {}
@@ -419,6 +419,7 @@ def astar(n_col, n_lig, map, start, goal):
                 new_came_from[(key[0], key[1])] = (value[0], value[1])
         else: 
             new_came_from[(key[0], key[1])] = None
+    print("came_from ", came_from)
     path = reconstruct_path_real(came_from, start=tuple(start), goal=tuple(goal))
     # print(path)
     # print(fromPathToActions(path))
@@ -429,7 +430,7 @@ def astar(n_col, n_lig, map, start, goal):
 def reconstruct_path_real(came_from: dict[str, str],
                     start: str, goal: Tuple[int, int, str]) -> list[str]:
 
-    # currentCoord: str = goal
+    currentCoord: str = goal
     current = goal
 
 
@@ -444,19 +445,18 @@ def reconstruct_path_real(came_from: dict[str, str],
     if not goalFound:
         return []
 
-    # if came_from.get((currentCoord[0], currentCoord[1], "N"), -1) != -1:
-    #     current = (currentCoord[0], currentCoord[1], "N")
-    # elif came_from.get((currentCoord[0], currentCoord[1], "S"), -1) != -1:
-    #     current = (currentCoord[0], currentCoord[1], "S")
-    # elif came_from.get((currentCoord[0], currentCoord[1], "E"), -1) != -1:
-    #     current = (currentCoord[0], currentCoord[1], "E")
-    # elif came_from.get((currentCoord[0], currentCoord[1], "W"), -1) != -1:
-    #     current = (currentCoord[0], currentCoord[1], "W")
+    if came_from.get((currentCoord[0], currentCoord[1], "N"), -1) != -1:
+        current = (currentCoord[0], currentCoord[1], "N")
+    elif came_from.get((currentCoord[0], currentCoord[1], "S"), -1) != -1:
+        current = (currentCoord[0], currentCoord[1], "S")
+    elif came_from.get((currentCoord[0], currentCoord[1], "E"), -1) != -1:
+        current = (currentCoord[0], currentCoord[1], "E")
+    elif came_from.get((currentCoord[0], currentCoord[1], "W"), -1) != -1:
+        current = (currentCoord[0], currentCoord[1], "W")
 
 
-    startCoord = (start[0], start[1])
-    # print("currnet", current)
-    # print("start", start)
+    print("currnet", current)
+    print("start", start)
     while current != start:
         path.append(current)
         current = came_from[current]
