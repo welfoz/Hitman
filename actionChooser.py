@@ -534,9 +534,9 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection):
     openList.put(startTuple, 0)
     
     came_from: dict[Tuple[GridLocationDirection, Optional[GridLocationDirection]], Tuple[Optional[GridLocationDirection], Optional[GridLocationDirection]]] = {}
-    cost_so_far: dict[Tuple[GridLocationDirection, Optional[GridLocationDirection]], Tuple[float, float]] = {}
+    cost_so_far: dict[Tuple[GridLocationDirection, Optional[GridLocationDirection]], Tuple[float, float, float]] = {}
     came_from[startTuple]= None, None
-    cost_so_far[startTuple] = (0, howManyUnknown(graph.map))
+    cost_so_far[startTuple] = (0, howManyUnknown(graph.map), 0)
     state_map: dict[Tuple[GridLocationDirection, Optional[GridLocationDirection]], List[List[int]]] = {}
     state_map[startTuple] = graph.map
 
@@ -570,6 +570,8 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection):
             if cost_so_far[current][0] < minimumCostValue:
                 minimumCostValue = cost_so_far[current][0]
                 minimumCostPosition = current
+                minimum = current
+                minimumValue = cost_so_far[current][1]
 
         if howManyUnknown(state_map[current]) == 0:
             # the first solution is the best one if we have a good heuristic
@@ -582,15 +584,21 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection):
             newInfos = getAllNewInformation(graph.width, graph.height, state_map[current], next)
             nextMap = updateMap(copy.deepcopy(state_map[current]), newInfos)
             new_cost = cost_so_far[current][0] + 1 #graph.cost(current, next) # every move costs 1 for now
+            # score is the number of newInfos / the cost
+            # goal: minimize the cost and maximize the number of newInfos
+            # score means ratio combien de nouvelle info par action
+            howManyNewInfosSinceBeginning = howManyUnknown(graph.map) - howManyUnknown(nextMap)
+            score = howManyNewInfosSinceBeginning / new_cost
             if nextTuple not in cost_so_far or howManyUnknown(nextMap) < cost_so_far[nextTuple][1]: # on a trouvé une nouvelle route pour aller à nextTuple moins chere
                 # si on trouve une route apportant plus d'information pour aller à nextTuple, on la prend
                 backtrack[nextTuple] = backtrack[current] + [nextTuple[0]]
 
-                cost_so_far[nextTuple] = (new_cost, howManyUnknown(nextMap))
+                cost_so_far[nextTuple] = (new_cost, howManyUnknown(nextMap), score)
 
                 state_map[nextTuple] = nextMap
 
-                priority = new_cost + heuristic_pts(nextMap)
+                # priority = new_cost + howManyUnknown(nextMap)
+                priority = new_cost + score
                 
                 openList.put(nextTuple, priority)
                 # to test

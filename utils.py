@@ -86,17 +86,15 @@ def getAllNewInformation(n_col, n_lig, map, position) -> List[Tuple[int, int, in
         elif computeNewPosition[1] == "-":
             newPosition[1] = y - i - 1
 
-
         if isOutsideTheMap(n_col, n_lig, newPosition): continue
-        # info = [newPosition[0], newPosition[1], map[newPosition[1]][newPosition[0]]] 
-        info = [newPosition[0], newPosition[1], 1] 
 
-        # if not isInformationAlreadyKnown(map, info):
-        if map[newPosition[1]][newPosition[0]] == -1:
+        info = [newPosition[0], newPosition[1], map[newPosition[1]][newPosition[0]]] 
+
+        if info[2] == -1: # unknown cell
+            info[2] = OBJECTS_INDEX['empty'] # means we hope to see an empty cell
             casesSeen.append(info)
-        else:
-            if map[newPosition[1]][newPosition[0]] != OBJECTS_INDEX['empty']:
-                break
+        elif info[2] != OBJECTS_INDEX['empty']: # can't see through objects
+            break
 
     return casesSeen
 
