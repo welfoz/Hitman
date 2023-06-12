@@ -48,6 +48,35 @@ def HCInfoToObjectIndex(value : int) -> int:
     if value == HC.PIANO_WIRE._value_:
         return OBJECTS_INDEX['rope']
 
+def HCInfoToObjectIndexFull(value : int) -> int:
+    # if value in range(HC.GUARD_N._value_, HC.GUARD_W._value_ + 1):
+    if value == HC.GUARD_N._value_:
+        return OBJECTS_INDEX['guard'][1]
+    if value == HC.GUARD_S._value_:
+        return OBJECTS_INDEX['guard'][2]
+    if value == HC.GUARD_E._value_:
+        return OBJECTS_INDEX['guard'][3]
+    if value == HC.GUARD_W._value_:
+        return OBJECTS_INDEX['guard'][4]
+    if value == HC.CIVIL_N._value_:
+        return OBJECTS_INDEX['civil'][1]
+    if value == HC.CIVIL_S._value_:
+        return OBJECTS_INDEX['civil'][2]
+    if value == HC.CIVIL_E._value_:
+        return OBJECTS_INDEX['civil'][3]
+    if value == HC.CIVIL_W._value_:
+        return OBJECTS_INDEX['civil'][4]
+    if value == HC.EMPTY._value_:
+        return OBJECTS_INDEX['empty']
+    if value == HC.WALL._value_:
+        return OBJECTS_INDEX['wall']
+    if value == HC.TARGET._value_:
+        return OBJECTS_INDEX['target']
+    if value == HC.SUIT._value_:
+        return OBJECTS_INDEX['costume']
+    if value == HC.PIANO_WIRE._value_:
+        return OBJECTS_INDEX['rope']
+
 def addInfoVision(n_col : int, n_lig : int, info_vision : Information) -> ClauseBase:
     # print("Info vision : " + str(info_vision))
     x = info_vision[0]
@@ -207,7 +236,7 @@ def getVisionsFromStatus(status_vision: List[Tuple[Tuple[int, int], HC]]) -> Lis
     # print("status vision", status_vision)
     visions = []
     for vision in status_vision:
-        visionValue = HCInfoToObjectIndex(vision[1].value)
+        visionValue = HCInfoToObjectIndexFull(vision[1].value)
         visions.append([vision[0][0], vision[0][1], visionValue])
     return visions
 
@@ -257,11 +286,9 @@ def fromHCDirectionToOrientation(direction: HC) -> Orientation:
         return "W"
     raise Exception("Unknown direction")
 
-def main():
-
+def phase1(referee):
     start_time = time.time()
 
-    referee = HitmanReferee()
     status = referee.start_phase1()
     pprint(status)
 
@@ -343,6 +370,23 @@ def main():
     pprint(actions)
     print("is good solution for referee....", end=" ")
     print(referee.send_content(solutionMap))
+
+def main():
+    referee = HitmanReferee()
+    map = phase1(referee)
+
+    """
+    phase 2
+
+    first goal: 
+    go to the rope, take it then go to the target in a minimum of actions and kill it
+    come back to the start position
+
+    second goal:
+    same in a minimum of penalties (include guards seen, rope, costume...)
+    come back to the start position
+    """
+
 
 if __name__ == "__main__":
     main()

@@ -33,11 +33,17 @@ def draw_tile(graph: SquareGrid, id, style):
             x2, y2, d = style['point_to'][(id[0], id[1], "W")]
         r = " " + d + " " 
     if graph.map[id[1]][id[0]] == OBJECTS_INDEX['wall']: r = "###"
-    if graph.map[id[1]][id[0]] in OBJECTS_INDEX['guard']: r = " G "
     if graph.map[id[1]][id[0]] == OBJECTS_INDEX['target']: r = " T "
+    if graph.map[id[1]][id[0]] == OBJECTS_INDEX['guard'][1]: r = "GNG"
+    if graph.map[id[1]][id[0]] == OBJECTS_INDEX['guard'][2]: r = "GSG"
+    if graph.map[id[1]][id[0]] == OBJECTS_INDEX['guard'][3]: r = "GEG"
+    if graph.map[id[1]][id[0]] == OBJECTS_INDEX['guard'][4]: r = "GWG"
     if graph.map[id[1]][id[0]] == OBJECTS_INDEX['rope']: r = " R "
-    if graph.map[id[1]][id[0]] == OBJECTS_INDEX['costume']: r = " S "
-    if graph.map[id[1]][id[0]] in OBJECTS_INDEX['civil']: r = " C "
+    if graph.map[id[1]][id[0]] == OBJECTS_INDEX['costume']: r = " C "
+    if graph.map[id[1]][id[0]] == OBJECTS_INDEX['civil'][1]: r = "CNC"
+    if graph.map[id[1]][id[0]] == OBJECTS_INDEX['civil'][2]: r = "CSC"
+    if graph.map[id[1]][id[0]] == OBJECTS_INDEX['civil'][3]: r = "CEC"
+    if graph.map[id[1]][id[0]] == OBJECTS_INDEX['civil'][4]: r = "CWC"
 
     if graph.map[id[1]][id[0]] == -1 : r = " ? "
 
