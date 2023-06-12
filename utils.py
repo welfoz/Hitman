@@ -178,3 +178,26 @@ def count_dupplicate_clauses() -> int:
         
         clausesset = list(set(clauses))
         return len(lines), len(clauses), len(clausesset), len(clauses) - len(clausesset), (len(clauses) - len(clausesset)) / len(clauses)
+
+# to test 
+def mapDivider(map):
+    if len(map) < 5 and len(map[0]) < 5:
+        return [map]
+    
+    # divide the map in 4
+    map1 = [] # bottom left
+    map2 = [] # bottom right
+    map3 = [] # top left
+    map4 = [] # top right
+    for y in range(len(map)):
+        for x in range(len(map[y])):
+            case = map[y][x]
+            if y < len(map) / 2 and x < len(map[y]) / 2:
+                map1.append(case)
+            elif y < len(map) / 2 and x >= len(map[y]) / 2:
+                map2.append(case)
+            elif y >= len(map) / 2 and x < len(map[y]) / 2:
+                map3.append(case)
+            elif y >= len(map) / 2 and x >= len(map[y]) / 2:
+                map4.append(case)
+    return [map1, map2, map3, map4]
