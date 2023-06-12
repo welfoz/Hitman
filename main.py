@@ -211,6 +211,11 @@ def getVisionsFromStatus(status_vision: List[Tuple[Tuple[int, int], HC]]) -> Lis
         visions.append([vision[0][0], vision[0][1], visionValue])
     return visions
 
+def updateSolutionMap(solutionMap: Dict[Tuple[int, int], HC], vision: List[Tuple[Tuple[int, int], HC]]) -> Dict[Tuple[int, int], HC]:
+    for v in vision:
+        solutionMap[(v[0][0], v[0][1])] = v[1]
+    return solutionMap
+
 def addTurnInfo(status, heardMap, map, clauses):
     # print()
     visions = getVisionsFromStatus(status["vision"])
@@ -266,6 +271,7 @@ def main():
     actionChooser = ActionChooser(n_col, n_lig)
 
     map = createMap(n_col, n_lig)
+    solutionMap: Dict[Tuple[int, int], HC] = {} 
     heardMap = createMap(n_col, n_lig)
 
     clauses = []
@@ -283,6 +289,8 @@ def main():
     map[0][0] = OBJECTS_INDEX['empty']
     
     addTurnInfo(status, heardMap, map, clauses)
+    updateSolutionMap(solutionMap, [((0, 0), HC.EMPTY)])
+    updateSolutionMap(solutionMap, status["vision"])
 
     dimension = status['n'] * status['m'] * len(OBJECTS_INDEX)
     MAX = 100
@@ -318,19 +326,23 @@ def main():
         #     "status": status['status']
         # })
         addTurnInfo(status, heardMap, map, clauses)
+        updateSolutionMap(solutionMap, status["vision"])
         count += 1
     print("count: ", count)
+    pprint(status)
+
 
     # print("Carte connue : \n")
     # print(solveur(clauses, dimension))
     # map_info = solutionToMap(solveur(clauses, dimension)[1], status['n'], status['m'])
-    print(map)
-    print("is good solution for referee")
+    pprint(map)
     end_time = time.time()
     print("total time: ", end_time - start_time)
     # ne fonctionne pas pour le moment car on ne met pas les infos des orientations des civils & gardes
-    # print(referee.send_content(map_info))
+    pprint(solutionMap)
     pprint(actions)
+    print("is good solution for referee....", end=" ")
+    print(referee.send_content(solutionMap))
 
 if __name__ == "__main__":
     main()
