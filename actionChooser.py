@@ -552,8 +552,10 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection):
     backtrack = {}
     backtrack[startTuple] = []
 
-    
+    count = 0
+    MAX = 30000
     while not openList.empty():
+        count += 1
         current: Tuple[GridLocationDirection, Optional[GridLocationDirection]] = openList.get()
 
         if backtrack.get(current, None) == None:
@@ -561,17 +563,12 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection):
         
         # if we have multiple minimums equals (= 0, =1....)
         # then we take the one with the minimum cost
-        if cost_so_far[current][1] < minimumValue:
+        if cost_so_far[current][1] < minimumValue \
+                or (cost_so_far[current][1] == minimumValue and cost_so_far[current][0] < minimumCostValue):
             minimum = current
             minimumValue = cost_so_far[current][1]
             minimumCostValue = cost_so_far[current][0]
             minimumCostPosition = current
-        elif cost_so_far[current][1] == minimumValue:
-            if cost_so_far[current][0] < minimumCostValue:
-                minimumCostValue = cost_so_far[current][0]
-                minimumCostPosition = current
-                minimum = current
-                minimumValue = cost_so_far[current][1]
 
         if howManyUnknown(state_map[current]) == 0:
             # the first solution is the best one if we have a good heuristic
@@ -589,7 +586,7 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection):
             # score means ratio combien de nouvelle info par action
             howManyNewInfosSinceBeginning = howManyUnknown(graph.map) - howManyUnknown(nextMap)
             score = howManyNewInfosSinceBeginning / new_cost
-            if nextTuple not in cost_so_far or howManyUnknown(nextMap) < cost_so_far[nextTuple][1]: # on a trouvé une nouvelle route pour aller à nextTuple moins chere
+            if nextTuple not in cost_so_far or howManyUnknown(nextMap) < cost_so_far[nextTuple][1] or (howManyUnknown(nextMap) == cost_so_far[nextTuple][1] and new_cost < cost_so_far[nextTuple][0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
                 # si on trouve une route apportant plus d'information pour aller à nextTuple, on la prend
                 backtrack[nextTuple] = backtrack[current] + [nextTuple[0]]
 
@@ -597,13 +594,19 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection):
 
                 state_map[nextTuple] = nextMap
 
-                # priority = new_cost + howManyUnknown(nextMap)
-                priority = new_cost + score
+                priority = new_cost + howManyUnknown(nextMap) # pretty efficient but not best result
+                # priority = howManyUnknown(nextMap) # pretty efficient but not best result
+                # priority = new_cost + score # inneficient but find the best result as it expends more than others
+                # priority = new_cost + score * 10 # get stuck, why ? circular path
+                # priority = new_cost # diskstra
                 
                 openList.put(nextTuple, priority)
                 # to test
                 came_from[nextTuple] = current[0], previous[current][0]
                 previous[nextTuple] = current
+    print("total count: ", count)
+    print('len nodes: ', len(list(cost_so_far.keys())))
+
     return came_from, cost_so_far, (minimumCostPosition, previous[minimumCostPosition]), minimumValue, getClusteringScore(state_map[minimum]), backtrack[minimumCostPosition]
 
 def heuristic_pts(map) -> float:
