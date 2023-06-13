@@ -1,12 +1,86 @@
 
 from typing import List, Tuple, Dict
-import subprocess
-import os
-import platform
 from aliases import OBJECTS_INDEX, Information
 from aliases import  ClauseBase, Orientation, Information, Position, OBJECTS_INDEX
 
 from arbitre_gitlab.hitman.hitman import HC
+
+def HCInfoToObjectIndex(value : int) -> int:
+    if value in range(HC.GUARD_N._value_, HC.GUARD_W._value_ + 1):
+        return OBJECTS_INDEX['guard'][0]
+    if value in range(HC.CIVIL_N._value_, HC.CIVIL_W._value_ + 1):
+        return OBJECTS_INDEX['civil'][0]
+    if value == HC.EMPTY._value_:
+        return OBJECTS_INDEX['empty']
+    if value == HC.WALL._value_:
+        return OBJECTS_INDEX['wall']
+    if value == HC.TARGET._value_:
+        return OBJECTS_INDEX['target']
+    if value == HC.SUIT._value_:
+        return OBJECTS_INDEX['costume']
+    if value == HC.PIANO_WIRE._value_:
+        return OBJECTS_INDEX['rope']
+
+def HCInfoToObjectIndexFull(value : int) -> int:
+    # if value in range(HC.GUARD_N._value_, HC.GUARD_W._value_ + 1):
+    if value == HC.GUARD_N._value_:
+        return OBJECTS_INDEX['guard'][1]
+    if value == HC.GUARD_S._value_:
+        return OBJECTS_INDEX['guard'][2]
+    if value == HC.GUARD_E._value_:
+        return OBJECTS_INDEX['guard'][3]
+    if value == HC.GUARD_W._value_:
+        return OBJECTS_INDEX['guard'][4]
+    if value == HC.CIVIL_N._value_:
+        return OBJECTS_INDEX['civil'][1]
+    if value == HC.CIVIL_S._value_:
+        return OBJECTS_INDEX['civil'][2]
+    if value == HC.CIVIL_E._value_:
+        return OBJECTS_INDEX['civil'][3]
+    if value == HC.CIVIL_W._value_:
+        return OBJECTS_INDEX['civil'][4]
+    if value == HC.EMPTY._value_:
+        return OBJECTS_INDEX['empty']
+    if value == HC.WALL._value_:
+        return OBJECTS_INDEX['wall']
+    if value == HC.TARGET._value_:
+        return OBJECTS_INDEX['target']
+    if value == HC.SUIT._value_:
+        return OBJECTS_INDEX['costume']
+    if value == HC.PIANO_WIRE._value_:
+        return OBJECTS_INDEX['rope']
+
+def getKeyFromValue(obj: Dict[str, int], value: int) -> str:
+    for key, v in obj.items():
+        if v == value:
+            return key
+        # check if v is a list
+        if isinstance(v, list) and value in v:
+            return key
+
+def getVisionsFromStatus(status_vision: List[Tuple[Tuple[int, int], HC]]) -> List[Information]:
+    # print("status vision", status_vision)
+    visions = []
+    for vision in status_vision:
+        visionValue = HCInfoToObjectIndexFull(vision[1].value)
+        visions.append([vision[0][0], vision[0][1], visionValue])
+    return visions
+
+def updateSolutionMap(solutionMap: Dict[Tuple[int, int], HC], vision: List[Tuple[Tuple[int, int], HC]]) -> Dict[Tuple[int, int], HC]:
+    for v in vision:
+        solutionMap[(v[0][0], v[0][1])] = v[1]
+    return solutionMap
+
+def fromHCDirectionToOrientation(direction: HC) -> Orientation:
+    if direction == HC.N:
+        return "N"
+    elif direction == HC.S:
+        return "S"
+    elif direction == HC.E:
+        return "E"
+    elif direction == HC.W:
+        return "W"
+    raise Exception("Unknown direction")
 
 def updateMap(map, newInfo: Information):
     """
@@ -117,67 +191,12 @@ def printMaps(maps, reverse = True):
                 print(map[i])
         print()
 
-#### fonctions fournies
-def write_dimacs_file(dimacs: str, filename: str):
-    with open(filename, "w", newline="") as cnf:
-        cnf.write(dimacs)
-
-# l'executable gophersat soit etre dans le cwd
-def exec_gophersat(
-    filename: str, cmd: str = "", encoding: str = "utf8"
-) -> Tuple[bool, List[int]]:
-    # Vérifier si l'OS est macOS
-    if platform.system() == 'Darwin':
-        cmd = os.getcwd() + "/gophersat"
-    # Vérifier si l'OS est Windows
-    if platform.system() == 'Windows':
-        cmd = os.getcwd() + "\gophersat\gophersat.exe"
-
-    result = subprocess.run(
-        [cmd, filename], capture_output=True, check=True, encoding=encoding
-    )
-    string = str(result.stdout)
-    lines = string.splitlines()
-
-    if lines[1] != "s SATISFIABLE":
-        return False, []
-
-    model = lines[2][2:-2].split(" ")
-
-    return True, [int(x) for x in model]
-
-def clausesToDimacs(clauses: ClauseBase, dimension: int) -> List[str]:
-    # dimacs = "p cnf " + str(pow(dimension, 3)) + ' ' + str(len(clauses)) pas compris pk c'est dim^3
-    dimacs = "p cnf " + str(dimension) + ' ' + str(len(clauses))
-    result = [dimacs]
-    for clause in clauses:
-        line = ""
-        for literal in clause:
-            line += str(literal) + " "
-        line += "0"
-        result.append(line)
-    result.append("")
-    return result
-
 def isMapComplete(map: List[List[HC]]) -> bool:
     for i in range(len(map)):
         for j in range(len(map[i])):
             if map[i][j] == -1:
                 return False
     return True
-
-## open the temp.cnf file and count the number of dupplicate clauses
-def count_dupplicate_clauses() -> int:
-    with open('./Hitman/temp.cnf', 'r') as f:
-        lines = f.readlines()
-        clauses = []
-        # print(lines)
-        for line in lines:
-            if line[0] != 'c':
-                clauses.append(line)
-        
-        clausesset = list(set(clauses))
-        return len(lines), len(clauses), len(clausesset), len(clauses) - len(clausesset), (len(clauses) - len(clausesset)) / len(clauses)
 
 # to test 
 def mapDivider(map):
