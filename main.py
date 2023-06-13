@@ -8,7 +8,7 @@ from arbitre_gitlab.hitman.hitman import HC, HitmanReferee
 from actionChooser import ActionChooser, createMap, isInformationAlreadyKnown, updateMap
 from aliases import  Literal, ClauseBase, Orientation, Information, Position, OBJECTS_INDEX
 from utils import createMap, howManyUnknown, isInformationAlreadyKnown, updateMap, isMapComplete, updateSolutionMap, fromHCDirectionToOrientation, getVisionsFromStatus
-from satUtils import generateTypesGrid, generateClausesForObject, addInfoListening, addInfoIsInGuardRange, addInfoVision, count_dupplicate_clauses, is_position_safe
+from satUtils import generateTypesGrid, generateClausesForObject, addInfoListening, addInfoIsInGuardRange, addInfoVision, count_dupplicate_clauses, is_position_safe, generateInitialClauses
 
 def addTurnInfo(status, heardMap, map, clauses):
     # print()
@@ -55,34 +55,29 @@ def phase1(referee):
     solutionMap: Dict[Tuple[int, int], HC] = {} 
     heardMap = createMap(n_col, n_lig)
 
-    clauses = []
-    clauses += generateTypesGrid(status['n'], status['m'])
-    clauses += generateClausesForObject(status['n'], status['m'], status['guard_count'], OBJECTS_INDEX['guard'][0])
-    clauses += generateClausesForObject(status['n'], status['m'], status['civil_count'], OBJECTS_INDEX['civil'][0])
-    clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['target'])
-    clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['rope'])
-    clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['costume'])
+    clauses = generateInitialClauses(n_col, n_lig, status['guard_count'], status['civil_count'])
     print(len(clauses))
 
-    # case 0,0 est vide
-    # on est sûr de ca ?
     clauses.append([(OBJECTS_INDEX['empty'])])
     map[0][0] = OBJECTS_INDEX['empty']
     
-    addTurnInfo(status, heardMap, map, clauses)
     updateSolutionMap(solutionMap, [((0, 0), HC.EMPTY)])
     updateSolutionMap(solutionMap, status["vision"])
-
-    dimension = status['n'] * status['m'] * 15
     MAX = 100
     count = 0
     actions = []
+    
     while count < MAX and not isMapComplete(map):
         print("------------------")        
 
         orientation = fromHCDirectionToOrientation(status["orientation"])
         position: Position = [status["position"][0], status["position"][1], orientation]
         print("position: ", position)
+
+        addTurnInfo(status, heardMap, map, clauses)
+        print(len(clauses))
+        safe  = is_position_safe(position, solutionMap, clauses, n_col, n_lig)
+        print(safe)
 
         action = actionChooser.choose(map, position)
 
@@ -107,11 +102,7 @@ def phase1(referee):
         #     "status": status['status']
         # })
 
-        addTurnInfo(status, heardMap, map, clauses)
-        print(len(clauses))
         updateSolutionMap(solutionMap, status["vision"])
-        safe  = is_position_safe(position, solutionMap, clauses, n_col, n_lig, dimension)
-        print(safe)
         count += 1
     print("count: ", count)
     pprint(status)
@@ -129,10 +120,9 @@ def phase1(referee):
     print(referee.send_content(solutionMap))
 
 def main():
+
     referee = HitmanReferee()
     map = phase1(referee)
-
-    print(count_dupplicate_clauses())
 
     """
     phase 2

@@ -278,11 +278,11 @@ def HCInfoToMapGuardIndex(value : int) -> int:
     if value == HC.WALL._value_ or value in range(HC.TARGET._value_, HC.PIANO_WIRE._value_ + 1):
         return MAP_GUARD_INDEX['blocking']
     if value in range(HC.GUARD_N._value_, HC.GUARD_W._value_ + 1):
-        return GUARD_INDEX['guard']
+        return MAP_GUARD_INDEX['guard']
     if value in range(HC.CIVIL_N._value_, HC.CIVIL_W._value_ + 1):
-        return GUARD_INDEX['civil']
+        return MAP_GUARD_INDEX['civil']
     if value == HC.EMPTY._value_:
-        return GUARD_INDEX['empty']
+        return MAP_GUARD_INDEX['empty']
     
 # renvoie les 4 paires de 2 cases autour de la position
 def get_surroundings(position, map, n_col, n_lig) -> List[Information]:
@@ -302,7 +302,8 @@ def get_surroundings(position, map, n_col, n_lig) -> List[Information]:
         result.append(cases)
     return result
 
-def is_position_safe(position : Tuple, known_map : dict[Tuple[int, int], HC], clauses : ClauseBase, n_col : int, n_lig : int, dimension : int) -> bool:
+def is_position_safe(position : Tuple, known_map : dict[Tuple[int, int], HC], clauses : ClauseBase, n_col : int, n_lig : int) -> bool:
+    dimension = n_col * n_lig * 4
     if HCInfoToGuardIndex(known_map[(position[0], position[1])].value) == GUARD_INDEX['blocking']:
         return True
     surroundings = get_surroundings(position, known_map, n_col, n_lig)
