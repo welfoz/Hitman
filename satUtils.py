@@ -11,118 +11,20 @@ import os
 import platform
 import time
 
-# generation des types possibles pour une case
-def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
-    objectNumber = 15
-    clauses = []
-    for i in range(n_col):
-        for j in range(n_lig):
-            literals = []
-            for k in range(objectNumber):
-                literals.append(i * n_lig * objectNumber + j * objectNumber + k + 1)
-            clauses += uniqueX(literals, 1)
-    return clauses
 
-# generation des clauses pour un nombre donne d'ojects dans la carte
-def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_index: int) -> ClauseBase:
-    litterals = []
-    for i in range(n_col):
-        for j in range(n_lig):
-            litterals.append(i * n_lig * 15 + j * 15 + object_index)
-    r = uniqueX(litterals, n_object)
-    #print("Clauses pour " + str(n_object) + " " + list(OBJECTS_INDEX.keys())[list(OBJECTS_INDEX.values()).index(object_index)] + " :")
-    #print(r)
-    return r
+GUARD_INDEX = {
+    'unknown' : -1,
+    'empty': 1,
+    'blocking': 2,
+    'guard': 3,
+}
 
-def addInfoVision(n_col : int, n_lig : int, info_vision : Information) -> ClauseBase:
-    print("Info vision : " + str(info_vision))
-    x = info_vision[0]
-    y = info_vision[1]
-    value = info_vision[2]
-    # print("Clauses pour les infos de vision : ")
-    # print(result)
-    return [[x * n_lig * 15 + y * 15 + value]]
-
-# est ce juste pour nb_heard = 0 ?
-def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int, map) -> ClauseBase:
-    x = position[0]
-    y = position[1]
-    litterals = []
-    guardsOrCivils = nb_heard
-    #pour toutes les cases autour
-    for i in range(x-2, x+3):
-        for j in range(y-2, y+3):
-            if i < 0 or i >= n_col or j < 0 or j >= n_lig:
-                continue
-            if map[j][i] != -1:
-                if map[j][i] in range(HCInfoToObjectIndexFull(HC.GUARD_N.value), HCInfoToObjectIndexFull(HC.GUARD_S.value) + 1):
-                    guardsOrCivils -= 1
-                if map[j][i] in range(HCInfoToObjectIndexFull(HC.CIVIL_N.value), HCInfoToObjectIndexFull(HC.CIVIL_S.value) + 1):
-                    guardsOrCivils -= 1
-                # print("Case deja connue", i, j, map[j][i], guardsOrCivils)
-                continue
-            
-            for g in range(OBJECTS_INDEX['guard'][0], OBJECTS_INDEX['guard'][4]):
-                litterals.append(i * n_lig * 15 + j * 15 + g)
-            for c in range(OBJECTS_INDEX['civil'][0], OBJECTS_INDEX['civil'][4]):
-                litterals.append(i * n_lig * 15 + j * 15 + c)
-    
-    if len(litterals) > 0:
-        if nb_heard > 4:
-            return atLeast(guardsOrCivils, litterals)
-        return uniqueX(litterals, guardsOrCivils)
-    return []
-
-# prise en compte du is_in_guard_range
-def addInfoIsInGuardRange(n_col : int, n_lig : int, position : Tuple) -> ClauseBase:
-    x = position[0]
-    y = position[1]
-    litterals = []
-    # cases horizontales
-    for i in range(x-2, x):
-        if i < 0 or i >= n_col:
-            continue
-        litterals.append(i * n_lig * 15 + y * 15 + OBJECTS_INDEX['guard'][3])
-    for i in range(x+1, x+3):
-        if i < 0 or i >= n_col:
-            continue
-        litterals.append(i * n_lig * 15 + y * 15 + OBJECTS_INDEX['guard'][4])
-    # cases verticales
-    for j in range(y-2, y):
-        if j < 0 or j >= n_lig:
-            continue
-        litterals.append(x * n_lig * 15 + j * 15 + OBJECTS_INDEX['guard'][1])
-    for j in range(y+1, y+3):
-        if j < 0 or j >= n_lig:
-            continue
-        litterals.append(x * n_lig * 15 + j * 15 + OBJECTS_INDEX['guard'][2])
-    # print(litterals)
-    return atLeast(1, litterals)
-
-def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
-    filename = "temp.cnf"
-    dimacs = clausesToDimacs(clauses, dimension)
-    write_dimacs_file("\n".join(dimacs), filename)
-    return exec_gophersat(filename)
-
-def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
-    start_time = time.time()
-    sol = solveur(clauses, dimension)
-    # print(sol)
-    # solutionToMap(sol[1], 3, 3)
-    if not sol[0]: return False
-
-    # print("Solution : \n")
-    # print(sol[1])
-    sol2 = solveur(clauses + [[-x for x in sol[1]]], dimension)
-    end_time = time.time()
-    print("solveur time: ", end_time - start_time)
-    if sol2[0]:
-        # print("Pas d'unicite")
-        return False
-    else:
-        # print("Solution unique")
-        return True
+MAP_GUARD_INDEX = {
+    'empty': 1,
+    'blocking': 2,
+    'guard': 3,
+    'civil': 4
+}
 
 def atMost(atMostNumber: int, literals: List[Literal]) -> ClauseBase:
     """
@@ -153,46 +55,159 @@ def uniqueX(literals: List[Literal], x: int) -> ClauseBase:
     @param x: the number of literals that are required to be true
     """
     clauses = []
-
     if x == 0:
         return atMost(x, literals)
-    
     # at least x, least x-1, x-2, ... 1
     for i in range(1, x):
         clauses += atLeast(i, literals)
-
     clauses += atLeast(x, literals) + atMost(x, literals)
     return clauses
 
-# calcule la proba de chaque littéral dans les solutions du solveur
-def probaLitteral(clauses: ClauseBase, dimension : int) -> List[float]:
-    proba = [0] * dimension
-    n = 0
-    sol = solveur(clauses, dimension)
-    while sol[0] & (n < 1001):
-        n += 1
-        for c in sol[1]:
-            if c > 0:
-                proba[c-1] += 1
-            else:
-                proba[-c-1] -= 1
-        sol = solveur(clauses + [[-x for x in sol[1]]], dimension)
-    return [p/(n) for p in proba]
-
-def solutionToMap(solution: List[int], n_col : int, n_lig : int) -> Dict[Tuple[int, int], HC]:
-    objectNumber = len(OBJECTS_INDEX)
-    map_info: Dict[Tuple[int, int], HC] = {}
-    map_info_readable: Dict[Tuple[int, int], HC] = {}
-
+# generation des types possibles pour une case
+def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
+    objectNumber = len(MAP_GUARD_INDEX)
+    clauses = []
     for i in range(n_col):
         for j in range(n_lig):
+            literals = []
             for k in range(objectNumber):
-                if solution[i * n_lig * objectNumber + j * objectNumber + k] > 0:
-                    map_info_readable[(i, j)] = getKeyFromValue(OBJECTS_INDEX, k + 1)
-                    ## need to keep the map with guard N ...
-                    map_info[(i, j)] = k + 1
-    pprint(map_info_readable)
-    return map_info
+                literals.append(i * n_lig * objectNumber + j * objectNumber + k + 1)
+            clauses += uniqueX(literals, 1)
+    return clauses
+
+# generation des clauses pour un nombre donne d'ojects dans la carte
+def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_index: int) -> ClauseBase:
+    litterals = []
+    for i in range(n_col):
+        for j in range(n_lig):
+            litterals.append(i * n_lig * 4 + j * 4 + object_index)
+    r = uniqueX(litterals, n_object)
+    #print("Clauses pour " + str(n_object) + " " + list(OBJECTS_INDEX.keys())[list(OBJECTS_INDEX.values()).index(object_index)] + " :")
+    #print(r)
+    return r
+
+def generateInitialClauses(n_col : int, n_lig : int, n_guards : int, n_civils : int) -> ClauseBase:
+    result = []
+    result += generateTypesGrid(n_col, n_lig)
+    result += generateClausesForObject(n_col, n_lig, n_guards, MAP_GUARD_INDEX['guard'])
+    result += generateClausesForObject(n_col, n_lig, n_civils, MAP_GUARD_INDEX['civil'])
+    return result
+
+def addInfoVision(n_col : int, n_lig : int, info_vision : Information) -> ClauseBase:
+    print("Info vision : " + str(info_vision))
+    x = info_vision[0]
+    y = info_vision[1]
+    value = HCInfoToMapGuardIndex(info_vision[2])
+    # print("Clauses pour les infos de vision : ")
+    # print(result)
+    return [[x * n_lig * 4 + y * 4 + value]]
+
+def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int, map) -> ClauseBase:
+    x = position[0]
+    y = position[1]
+    litterals = []
+    guardsOrCivils = nb_heard
+    #pour toutes les cases autour
+    for i in range(x-2, x+3):
+        for j in range(y-2, y+3):
+            if i < 0 or i >= n_col or j < 0 or j >= n_lig:
+                continue
+            if map[j][i] != -1:
+                if map[j][i] in range(HCInfoToObjectIndexFull(HC.GUARD_N.value), HCInfoToObjectIndexFull(HC.GUARD_S.value) + 1):
+                    guardsOrCivils -= 1
+                if map[j][i] in range(HCInfoToObjectIndexFull(HC.CIVIL_N.value), HCInfoToObjectIndexFull(HC.CIVIL_S.value) + 1):
+                    guardsOrCivils -= 1
+                # print("Case deja connue", i, j, map[j][i], guardsOrCivils)
+                continue
+            
+            litterals.append(i * n_lig * 4 + j * 4 + MAP_GUARD_INDEX['guard'])
+            litterals.append(i * n_lig * 4 + j * 4 + MAP_GUARD_INDEX['civil'])
+    
+    if len(litterals) > 0:
+        if nb_heard > 4:
+            return atLeast(guardsOrCivils, litterals)
+        return uniqueX(litterals, guardsOrCivils)
+    return []
+
+# prise en compte du is_in_guard_range
+def addInfoIsInGuardRange(n_col : int, n_lig : int, position : Tuple) -> ClauseBase:
+    x = position[0]
+    y = position[1]
+    litterals = []
+    # cases horizontales
+    for i in range(x-2, x):
+        if i < 0 or i >= n_col:
+            continue
+        litterals.append(i * n_lig * 3 + y * 3 + OBJECTS_INDEX['guard'])
+    for i in range(x+1, x+3):
+        if i < 0 or i >= n_col:
+            continue
+        litterals.append(i * n_lig * 3 + y * 3 + GUARD_INDEX['guard'])
+    # cases verticales
+    for j in range(y-2, y):
+        if j < 0 or j >= n_lig:
+            continue
+        litterals.append(x * n_lig * 3 + j * 3 + GUARD_INDEX['guard'])
+    for j in range(y+1, y+3):
+        if j < 0 or j >= n_lig:
+            continue
+        litterals.append(x * n_lig * 3 + j * 3 + GUARD_INDEX['guard'])
+    # print(litterals)
+    return atLeast(1, litterals)
+
+def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
+    filename = "temp.cnf"
+    dimacs = clausesToDimacs(clauses, dimension)
+    write_dimacs_file("\n".join(dimacs), filename)
+    return exec_gophersat(filename)
+
+def isSolutionUnique(clauses: ClauseBase, dimension : int) -> bool:
+    start_time = time.time()
+    sol = solveur(clauses, dimension)
+    # print(sol)
+    # solutionToMap(sol[1], 3, 3)
+    if not sol[0]: return False
+    # print("Solution : \n")
+    # print(sol[1])
+    sol2 = solveur(clauses + [[-x for x in sol[1]]], dimension)
+    end_time = time.time()
+    print("solveur time: ", end_time - start_time)
+    if sol2[0]:
+        # print("Pas d'unicite")
+        return False
+    else:
+        # print("Solution unique")
+        return True
+
+# calcule la proba de chaque littéral dans les solutions du solveur
+# def probaLitteral(clauses: ClauseBase, dimension : int) -> List[float]:
+#     proba = [0] * dimension
+#     n = 0
+#     sol = solveur(clauses, dimension)
+#     while sol[0] & (n < 1001):
+#         n += 1
+#         for c in sol[1]:
+#             if c > 0:
+#                 proba[c-1] += 1
+#             else:
+#                 proba[-c-1] -= 1
+#         sol = solveur(clauses + [[-x for x in sol[1]]], dimension)
+#     return [p/(n) for p in proba]
+
+# def solutionToMap(solution: List[int], n_col : int, n_lig : int) -> Dict[Tuple[int, int], HC]:
+#     objectNumber = len(OBJECTS_INDEX)
+#     map_info: Dict[Tuple[int, int], HC] = {}
+#     map_info_readable: Dict[Tuple[int, int], HC] = {}
+
+#     for i in range(n_col):
+#         for j in range(n_lig):
+#             for k in range(objectNumber):
+#                 if solution[i * n_lig * objectNumber + j * objectNumber + k] > 0:
+#                     map_info_readable[(i, j)] = getKeyFromValue(OBJECTS_INDEX, k + 1)
+#                     ## need to keep the map with guard N ...
+#                     map_info[(i, j)] = k + 1
+#     pprint(map_info_readable)
+#     return map_info
 
 #### fonctions fournies
 def write_dimacs_file(dimacs: str, filename: str):
@@ -249,19 +264,6 @@ def count_dupplicate_clauses() -> int:
         clausesset = list(set(clauses))
         return len(lines), len(clauses), len(clausesset), len(clauses) - len(clausesset), (len(clauses) - len(clausesset)) / len(clauses)
 
-## savoir si un garde peut nous voir sur une case
-# def is_position_safe(position : Tuple, clauses : ClauseBase, n_col : int, n_lig : int, dimension : int) -> bool:
-#     clauses += addInfoIsInGuardRange(n_col, n_lig, position)
-#     sol = solveur(clauses, dimension)
-#     return not sol[0]
-
-GUARD_INDEX = {
-    'unknown' : -1,
-    'empty': 1,
-    'blocking': 2,
-    'guard': 3,
-}
-
 def HCInfoToGuardIndex(value : int) -> int:
     if value == HC.WALL._value_ or value in range(HC.CIVIL_N._value_, HC.PIANO_WIRE._value_ + 1):
         return GUARD_INDEX['blocking']
@@ -271,6 +273,16 @@ def HCInfoToGuardIndex(value : int) -> int:
         return GUARD_INDEX['empty']
     else:
         return GUARD_INDEX['unknown']
+    
+def HCInfoToMapGuardIndex(value : int) -> int:
+    if value == HC.WALL._value_ or value in range(HC.TARGET._value_, HC.PIANO_WIRE._value_ + 1):
+        return MAP_GUARD_INDEX['blocking']
+    if value in range(HC.GUARD_N._value_, HC.GUARD_W._value_ + 1):
+        return GUARD_INDEX['guard']
+    if value in range(HC.CIVIL_N._value_, HC.CIVIL_W._value_ + 1):
+        return GUARD_INDEX['civil']
+    if value == HC.EMPTY._value_:
+        return GUARD_INDEX['empty']
     
 # renvoie les 4 paires de 2 cases autour de la position
 def get_surroundings(position, map, n_col, n_lig) -> List[Information]:
@@ -309,17 +321,17 @@ def is_position_safe(position : Tuple, known_map : dict[Tuple[int, int], HC], cl
             if s[1][2] == GUARD_INDEX['blocking'] or s[1] == GUARD_INDEX['empty']:
                 continue
             if s[1][2] == GUARD_INDEX['unknown']:
-                clauses += [[s[1][0] * n_lig * 15 + s[1][1] * 15 + OBJECTS_INDEX['guard'][0]]] #  a maj !!!
+                clauses += [[s[1][0] * n_lig * 15 + s[1][1] * 15 + GUARD_INDEX['guard'][0]]] #  a maj !!!
                 sol = solveur(clauses, dimension)
                 if sol[0]:
                     return False
         if s[0][2] == GUARD_INDEX['unknown']:
-            clauses += [[s[0][0] * n_lig * 15 + s[0][1] * 15 + OBJECTS_INDEX['guard'][0]]] #  a maj !!!
+            clauses += [[s[0][0] * n_lig * 15 + s[0][1] * 15 + GUARD_INDEX['guard'][0]]] #  a maj !!!
             sol = solveur(clauses, dimension)
             if sol[0]:
                 return False
             if s[1][2] == GUARD_INDEX['unknown']:
-                clauses += [[s[1][0] * n_lig * 15 + s[1][1] * 15 + OBJECTS_INDEX['guard'][0]]]
+                clauses += [[s[1][0] * n_lig * 15 + s[1][1] * 15 + GUARD_INDEX['guard'][0]]]
                 sol = solveur(clauses, dimension)
                 if sol[0]:
                     return False
