@@ -122,6 +122,10 @@ class SquareGrid:
         # each action costs 1
         return 1 + 5 * howManyGuardsAreSeeingUs
     
+    def cost_phase2(self, howManyGuardsAreSeeingUs: int) -> float:
+        # each action costs 1
+        return 1 + 5 * howManyGuardsAreSeeingUs
+    
     def neighbors(self, id: GridLocationDirection) -> Iterator[GridLocationDirection]:
         (x, y, direction) = id
         neighbors = []
@@ -140,6 +144,26 @@ class SquareGrid:
         results = filter(self.in_bounds, neighbors)
         results = filter(self.passable, results)
         return results
+
+    def neighbors_phase2(self, id: GridLocationDirection) -> Iterator[GridLocationDirection]:
+        (x, y, direction) = id
+        neighbors = []
+        if direction == 'N':
+            # move, turn 90, turn -90
+            neighbors = [(x, y+1, 'N'), (x, y, 'E'), (x, y, 'W')]
+        elif direction == 'S':
+            neighbors = [(x, y-1, 'S'), (x, y, 'W'), (x, y, 'E')]
+        elif direction == 'W':
+            neighbors = [(x-1, y, 'W'), (x, y, 'N'), (x, y, 'S')]
+        elif direction == 'E':
+            neighbors = [(x+1, y, 'E'), (x, y, 'S'), (x, y, 'N')]
+        else:
+            raise ValueError('Invalid direction')
+        
+        results = filter(self.in_bounds, neighbors)
+        results = filter(self.passable, results)
+        return results
+
 
 class PriorityQueue:
     def __init__(self):
@@ -180,14 +204,14 @@ def a_star_search(graph: SquareGrid, start: GridLocationDirection, goal: GridLoc
         if current[0] == goal[0] and current[1] == goal[1]:
             break
         
-        for next in graph.neighbors(current):
+        for next in graph.neighbors_phase2(current):
             # print("next", next)
-            new_cost = cost_so_far[current] + graph.cost(current, next) # every move costs 1 for now
+            new_cost = cost_so_far[current] + graph.cost_phase2(current, next) # every move costs 1 for now
             if next not in cost_so_far or new_cost < cost_so_far[next]:
                 # ok on a trouvé une nouvelle route pour aller à next moins chere
                 cost_so_far[next] = new_cost
-                priority = new_cost + heuristic((next[0], next[1]), goal)
-                # priority = new_cost
+                priority = new_cost + heuristic((next[0], next[1]), goal) # manhattan distance
+
                 openList.put(next, priority)
                 came_from[next] = current
     return came_from, cost_so_far

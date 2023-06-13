@@ -286,7 +286,7 @@ def fromHCDirectionToOrientation(direction: HC) -> Orientation:
         return "W"
     raise Exception("Unknown direction")
 
-def phase1(referee):
+def phase1(referee: HitmanReferee):
     start_time = time.time()
 
     status = referee.start_phase1()
@@ -370,10 +370,129 @@ def phase1(referee):
     pprint(actions)
     print("is good solution for referee....", end=" ")
     print(referee.send_content(solutionMap))
+    print("end phase1....")
+    pprint(referee.end_phase1())
+    return map
+
+def findObject(map, object):
+    for i in range(len(map)):
+        for j in range(len(map[i])):
+            if map[i][j] == object:
+                return (j, i)
+    return None
+
+def isOnObject(map, position, object):
+    if map[position[1]][position[0]] == object:
+        return True
+    return False
+
+def phase2(referee: HitmanReferee, map):
+    map = [[1, 1, 2, 2, 1, 4, 1], # default map 6*7
+            [1, 1, 1, 1, 1, 1, 1],
+            [2, 2, 1, 10, 1, 14, 15],
+            [3, 2, 1, 1, 1, 12, 1],
+            [1, 2, 1, 1, 1, 1, 1],
+            [1, 1, 1, 5, 9, 2, 2]]
+    start_time = time.time()
+    
+    ropePosition = findObject(map, OBJECTS_INDEX['rope'])
+    costumePosition = findObject(map, OBJECTS_INDEX['costume'])
+    targetPosition = findObject(map, OBJECTS_INDEX['target'])
+
+    orientation = fromHCDirectionToOrientation(status["orientation"])
+    startPosition: Position = [status["position"][0], status["position"][1], orientation]
+    position: Position = startPosition
+    print("ropePosition: ", ropePosition)
+    print("costumePosition: ", costumePosition)
+    print("targetPosition: ", targetPosition)
+    print("startPosition: ", startPosition)
+
+    status = referee.start_phase2()
+    pprint(status)
+
+    n_col = status['n']
+    n_lig = status['m']
+
+    actionChooser = ActionChooser(n_col, n_lig)
+
+
+    MAX = 100
+    count = 0
+    actions = []
+    ### first go to the rope
+    while count < MAX and not isOnObject(map, position, OBJECTS_INDEX['rope']):
+        print("------------------")        
+
+        orientation = fromHCDirectionToOrientation(status["orientation"])
+        position: Position = [status["position"][0], status["position"][1], orientation]
+        # print("position: ", position)
+
+        action = actionChooser.choose_phase2(map, position, goal)
+
+        # all actions 
+        if action == 1:
+            actions.append(('move', position))
+            status = referee.move()
+        elif action == 2:
+            actions.append(("turn 90", position))
+            status = referee.turn_clockwise()
+        elif action == 3:
+            actions.append(("turn -90", position))
+            status = referee.turn_anti_clockwise()
+        elif action == 4:
+            actions.append(("kill_target", position))
+            status = referee.kill_target()
+        elif action == 5:
+            actions.append(("neutralize_guard", position))
+            status = referee.neutralize_guard()
+        elif action == 6:
+            actions.append(("neutralize_civil", position))
+            status = referee.neutralize_civil()
+        elif action == 7:
+            actions.append(("take_weapon", position))
+            status = referee.take_weapon()
+        elif action == 8:
+            actions.append(("take_suit", position))
+            status = referee.take_suit()
+        elif action == 9:
+            actions.append(("put_on_suit", position))
+            status = referee.put_on_suit()
+        else: 
+            raise Exception("action not found")
+
+        # pprint({
+        #     "vision": status['vision'],
+        #     "hear": status['hear'],
+        #     "position": status['position'],
+        #     "orientation": status['orientation'],
+        #     "is_in_guard_range": status['is_in_guard_range'],
+        #     "penalties": status['penalties'],
+        #     "status": status['status']
+        # })
+        count += 1
+    print("count: ", count)
+    pprint(status)
+
+    ### then go to the target
+
+
+    ### then kill the target
+
+
+    ### then come back to the start position
+
+
+    end_time = time.time()
+    print("total time: ", end_time - start_time)
+    # ne fonctionne pas pour le moment car on ne met pas les infos des orientations des civils & gardes
+    pprint(actions)
+    print("is good solution for referee....", end=" ")
+    pprint(referee.end_phase2())
+    return 
 
 def main():
     referee = HitmanReferee()
-    map = phase1(referee)
+    # map = phase1(referee)
 
     """
     phase 2
@@ -386,6 +505,7 @@ def main():
     same in a minimum of penalties (include guards seen, rope, costume...)
     come back to the start position
     """
+    phase2(referee, map)
 
 
 if __name__ == "__main__":
