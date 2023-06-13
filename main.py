@@ -544,6 +544,51 @@ def phase2(referee: HitmanReferee, map):
     pprint(status)
 
     ### then come back to the start position
+    MAX = 100
+    count = 0
+    actions = []
+    goal = (startPosition[0], startPosition[1])
+    while count < MAX and (position[0], position[1]) != goal:
+        print("------------------")        
+
+        action = actionChooser.choose_phase2(map, position, goal)
+
+        # all actions 
+        if action == 1:
+            actions.append(('move', position))
+            status = referee.move()
+        elif action == 2:
+            actions.append(("turn 90", position))
+            status = referee.turn_clockwise()
+        elif action == 3:
+            actions.append(("turn -90", position))
+            status = referee.turn_anti_clockwise()
+        elif action == 4:
+            actions.append(("kill_target", position))
+            status = referee.kill_target()
+        elif action == 5:
+            actions.append(("neutralize_guard", position))
+            status = referee.neutralize_guard()
+        elif action == 6:
+            actions.append(("neutralize_civil", position))
+            status = referee.neutralize_civil()
+        elif action == 7:
+            actions.append(("take_weapon", position))
+            status = referee.take_weapon()
+        elif action == 8:
+            actions.append(("take_suit", position))
+            status = referee.take_suit()
+        elif action == 9:
+            actions.append(("put_on_suit", position))
+            status = referee.put_on_suit()
+        else: 
+            raise Exception("action not found")
+
+        orientation = fromHCDirectionToOrientation(status["orientation"])
+        position: Position = (status["position"][0], status["position"][1], orientation)
+        count += 1
+    print("count: ", count)
+    pprint(status)
 
 
     end_time = time.time()
