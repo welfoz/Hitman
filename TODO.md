@@ -1,22 +1,24 @@
 # TO DO 
 ### phase 1 todo 
-- prise en compte des pts (malus si on passe dans le champ de vision d'un garde) -> @Fabien working on it
+- on est sûr de connaitre la premiere case ? -> tjrs (0, 0)
 - comment les infos de l'ouie peuvent nous servir dans le choix du déplacement ? (pour plus tard)
+- SAT pour l'ouie @Pol
+- utiliser SAT @Fabien
+
+### phase 2 TODO 
+- prg exploitant la modélisation
+- d'abord le faire marcher
+- apres opti petit à petit
+- prise en compte des gardes A*, essayer de minimiser les points
+
+Opti a*: 
+- red blob 
+- algo zobrist
 - utiliser numpy (et non des tableaux) pour optimiser la recherche (pour plus tard)
 - typer stateTree
 
-- stateTree optimisation, evaluation function, ---> when max = 0 --> means with the current depth we didn't find any ways to gain informations (without guards penalties) ---> select X nearest cases and applies A* algo to go there
-- make it work for n_lig & n_col
-
-- si info déjà dans clause, ne pas rajouter (gestion dans la couche python des infos)
-- utiliser is_in_guard_range
-- send_content du referee à besoin de l'orientation des gardes et des civils ??
-- on est sûr de connaitre la premiere case ?
-### phase 2 TODO 
-- modélisation STRIPS
-- prg exploitant la modélisation
-- prise en compte des gardes A*, essayer de minimiser les points
-- phase 2
+### rapport ? 
+- readme
 
 # rules 
 
