@@ -102,6 +102,7 @@ def phase1(referee):
         #     "status": status['status']
         # })
 
+        updateSolutionMap(solutionMap, status["vision"])
         count += 1
     print("count: ", count)
     pprint(status)

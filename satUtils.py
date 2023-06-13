@@ -2,9 +2,9 @@ from typing import List, Tuple, Dict
 from pprint import pprint
 from itertools import combinations
 
-from aliases import  Literal, ClauseBase, Orientation, Information, Position, OBJECTS_INDEX
+from aliases import  Literal, ClauseBase, Orientation, Information, Position
 from arbitre_gitlab.hitman.hitman import HC, HitmanReferee
-from utils import getKeyFromValue, HCInfoToObjectIndexFull
+from utils import getKeyFromValue
 
 import subprocess
 import os
@@ -113,9 +113,9 @@ def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int,
             if i < 0 or i >= n_col or j < 0 or j >= n_lig:
                 continue
             if map[j][i] != -1:
-                if map[j][i] in range(HCInfoToObjectIndexFull(HC.GUARD_N.value), HCInfoToObjectIndexFull(HC.GUARD_S.value) + 1):
+                if map[j][i] in range(HC.GUARD_N.value, HC.GUARD_S.value + 1):
                     guardsOrCivils -= 1
-                if map[j][i] in range(HCInfoToObjectIndexFull(HC.CIVIL_N.value), HCInfoToObjectIndexFull(HC.CIVIL_S.value) + 1):
+                if map[j][i] in range(HC.CIVIL_N.value, HC.CIVIL_S.value + 1):
                     guardsOrCivils -= 1
                 # print("Case deja connue", i, j, map[j][i], guardsOrCivils)
                 continue
@@ -138,7 +138,7 @@ def addInfoIsInGuardRange(n_col : int, n_lig : int, position : Tuple) -> ClauseB
     for i in range(x-2, x):
         if i < 0 or i >= n_col:
             continue
-        litterals.append(i * n_lig * 3 + y * 3 + OBJECTS_INDEX['guard'])
+        litterals.append(i * n_lig * 3 + y * 3 + GUARD_INDEX['guard'])
     for i in range(x+1, x+3):
         if i < 0 or i >= n_col:
             continue
