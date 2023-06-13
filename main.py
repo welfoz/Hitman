@@ -1,58 +1,13 @@
 from typing import List, Tuple, Dict
-import subprocess
-import os
-import platform
-from enum import Enum
 from pprint import pprint
 from itertools import combinations
 import time
 
-from arbitre_gitlab.hitman.hitman import HC, HitmanReferee, complete_map_example
+from arbitre_gitlab.hitman.hitman import HC, HitmanReferee
 
-from stateTree import ActionChoice, createMap, isInformationAlreadyKnown, updateMap
+from actionChooser import ActionChooser, createMap, isInformationAlreadyKnown, updateMap
 from aliases import  Literal, ClauseBase, Orientation, Information, Position, OBJECTS_INDEX
-
-#### fonctions fournies
-def write_dimacs_file(dimacs: str, filename: str):
-    with open(filename, "w", newline="") as cnf:
-        cnf.write(dimacs)
-
-# l'executable gophersat soit etre dans le cwd
-def exec_gophersat(
-    filename: str, cmd: str = "", encoding: str = "utf8"
-) -> Tuple[bool, List[int]]:
-    # Vérifier si l'OS est macOS
-    if platform.system() == 'Darwin':
-        cmd = os.getcwd() + "/gophersat"
-    # Vérifier si l'OS est Windows
-    if platform.system() == 'Windows':
-        cmd = os.getcwd() + "\gophersat\gophersat.exe"
-
-    result = subprocess.run(
-        [cmd, filename], capture_output=True, check=True, encoding=encoding
-    )
-    string = str(result.stdout)
-    lines = string.splitlines()
-
-    if lines[1] != "s SATISFIABLE":
-        return False, []
-
-    model = lines[2][2:-2].split(" ")
-
-    return True, [int(x) for x in model]
-
-def clausesToDimacs(clauses: ClauseBase, dimension: int) -> List[str]:
-    # dimacs = "p cnf " + str(pow(dimension, 3)) + ' ' + str(len(clauses)) pas compris pk c'est dim^3
-    dimacs = "p cnf " + str(dimension) + ' ' + str(len(clauses))
-    result = [dimacs]
-    for clause in clauses:
-        line = ""
-        for literal in clause:
-            line += str(literal) + " "
-        line += "0"
-        result.append(line)
-    result.append("")
-    return result
+from utils import createMap, howManyUnknown, isInformationAlreadyKnown, updateMap, clausesToDimacs, exec_gophersat, isMapComplete, write_dimacs_file
 
 # generation des types possibles pour une case
 def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
@@ -82,6 +37,35 @@ def HCInfoToObjectIndex(value : int) -> int:
         return OBJECTS_INDEX['guard'][0]
     if value in range(HC.CIVIL_N._value_, HC.CIVIL_W._value_ + 1):
         return OBJECTS_INDEX['civil'][0]
+    if value == HC.EMPTY._value_:
+        return OBJECTS_INDEX['empty']
+    if value == HC.WALL._value_:
+        return OBJECTS_INDEX['wall']
+    if value == HC.TARGET._value_:
+        return OBJECTS_INDEX['target']
+    if value == HC.SUIT._value_:
+        return OBJECTS_INDEX['costume']
+    if value == HC.PIANO_WIRE._value_:
+        return OBJECTS_INDEX['rope']
+
+def HCInfoToObjectIndexFull(value : int) -> int:
+    # if value in range(HC.GUARD_N._value_, HC.GUARD_W._value_ + 1):
+    if value == HC.GUARD_N._value_:
+        return OBJECTS_INDEX['guard'][1]
+    if value == HC.GUARD_S._value_:
+        return OBJECTS_INDEX['guard'][2]
+    if value == HC.GUARD_E._value_:
+        return OBJECTS_INDEX['guard'][3]
+    if value == HC.GUARD_W._value_:
+        return OBJECTS_INDEX['guard'][4]
+    if value == HC.CIVIL_N._value_:
+        return OBJECTS_INDEX['civil'][1]
+    if value == HC.CIVIL_S._value_:
+        return OBJECTS_INDEX['civil'][2]
+    if value == HC.CIVIL_E._value_:
+        return OBJECTS_INDEX['civil'][3]
+    if value == HC.CIVIL_W._value_:
+        return OBJECTS_INDEX['civil'][4]
     if value == HC.EMPTY._value_:
         return OBJECTS_INDEX['empty']
     if value == HC.WALL._value_:
@@ -181,7 +165,6 @@ def atMost(atMostNumber: int, literals: List[Literal]) -> ClauseBase:
         clauses.append([-l for l in comb])
     return clauses
     
-
 def atLeast(atLeastNumber: int, literals: List[Literal]) -> ClauseBase:
     """
     Generate clauses to express that at least atLeastNumber literals in literals are true
@@ -250,53 +233,46 @@ def solutionToMap(solution: List[int], n_col : int, n_lig : int) -> Dict[Tuple[i
     return map_info
 
 def getVisionsFromStatus(status_vision: List[Tuple[Tuple[int, int], HC]]) -> List[Information]:
-    print("status vision", status_vision)
+    # print("status vision", status_vision)
     visions = []
     for vision in status_vision:
-        visionValue = HCInfoToObjectIndex(vision[1].value)
+        visionValue = HCInfoToObjectIndexFull(vision[1].value)
         visions.append([vision[0][0], vision[0][1], visionValue])
     return visions
 
-def printMaps(maps, reverse = True):
-    print("maps")
-    for map in maps:
-        if reverse:
-            for i in range(len(map) - 1, -1, -1):
-                print(map[i])
-        else:
-            for i in range(len(map)):
-                print(map[i])
-        print()
-
+def updateSolutionMap(solutionMap: Dict[Tuple[int, int], HC], vision: List[Tuple[Tuple[int, int], HC]]) -> Dict[Tuple[int, int], HC]:
+    for v in vision:
+        solutionMap[(v[0][0], v[0][1])] = v[1]
+    return solutionMap
 
 def addTurnInfo(status, heardMap, map, clauses):
-    print()
+    # print()
     visions = getVisionsFromStatus(status["vision"])
-    print("visions", visions)
+    # print("visions", visions)
 
     for vision in visions: 
         if (not isInformationAlreadyKnown(map, vision)):
-            print("add info vision")
-            print(len(clauses))
-            clauses += addInfoVision(status['n'], status['m'], vision)
-            print(len(clauses))
+            # print("add info vision")
+            # print(len(clauses))
+            # clauses += addInfoVision(status['n'], status['m'], vision)
+            # print(len(clauses))
             map = updateMap(map, [vision])
 
-    if status['is_in_guard_range']:
-        clauses += addInfoIsInGuardRange(status['n'], status['m'], status['position'])
+    # if status['is_in_guard_range']:
+    #     clauses += addInfoIsInGuardRange(status['n'], status['m'], status['position'])
 
     heardInfo: Information = [status["position"][0], status["position"][1], status["hear"]]
     if (not isInformationAlreadyKnown(heardMap, heardInfo)):
-        print("add info listening")
-        print(len(clauses))
-        clauses += addInfoListening(status['n'], status['m'], status['position'], status['hear'], map)
-        print(len(clauses))
+        # print("add info listening")
+        # print(len(clauses))
+        # clauses += addInfoListening(status['n'], status['m'], status['position'], status['hear'], map)
+        # print(len(clauses))
         heardMap = updateMap(heardMap, [heardInfo])
 
     print()
     
-    printMaps([map, heardMap])
-    #input("Press Enter to continue...")
+    # printMaps([map, heardMap])
+    # input("Press Enter to continue...")
     return
 
 def fromHCDirectionToOrientation(direction: HC) -> Orientation:
@@ -310,79 +286,107 @@ def fromHCDirectionToOrientation(direction: HC) -> Orientation:
         return "W"
     raise Exception("Unknown direction")
 
-def main():
-
+def phase1(referee):
     start_time = time.time()
 
-    referee = HitmanReferee()
     status = referee.start_phase1()
     pprint(status)
 
     n_col = status['n']
     n_lig = status['m']
 
-    actionChooser = ActionChoice(n_col, n_lig)
+    actionChooser = ActionChooser(n_col, n_lig)
 
     map = createMap(n_col, n_lig)
+    solutionMap: Dict[Tuple[int, int], HC] = {} 
     heardMap = createMap(n_col, n_lig)
 
     clauses = []
-    clauses += generateTypesGrid(status['n'], status['m'])
-    clauses += generateClausesForObject(status['n'], status['m'], status['guard_count'], OBJECTS_INDEX['guard'][0])
-    clauses += generateClausesForObject(status['n'], status['m'], status['civil_count'], OBJECTS_INDEX['civil'][0])
-    clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['target'])
-    clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['rope'])
-    clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['costume'])
-    print(len(clauses))
+    # clauses += generateTypesGrid(status['n'], status['m'])
+    # clauses += generateClausesForObject(status['n'], status['m'], status['guard_count'], OBJECTS_INDEX['guard'][0])
+    # clauses += generateClausesForObject(status['n'], status['m'], status['civil_count'], OBJECTS_INDEX['civil'][0])
+    # clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['target'])
+    # clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['rope'])
+    # clauses += generateClausesForObject(status['n'], status['m'], 1, OBJECTS_INDEX['costume'])
+    # print(len(clauses))
 
     # case 0,0 est vide
     # on est sûr de ca ?
-    clauses.append([(OBJECTS_INDEX['empty'])])
+    # clauses.append([(OBJECTS_INDEX['empty'])])
     map[0][0] = OBJECTS_INDEX['empty']
     
     addTurnInfo(status, heardMap, map, clauses)
+    updateSolutionMap(solutionMap, [((0, 0), HC.EMPTY)])
+    updateSolutionMap(solutionMap, status["vision"])
 
     dimension = status['n'] * status['m'] * len(OBJECTS_INDEX)
-    while not isSolutionUnique(clauses, dimension):
-        print()
+    MAX = 100
+    count = 0
+    actions = []
+    while count < MAX and not isMapComplete(map):
         print("------------------")        
 
         orientation = fromHCDirectionToOrientation(status["orientation"])
         position: Position = [status["position"][0], status["position"][1], orientation]
-        print("position: ", position)
+        # print("position: ", position)
 
         action = actionChooser.choose(map, position)
 
-        print("action: ", end="")
+        unknown = howManyUnknown(map)
         if action == 1:
-            print("move")
+            actions.append(('move', position, unknown))
             status = referee.move()
         elif action == 2:
-            print("turn 90")
+            actions.append(("turn 90", position, unknown))
             status = referee.turn_clockwise()
         elif action == 3:
-            print("turn -90")
+            actions.append(("turn -90", position, unknown))
             status = referee.turn_anti_clockwise()
 
-        pprint({
-            "vision": status['vision'],
-            "hear": status['hear'],
-            "position": status['position'],
-            "orientation": status['orientation'],
-            "is_in_guard_range": status['is_in_guard_range'],
-            "penalties": status['penalties'],
-            "status": status['status']
-        })
+        # pprint({
+        #     "vision": status['vision'],
+        #     "hear": status['hear'],
+        #     "position": status['position'],
+        #     "orientation": status['orientation'],
+        #     "is_in_guard_range": status['is_in_guard_range'],
+        #     "penalties": status['penalties'],
+        #     "status": status['status']
+        # })
         addTurnInfo(status, heardMap, map, clauses)
+        updateSolutionMap(solutionMap, status["vision"])
+        count += 1
+    print("count: ", count)
+    pprint(status)
 
-    print("Carte connue : \n")
-    print(solveur(clauses, dimension))
-    map_info = solutionToMap(solveur(clauses, dimension)[1], status['n'], status['m'])
-    print("is good solution for referee")
+
+    # print("Carte connue : \n")
+    # print(solveur(clauses, dimension))
+    # map_info = solutionToMap(solveur(clauses, dimension)[1], status['n'], status['m'])
+    pprint(map)
     end_time = time.time()
     print("total time: ", end_time - start_time)
     # ne fonctionne pas pour le moment car on ne met pas les infos des orientations des civils & gardes
-    print(referee.send_content(map_info))
+    pprint(solutionMap)
+    pprint(actions)
+    print("is good solution for referee....", end=" ")
+    print(referee.send_content(solutionMap))
+
+def main():
+    referee = HitmanReferee()
+    map = phase1(referee)
+
+    """
+    phase 2
+
+    first goal: 
+    go to the rope, take it then go to the target in a minimum of actions and kill it
+    come back to the start position
+
+    second goal:
+    same in a minimum of penalties (include guards seen, rope, costume...)
+    come back to the start position
+    """
+
 
 if __name__ == "__main__":
     main()
