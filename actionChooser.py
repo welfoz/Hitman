@@ -3,7 +3,7 @@ import copy
 from pprint import pprint
 
 from aliases import Position, OBJECTS_INDEX, Information
-from aStarUtils import SquareGrid, draw_grid, PriorityQueue, GridLocation, GridLocationDirection, Optional
+from aStarUtils import SquareGrid, draw_grid, PriorityQueue, GridLocation, Position, Optional
 from utils import createMap, getAllNewInformation, howManyUnknown, isInformationAlreadyKnown, isOutsideTheMap, updateMap
 
 # class ActionChoice:
@@ -363,45 +363,16 @@ class ActionChooser:
         else: 
             raise Exception("Error: action not found")
 
-    def choose_phase2(self, map, position, goal):
+    def choose_phase2(self, map, position: Position, goal: Tuple[int, int]):
         """
         return the best action to do according to the best path, which maximizes the total information gained
         @param stateTree: list of the values of the total information gained for each path
         """
-        # farthestCases = self.farthestCasesWithNewInformation(position, map, 1)
-        # print(farthestCases)
 
         diagram = SquareGrid(self.n_col, self.n_lig, map)
 
-        # bestResult = []
-        # howManyUnknownBefore = howManyUnknown(map)
-        # # bestHowManyUnknown = 100000
-        # bestScore = 0
-        # bestPath = None
 
-        # for case in farthestCases:
-        #     # clusteringScore peut etre utile, à voir comment l'implémenter
-        #     path, howManyUnknownVariable, clusteringScore = astar(position, diagram)
-        #     result = fromPathToActions(path)
-
-        #     # on favorise les chemins courts, on veut le plus d'info possible par action
-        #     score = (howManyUnknownBefore - howManyUnknownVariable) / len(result)
-
-        #     # if howManyUnknownVariable < bestHowManyUnknown: # favorise la découverte
-        #     if score > bestScore:
-        #         bestScore = score
-        #         bestResult = result
-        #         bestHowManyUnknown = howManyUnknownVariable
-        #         bestPath = path
-
-            # print("----")
-            # print("case: " + str(case))
-            # print("result: " + str(result))
-            # print("howManyUnknownVariable: " + str(howManyUnknownVariable))
-            # print("score: " + str(score))
-            # print("clusteringScore: " + str(clusteringScore))
-
-        path, howManyUnknownVariable, clusteringScore = astar_phase2(position, diagram, goal)
+        path = astar_phase2(position, diagram, goal)
         result = fromPathToActions(path)
 
         # if howManyUnknownVariable < bestHowManyUnknown: # favorise la découverte
@@ -498,22 +469,12 @@ def astar(start, diagram):
 
     return newpathBacktrack, howManyUnknown, clusteringScore
 
-def astar_phase2(start, diagram, goal):
-    came_from, cost_so_far, new_goal, howManyUnknown, clusteringScore, backtrack = a_star_search_points_with_goal(diagram, tuple(start), goal)
-    newpathBacktrack = [tuple(start)] + backtrack
-
-    # pprint("newpathBacktrack")
-    # pprint(newpathBacktrack)
-
-
-    if howManyUnknown == None:
-        raise Exception("No new goal found")
+def astar_phase2(start: Position, diagram, goal: Tuple[int, int]):
+    came_from, cost_so_far, new_goal = a_star_search_points_with_goal(diagram, start, goal)
 
     if new_goal != None:
-        goal = new_goal[0]
-        # print("new_goal", new_goal)
-    else: 
-        raise Exception("No new goal found")
+        goal: Position = new_goal
+        print("new_goal", new_goal)
 
     # new_came_from = {}
     # for key, value in came_from.items():
@@ -522,7 +483,7 @@ def astar_phase2(start, diagram, goal):
     #             new_came_from[(key[0], key[1])] = (value[0], value[1])
     #     else: 
     #         new_came_from[(key[0], key[1])] = None
-    # path = reconstruct_path_new(came_from, start=(tuple(start), None), goal=goal)
+    path = reconstruct_path(came_from, start=start, goal=goal)
     
     # new_cost = {}
     # for key, value in cost_so_far.items():
@@ -539,9 +500,9 @@ def astar_phase2(start, diagram, goal):
     
     # pprint(new_path)
 
-    return newpathBacktrack, howManyUnknown, clusteringScore
+    return path
 
-def reconstruct_path(came_from: dict[str, str], start: str, goal: Tuple[int, int, str]) -> list[str]:
+def reconstruct_path(came_from: dict[str, str], start: str, goal: Tuple[int, int, str|None]) -> list[str]:
     """
     input: { (0, 0, 'N'): (0, 0, 'N'), (0, 0, 'E', 2): (0, 0, 'N', 1), (1, 0, 'E', 1): (0, 0, 'E', 1) }
     output: [(0, 0, 'N'), (0, 0, 'E'), (1, 0, 'E')]
@@ -623,7 +584,7 @@ def getClusteringScore(map):
 
     return sum(distances) / len(distances)
 
-def a_star_search_points(graph: SquareGrid, start: GridLocationDirection):
+def a_star_search_points(graph: SquareGrid, start: Position):
     '''
     but: voir la case goal en gagnant le plus de nouvelles cases possible
 
@@ -634,11 +595,11 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection):
     startTuple = (start, None)
     openList.put(startTuple, 0)
     
-    came_from: dict[Tuple[GridLocationDirection, Optional[GridLocationDirection]], Tuple[Optional[GridLocationDirection], Optional[GridLocationDirection]]] = {}
-    cost_so_far: dict[Tuple[GridLocationDirection, Optional[GridLocationDirection]], Tuple[float, float, float]] = {}
+    came_from: dict[Tuple[Position, Optional[Position]], Tuple[Optional[Position], Optional[Position]]] = {}
+    cost_so_far: dict[Tuple[Position, Optional[Position]], Tuple[float, float, float]] = {}
     came_from[startTuple]= None, None
     cost_so_far[startTuple] = (0, howManyUnknown(graph.map), 0)
-    state_map: dict[Tuple[GridLocationDirection, Optional[GridLocationDirection]], List[List[int]]] = {}
+    state_map: dict[Tuple[Position, Optional[Position]], List[List[int]]] = {}
     state_map[startTuple] = graph.map
 
     minimum = start
@@ -657,7 +618,7 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection):
     MAX = 30000
     while not openList.empty():
         count += 1
-        current: Tuple[GridLocationDirection, Optional[GridLocationDirection]] = openList.get()
+        current: Tuple[Position, Optional[Position]] = openList.get()
 
         if backtrack.get(current, None) == None:
             backtrack[current] = []
@@ -721,10 +682,10 @@ def heuristic_pts(map) -> float:
 
 def reconstruct_path_new(
         came_from: dict[
-            Tuple[GridLocationDirection, Optional[GridLocationDirection]],
-            Tuple[Optional[GridLocationDirection], Optional[GridLocationDirection]]
+            Tuple[Position, Optional[Position]],
+            Tuple[Optional[Position], Optional[Position]]
             ], 
-        start: Tuple[GridLocationDirection, None], goal: Tuple[GridLocationDirection, Optional[GridLocationDirection]]) -> list[str]:
+        start: Tuple[Position, None], goal: Tuple[Position, Optional[Position]]) -> list[str]:
     """
     input: { (0, 0, 'N'): (0, 0, 'N'), (0, 0, 'E', 2): (0, 0, 'N', 1), (1, 0, 'E', 1): (0, 0, 'E', 1) }
     output: [(0, 0, 'N'), (0, 0, 'E'), (1, 0, 'E')]
@@ -761,27 +722,29 @@ def manhattan_distance(a: GridLocation, b: GridLocation) -> float:
     (x2, y2) = b
     return abs(x1 - x2) + abs(y1 - y2)
 
-def a_star_search_points_with_goal(graph: SquareGrid, start: GridLocationDirection, goal: GridLocation):
+def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tuple[int, int]):
     """basic a star search
     to go from start to goal
     """
     openList = PriorityQueue()
     openList.put(start, 0)
-    came_from: dict[GridLocationDirection, Optional[GridLocationDirection]] = {}
-    cost_so_far: dict[GridLocationDirection, float] = {}
+    came_from: dict[Position, Optional[Position]] = {}
+    cost_so_far: dict[Position, float] = {}
     came_from[start] = None
     cost_so_far[start] = 0
     
     while not openList.empty():
-        current: GridLocationDirection = openList.get()
+        current: Position = openList.get()
         # print("current", current)
         
         if current[0] == goal[0] and current[1] == goal[1]:
             break
         
         for next in graph.neighbors_phase2(current):
+            # new_cost = cost_so_far[current][0] + 1 #graph.cost(current, next) # every move costs 1 for now
+            howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
             # print("next", next)
-            new_cost = cost_so_far[current] + graph.cost_phase2(current, next) # every move costs 1 for now
+            new_cost = cost_so_far[current] + graph.cost_phase2(howManyGuardsAreSeeingUs) # every move costs 1 for now
             if next not in cost_so_far or new_cost < cost_so_far[next]:
                 # ok on a trouvé une nouvelle route pour aller à next moins chere
                 cost_so_far[next] = new_cost
@@ -789,4 +752,4 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: GridLocationDirecti
 
                 openList.put(next, priority)
                 came_from[next] = current
-    return came_from, cost_so_far
+    return came_from, cost_so_far, current

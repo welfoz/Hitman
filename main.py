@@ -394,21 +394,28 @@ def phase2(referee: HitmanReferee, map):
             [1, 2, 1, 1, 1, 1, 1],
             [1, 1, 1, 5, 9, 2, 2]]
     start_time = time.time()
+
+    status = referee.start_phase2()
+    pprint(status)
     
     ropePosition = findObject(map, OBJECTS_INDEX['rope'])
+    if ropePosition is None:
+        raise Exception("No rope found")
     costumePosition = findObject(map, OBJECTS_INDEX['costume'])
+    if costumePosition is None:
+        raise Exception("No costume found")
     targetPosition = findObject(map, OBJECTS_INDEX['target'])
+    if targetPosition is None:
+        raise Exception("No target found")
 
     orientation = fromHCDirectionToOrientation(status["orientation"])
-    startPosition: Position = [status["position"][0], status["position"][1], orientation]
+    startPosition: Position = (status["position"][0], status["position"][1], orientation)
     position: Position = startPosition
     print("ropePosition: ", ropePosition)
     print("costumePosition: ", costumePosition)
     print("targetPosition: ", targetPosition)
     print("startPosition: ", startPosition)
 
-    status = referee.start_phase2()
-    pprint(status)
 
     n_col = status['n']
     n_lig = status['m']
@@ -420,11 +427,10 @@ def phase2(referee: HitmanReferee, map):
     count = 0
     actions = []
     ### first go to the rope
+    goal = ropePosition
     while count < MAX and not isOnObject(map, position, OBJECTS_INDEX['rope']):
         print("------------------")        
 
-        orientation = fromHCDirectionToOrientation(status["orientation"])
-        position: Position = [status["position"][0], status["position"][1], orientation]
         # print("position: ", position)
 
         action = actionChooser.choose_phase2(map, position, goal)
@@ -469,9 +475,20 @@ def phase2(referee: HitmanReferee, map):
         #     "penalties": status['penalties'],
         #     "status": status['status']
         # })
+        orientation = fromHCDirectionToOrientation(status["orientation"])
+        position: Position = (status["position"][0], status["position"][1], orientation)
         count += 1
     print("count: ", count)
     pprint(status)
+
+    print("We are on the rope")
+    print("we take the rope")
+    status = referee.take_weapon()
+    if status["has_weapon"] == False:
+        raise Exception("We don't have the rope")
+    print("we have the rope")
+
+    print("now go kill the target")
 
     ### then go to the target
 

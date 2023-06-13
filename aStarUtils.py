@@ -12,7 +12,6 @@ from aliases import Position, OBJECTS_INDEX, Information
 import heapq
 
 GridLocation = Tuple[int, int]
-GridLocationDirection = Tuple[int, int, str]
 
 def draw_tile(graph: SquareGrid, id, style):
     r = " . "
@@ -106,11 +105,11 @@ class SquareGrid:
         self.height = height
         self.map = map
     
-    def in_bounds(self, id: GridLocationDirection) -> bool:
+    def in_bounds(self, id: Position) -> bool:
         (x, y, direction) = id
         return 0 <= x < self.width and 0 <= y < self.height
     
-    def passable(self, id: GridLocationDirection) -> bool:
+    def passable(self, id: Position) -> bool:
         (x, y, direction) = id
         newPositionValue = self.map[y][x]
         
@@ -126,7 +125,7 @@ class SquareGrid:
         # each action costs 1
         return 1 + 5 * howManyGuardsAreSeeingUs
     
-    def neighbors(self, id: GridLocationDirection) -> Iterator[GridLocationDirection]:
+    def neighbors(self, id: Position) -> Iterator[Position]:
         (x, y, direction) = id
         neighbors = []
         if direction == 'N':
@@ -145,7 +144,7 @@ class SquareGrid:
         results = filter(self.passable, results)
         return results
 
-    def neighbors_phase2(self, id: GridLocationDirection) -> Iterator[GridLocationDirection]:
+    def neighbors_phase2(self, id: Position) -> Iterator[Position]:
         (x, y, direction) = id
         neighbors = []
         if direction == 'N':
@@ -186,19 +185,19 @@ def heuristic(a: GridLocation, b: GridLocation) -> float:
     (x2, y2) = b
     return abs(x1 - x2) + abs(y1 - y2)
 
-def a_star_search(graph: SquareGrid, start: GridLocationDirection, goal: GridLocation):
+def a_star_search(graph: SquareGrid, start: Position, goal: GridLocation):
     """basic a star search
     to go from start to goal
     """
     openList = PriorityQueue()
     openList.put(start, 0)
-    came_from: dict[GridLocationDirection, Optional[GridLocationDirection]] = {}
-    cost_so_far: dict[GridLocationDirection, float] = {}
+    came_from: dict[Position, Optional[Position]] = {}
+    cost_so_far: dict[Position, float] = {}
     came_from[start] = None
     cost_so_far[start] = 0
     
     while not openList.empty():
-        current: GridLocationDirection = openList.get()
+        current: Position = openList.get()
         # print("current", current)
         
         if current[0] == goal[0] and current[1] == goal[1]:
