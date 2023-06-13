@@ -599,11 +599,11 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection):
 
                 state_map[nextTuple] = nextMap
 
-                # priority = new_cost + howManyUnknown(nextMap) # pretty efficient but not best result
+                priority = new_cost + howManyUnknown(nextMap) # pretty efficient but not best result
                 # priority = howManyUnknown(nextMap) # pretty efficient but not best result
                 # priority = new_cost + score # inneficient but find the best result as it expends more than others
                 # priority = new_cost + score * 10 # get stuck, why ? circular path
-                priority = new_cost # diskstra
+                # priority = new_cost # diskstra
                 
                 openList.put(nextTuple, priority)
                 # to test

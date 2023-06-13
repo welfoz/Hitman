@@ -120,7 +120,7 @@ class SquareGrid:
     
     def cost(self, howManyGuardsAreSeeingUs: int) -> float:
         # each action costs 1
-        return 2 + 5 * howManyGuardsAreSeeingUs
+        return 1 + 5 * howManyGuardsAreSeeingUs
     
     def neighbors(self, id: GridLocationDirection) -> Iterator[GridLocationDirection]:
         (x, y, direction) = id
