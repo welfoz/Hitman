@@ -189,76 +189,79 @@ from utils import createMap, getAllNewInformation, howManyUnknown, isInformation
 #         else: 
 #             raise Exception("Error: action not found")
 
-#     def getAllCasesSeenByGuard(self, position, map) -> List[Tuple[int, int, int]]:
-#         vision = 2
-#         x = position[0]
-#         y = position[1]
-#         direction = position[2]
-#         computeNewPosition = ["=", "="]
-#         if direction == 'N':
-#             computeNewPosition[1] = "-"
-#         elif direction == 'S':
-#             computeNewPosition[1] = "+"
-#         elif direction == 'E':
-#             computeNewPosition[0] = "+"
-#         elif direction == 'W':
-#             computeNewPosition[0] = "-"
 
-#         casesSeen = []
-#         for i in range(vision):
-#             newPosition = [x, y]
-#             if computeNewPosition[0] == "+":
-#                 newPosition[0] = x + i + 1
-#             elif computeNewPosition[0] == "-":
-#                 newPosition[0] = x - i - 1
+def getAllCasesSeenByGuard(position, map) -> List[Tuple[int, int, int]]:
+    vision = 2
+    x = position[0]
+    y = position[1]
+    direction = position[2]
+    computeNewPosition = ["=", "="]
+    if direction == 'N':
+        computeNewPosition[1] = "+"
+    elif direction == 'S':
+        computeNewPosition[1] = "-"
+    elif direction == 'E':
+        computeNewPosition[0] = "+"
+    elif direction == 'W':
+        computeNewPosition[0] = "-"
 
-#             if computeNewPosition[1] == "+":
-#                 newPosition[1] = y + i + 1
-#             elif computeNewPosition[1] == "-":
-#                 newPosition[1] = y - i - 1
+    casesSeen = []
+    for i in range(vision):
+        newPosition = [x, y]
+        if computeNewPosition[0] == "+":
+            newPosition[0] = x + i + 1
+        elif computeNewPosition[0] == "-":
+            newPosition[0] = x - i - 1
 
-#             if isOutsideTheMap(self.n_col, self.n_lig, newPosition): continue
-#             info = [newPosition[0], newPosition[1], map[newPosition[1]][newPosition[0]]] 
+        if computeNewPosition[1] == "+":
+            newPosition[1] = y + i + 1
+        elif computeNewPosition[1] == "-":
+            newPosition[1] = y - i - 1
 
-#             casesSeen.append(info)
+        if isOutsideTheMap(len(map[0]), len(map), newPosition): continue
+        info = [newPosition[0], newPosition[1], map[newPosition[1]][newPosition[0]]] 
 
-#             # if case not empty, vision stops here
-#             if info[2] != OBJECTS_INDEX['empty']: 
-#                 break
-#         return casesSeen
+        if info[2] == -1: # unknown cell
+            info[2] = OBJECTS_INDEX['empty'] # means we hope to see an empty cell
+            casesSeen.append(info)
+        elif info[2] == OBJECTS_INDEX['empty']: 
+            casesSeen.append(info)
+        else: # can't see through objects
+            break
+    return casesSeen
 
-#     def getAllGuardsPositions(self, map) -> List[Tuple[int, int, int]]:
-#         guardsPositions = []
-#         for y in range(len(map)):
-#             for x in range(len(map[y])):
-#                 if map[y][x] in OBJECTS_INDEX['guard']:
-#                     guardPositionValue = map[y][x]
-#                     direction = None
+def getAllGuardsPositions(map) -> List[Tuple[int, int, int]]:
+    guardsPositions = []
+    for y in range(len(map)):
+        for x in range(len(map[y])):
+            if map[y][x] in OBJECTS_INDEX['guard']:
+                guardPositionValue = map[y][x]
+                direction = None
 
-#                     # can change with the arbitre
-#                     if guardPositionValue == OBJECTS_INDEX['guard'][1]:
-#                         direction = 'N'
-#                     elif guardPositionValue == OBJECTS_INDEX['guard'][2]:
-#                         direction = 'S'
-#                     elif guardPositionValue == OBJECTS_INDEX['guard'][3]:
-#                         direction = 'E'
-#                     elif guardPositionValue == OBJECTS_INDEX['guard'][4]:
-#                         direction = 'W'
-                    
-#                     guardsPositions.append([x, y, direction])
-#         return guardsPositions
+                # can change with the arbitre
+                if guardPositionValue == OBJECTS_INDEX['guard'][1]:
+                    direction = 'N'
+                elif guardPositionValue == OBJECTS_INDEX['guard'][2]:
+                    direction = 'S'
+                elif guardPositionValue == OBJECTS_INDEX['guard'][3]:
+                    direction = 'E'
+                elif guardPositionValue == OBJECTS_INDEX['guard'][4]:
+                    direction = 'W'
+                
+                guardsPositions.append([x, y, direction])
+    return guardsPositions
 
-#     def howManyGuardsLookingAtUs(self, position, map) -> int:
-#         guardsPositions = self.getAllGuardsPositions(map)
+def howManyGuardsLookingAtUs(position, map) -> int:
+    guardsPositions = getAllGuardsPositions(map)
 
-#         guardsLookingAtUs = 0
-#         for guardPosition in guardsPositions:
-#             casesSeen = self.getAllCasesSeenByGuard(guardPosition, map)
-#             for caseSeen in casesSeen:
-#                 if caseSeen[0] == position[0] and caseSeen[1] == position[1]:
-#                     guardsLookingAtUs += 1
-            
-#         return guardsLookingAtUs
+    guardsLookingAtUs = 0
+    for guardPosition in guardsPositions:
+        casesSeen = getAllCasesSeenByGuard(guardPosition, map)
+        for caseSeen in casesSeen:
+            if caseSeen[0] == position[0] and caseSeen[1] == position[1]:
+                guardsLookingAtUs += 1
+        
+    return guardsLookingAtUs
 
 #     def informationGained(self, position, newInfo, map) -> int:
 #         """
@@ -580,7 +583,9 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection):
 
             newInfos = getAllNewInformation(graph.width, graph.height, state_map[current], next)
             nextMap = updateMap(copy.deepcopy(state_map[current]), newInfos)
-            new_cost = cost_so_far[current][0] + 1 #graph.cost(current, next) # every move costs 1 for now
+            # new_cost = cost_so_far[current][0] + 1 #graph.cost(current, next) # every move costs 1 for now
+            howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
+            new_cost = cost_so_far[current][0] + graph.cost(howManyGuardsAreSeeingUs) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
             # score is the number of newInfos / the cost
             # goal: minimize the cost and maximize the number of newInfos
             # score means ratio combien de nouvelle info par action
@@ -594,11 +599,11 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection):
 
                 state_map[nextTuple] = nextMap
 
-                priority = new_cost + howManyUnknown(nextMap) # pretty efficient but not best result
+                # priority = new_cost + howManyUnknown(nextMap) # pretty efficient but not best result
                 # priority = howManyUnknown(nextMap) # pretty efficient but not best result
                 # priority = new_cost + score # inneficient but find the best result as it expends more than others
                 # priority = new_cost + score * 10 # get stuck, why ? circular path
-                # priority = new_cost # diskstra
+                priority = new_cost # diskstra
                 
                 openList.put(nextTuple, priority)
                 # to test
