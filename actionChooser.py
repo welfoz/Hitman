@@ -476,30 +476,7 @@ def astar_phase2(start: Position, diagram, goal: Tuple[int, int]):
         goal: Position = new_goal
         print("new_goal", new_goal)
 
-    # new_came_from = {}
-    # for key, value in came_from.items():
-    #     if value is not None:
-    #         if key[0] != value[0] or key[1] != value[1]:
-    #             new_came_from[(key[0], key[1])] = (value[0], value[1])
-    #     else: 
-    #         new_came_from[(key[0], key[1])] = None
     path = reconstruct_path(came_from, start=start, goal=goal)
-    
-    # new_cost = {}
-    # for key, value in cost_so_far.items():
-    #     if value is not None:
-    #         new_cost[(key[0], key[1])] = value
-    #     else: 
-    #         new_cost[(key[0], key[1])] = None
-    # print("came_from", came_from)
-    # draw_grid(diagram, number=new_cost, start=(start[0], start[1]), goal=goal)
-    # draw_gnew_pathrid(diagram, start=(start[0], start[1], start[2]), path=path)
-    # new_path = []
-    # for case in newpathBacktrack:
-    #     new_path.append(case[0])
-    
-    # pprint(new_path)
-
     return path
 
 def reconstruct_path(came_from: dict[str, str], start: str, goal: Tuple[int, int, str|None]) -> list[str]:
