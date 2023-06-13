@@ -64,6 +64,7 @@ def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int,
             
             litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'][0])
             litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['civil'][0])
+            # A CHANGER !!!
     
     if len(litterals) > 0:
         if nb_heard > 4:
@@ -77,15 +78,23 @@ def addInfoIsInGuardRange(n_col : int, n_lig : int, position : Tuple) -> ClauseB
     y = position[1]
     litterals = []
     # cases horizontales
-    for i in range(x-2, x+3):
+    for i in range(x-2, x):
         if i < 0 or i >= n_col:
             continue
-        litterals.append(i * n_lig * 7 + y * 7 + OBJECTS_INDEX['guard'][0])
+        litterals.append(i * n_lig * 7 + y * 7 + OBJECTS_INDEX['guard'][3])
+    for i in range(x+1, x+3):
+        if i < 0 or i >= n_col:
+            continue
+        litterals.append(i * n_lig * 7 + y * 7 + OBJECTS_INDEX['guard'][4])
     # cases verticales
-    for j in range(y-2, y+3):
+    for j in range(y-2, y):
         if j < 0 or j >= n_lig:
             continue
-        litterals.append(x * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'][0])
+        litterals.append(x * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'][1])
+    for j in range(y+1, y+3):
+        if j < 0 or j >= n_lig:
+            continue
+        litterals.append(x * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'][2])
     # print(litterals)
     return atLeast(1, litterals)
 
@@ -238,3 +247,9 @@ def count_dupplicate_clauses() -> int:
         
         clausesset = list(set(clauses))
         return len(lines), len(clauses), len(clausesset), len(clauses) - len(clausesset), (len(clauses) - len(clausesset)) / len(clauses)
+
+## savoir si un garde peut nous voir sur une case
+def is_position_safe(position : Tuple, clauses : ClauseBase, n_col : int, n_lig : int, dimension : int) -> bool:
+    clauses += addInfoIsInGuardRange(n_col, n_lig, position)
+    sol = solveur(clauses, dimension)
+    return not sol[0]
