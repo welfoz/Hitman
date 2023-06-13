@@ -62,9 +62,10 @@ def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int,
                 # print("Case deja connue", i, j, map[j][i], guardsOrCivils)
                 continue
             
-            litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'][0])
-            litterals.append(i * n_lig * 7 + j * 7 + OBJECTS_INDEX['civil'][0])
-            # A CHANGER !!!
+            for g in range(OBJECTS_INDEX['guard'][0], OBJECTS_INDEX['guard'][4]):
+                litterals.append(i * n_lig * 7 + j * 7 + g)
+            for c in range(OBJECTS_INDEX['civil'][0], OBJECTS_INDEX['civil'][4]):
+                litterals.append(i * n_lig * 7 + j * 7 + c)
     
     if len(litterals) > 0:
         if nb_heard > 4:
@@ -237,7 +238,7 @@ def clausesToDimacs(clauses: ClauseBase, dimension: int) -> List[str]:
 
 ## open the temp.cnf file and count the number of dupplicate clauses
 def count_dupplicate_clauses() -> int:
-    with open('./Hitman/temp.cnf', 'r') as f:
+    with open('temp.cnf', 'r') as f:
         lines = f.readlines()
         clauses = []
         # print(lines)

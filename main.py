@@ -8,7 +8,7 @@ from arbitre_gitlab.hitman.hitman import HC, HitmanReferee
 from actionChooser import ActionChooser, createMap, isInformationAlreadyKnown, updateMap
 from aliases import  Literal, ClauseBase, Orientation, Information, Position, OBJECTS_INDEX
 from utils import createMap, howManyUnknown, isInformationAlreadyKnown, updateMap, isMapComplete, updateSolutionMap, fromHCDirectionToOrientation, getVisionsFromStatus
-from satUtils import generateTypesGrid, generateClausesForObject, addInfoListening, addInfoIsInGuardRange, addInfoVision
+from satUtils import generateTypesGrid, generateClausesForObject, addInfoListening, addInfoIsInGuardRange, addInfoVision, count_dupplicate_clauses, is_position_safe
 
 def addTurnInfo(status, heardMap, map, clauses):
     # print()
@@ -82,7 +82,9 @@ def phase1(referee):
 
         orientation = fromHCDirectionToOrientation(status["orientation"])
         position: Position = [status["position"][0], status["position"][1], orientation]
-        # print("position: ", position)
+        print("position: ", position)
+
+        print(is_position_safe(position, clauses, n_col, n_lig, dimension))
 
         action = actionChooser.choose(map, position)
 
@@ -128,6 +130,8 @@ def phase1(referee):
 def main():
     referee = HitmanReferee()
     map = phase1(referee)
+
+    print(count_dupplicate_clauses())
 
     """
     phase 2
