@@ -13,7 +13,7 @@ import time
 
 # generation des types possibles pour une case
 def generateTypesGrid(n_col : int, n_lig : int) -> ClauseBase:
-    objectNumber = len(OBJECTS_INDEX)
+    objectNumber = 15
     clauses = []
     for i in range(n_col):
         for j in range(n_lig):
@@ -28,20 +28,20 @@ def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_ind
     litterals = []
     for i in range(n_col):
         for j in range(n_lig):
-            litterals.append(i * n_lig * 7 + j * 7 + object_index)
+            litterals.append(i * n_lig * 15 + j * 15 + object_index)
     r = uniqueX(litterals, n_object)
     #print("Clauses pour " + str(n_object) + " " + list(OBJECTS_INDEX.keys())[list(OBJECTS_INDEX.values()).index(object_index)] + " :")
     #print(r)
     return r
 
 def addInfoVision(n_col : int, n_lig : int, info_vision : Information) -> ClauseBase:
-    # print("Info vision : " + str(info_vision))
+    print("Info vision : " + str(info_vision))
     x = info_vision[0]
     y = info_vision[1]
     value = info_vision[2]
     # print("Clauses pour les infos de vision : ")
     # print(result)
-    return [[x * n_lig * 7 + y * 7 + value]]
+    return [[x * n_lig * 15 + y * 15 + value]]
 
 # est ce juste pour nb_heard = 0 ?
 def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int, map) -> ClauseBase:
@@ -63,9 +63,9 @@ def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int,
                 continue
             
             for g in range(OBJECTS_INDEX['guard'][0], OBJECTS_INDEX['guard'][4]):
-                litterals.append(i * n_lig * 7 + j * 7 + g)
+                litterals.append(i * n_lig * 15 + j * 15 + g)
             for c in range(OBJECTS_INDEX['civil'][0], OBJECTS_INDEX['civil'][4]):
-                litterals.append(i * n_lig * 7 + j * 7 + c)
+                litterals.append(i * n_lig * 15 + j * 15 + c)
     
     if len(litterals) > 0:
         if nb_heard > 4:
@@ -82,20 +82,20 @@ def addInfoIsInGuardRange(n_col : int, n_lig : int, position : Tuple) -> ClauseB
     for i in range(x-2, x):
         if i < 0 or i >= n_col:
             continue
-        litterals.append(i * n_lig * 7 + y * 7 + OBJECTS_INDEX['guard'][3])
+        litterals.append(i * n_lig * 15 + y * 15 + OBJECTS_INDEX['guard'][3])
     for i in range(x+1, x+3):
         if i < 0 or i >= n_col:
             continue
-        litterals.append(i * n_lig * 7 + y * 7 + OBJECTS_INDEX['guard'][4])
+        litterals.append(i * n_lig * 15 + y * 15 + OBJECTS_INDEX['guard'][4])
     # cases verticales
     for j in range(y-2, y):
         if j < 0 or j >= n_lig:
             continue
-        litterals.append(x * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'][1])
+        litterals.append(x * n_lig * 15 + j * 15 + OBJECTS_INDEX['guard'][1])
     for j in range(y+1, y+3):
         if j < 0 or j >= n_lig:
             continue
-        litterals.append(x * n_lig * 7 + j * 7 + OBJECTS_INDEX['guard'][2])
+        litterals.append(x * n_lig * 15 + j * 15 + OBJECTS_INDEX['guard'][2])
     # print(litterals)
     return atLeast(1, litterals)
 
@@ -250,7 +250,50 @@ def count_dupplicate_clauses() -> int:
         return len(lines), len(clauses), len(clausesset), len(clauses) - len(clausesset), (len(clauses) - len(clausesset)) / len(clauses)
 
 ## savoir si un garde peut nous voir sur une case
-def is_position_safe(position : Tuple, clauses : ClauseBase, n_col : int, n_lig : int, dimension : int) -> bool:
-    clauses += addInfoIsInGuardRange(n_col, n_lig, position)
-    sol = solveur(clauses, dimension)
-    return not sol[0]
+# def is_position_safe(position : Tuple, clauses : ClauseBase, n_col : int, n_lig : int, dimension : int) -> bool:
+#     clauses += addInfoIsInGuardRange(n_col, n_lig, position)
+#     sol = solveur(clauses, dimension)
+#     return not sol[0]
+
+GUARD_INDEX = {
+    'unknown' : -1,
+    'empty': 1,
+    'blocking': 2,
+    'guard': 3,
+}
+
+def HCInfoToGuardIndex(value : int) -> int:
+    if value == HC.WALL._value_ or value in range(HC.CIVIL_N._value_, HC.PIANO_WIRE._value_ + 1):
+        return GUARD_INDEX['blocking']
+    if value in range(HC.GUARD_N._value_, HC.GUARD_W._value_ + 1):
+        return GUARD_INDEX['guard']
+    if value == HC.EMPTY._value_:
+        return GUARD_INDEX['empty']
+    else:
+        return GUARD_INDEX['unknown']
+    
+# renvoie les 4 paires de 2 cases autour de la position
+def get_surroundings(position, map, n_col, n_lig):
+    x = position[0]
+    y = position[1]
+    result = []
+    surroundings = [[(x-1, y), (x-2, y)], [(x+1, y), (x+2, y)], [(x, y-1), (x, y-2)], [(x, y+1), (x, y+2)]]
+    for d in surroundings: # for each direction
+        cases = []
+        for c in d: # for each case
+            i = c[0]
+            j = c[1]
+            if i < 0 or i >= n_col or j < 0 or j >= n_lig:
+                cases.append(GUARD_INDEX['blocking'])
+                continue
+            cases.append(HCInfoToGuardIndex(map[(i, j)].value))
+        result.append(cases)
+    return result
+
+def is_position_safe(position : Tuple, known_map : dict[Tuple[int, int], HC], clauses : ClauseBase, n_col : int, n_lig : int, dimension : int) -> bool:
+    if HCInfoToGuardIndex(known_map[(position[0], position[1])].value) == GUARD_INDEX['blocking']:
+        return True
+    surroundings = get_surroundings(position, known_map, n_col, n_lig)
+    print(surroundings)
+    input("Press Enter to continue...")
+    return False

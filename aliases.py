@@ -21,6 +21,6 @@ OBJECTS_INDEX = {
     'target': 3,
     'rope': 4,
     'costume': 5,
-    'guard': [6, 8, 9, 10, 11], # 6 default, 7: north, 8: south, 9: east, 10: west
-    'civil': [7, 12, 13, 14, 15], # 11 default, 12: north, 13: south, 14: east, 15: west
+    'guard': [6, 7, 8, 9, 10], # 6 default, 7: north, 8: south, 9: east, 10: west
+    'civil': [11, 12, 13, 14, 15], # 11 default, 12: north, 13: south, 14: east, 15: west
 }
