@@ -62,13 +62,13 @@ def phase1(referee):
     map[0][0] = OBJECTS_INDEX['empty']
     
     updateSolutionMap(solutionMap, [((0, 0), HC.EMPTY)])
-    updateSolutionMap(solutionMap, status["vision"])
     MAX = 100
     count = 0
     actions = []
-    
+
     while count < MAX and not isMapComplete(map):
-        print("------------------")        
+        print("------------------")
+        updateSolutionMap(solutionMap, status["vision"])
 
         orientation = fromHCDirectionToOrientation(status["orientation"])
         position: Position = [status["position"][0], status["position"][1], orientation]
@@ -76,7 +76,7 @@ def phase1(referee):
 
         addTurnInfo(status, heardMap, map, clauses)
         print(len(clauses))
-        safe  = is_position_safe(position, solutionMap, clauses, n_col, n_lig)
+        safe  = is_position_safe(position, map, clauses, n_col, n_lig)
         print(safe)
 
         action = actionChooser.choose(map, position)
@@ -102,7 +102,6 @@ def phase1(referee):
         #     "status": status['status']
         # })
 
-        updateSolutionMap(solutionMap, status["vision"])
         count += 1
     print("count: ", count)
     pprint(status)

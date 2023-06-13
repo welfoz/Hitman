@@ -94,7 +94,7 @@ def generateInitialClauses(n_col : int, n_lig : int, n_guards : int, n_civils : 
     return result
 
 def addInfoVision(n_col : int, n_lig : int, info_vision : Information) -> ClauseBase:
-    print("Info vision : " + str(info_vision))
+    # print("Info vision : " + str(info_vision))
     x = info_vision[0]
     y = info_vision[1]
     value = HCInfoToMapGuardIndex(info_vision[2])
@@ -298,13 +298,13 @@ def get_surroundings(position, map, n_col, n_lig) -> List[Information]:
             if i < 0 or i >= n_col or j < 0 or j >= n_lig:
                 cases.append((i, j, GUARD_INDEX['blocking']))
                 continue
-            cases.append((i, j, HCInfoToGuardIndex(map[(i, j)].value)))
+            cases.append((i, j, HCInfoToGuardIndex(map[j][i])))
         result.append(cases)
     return result
 
 def is_position_safe(position : Tuple, known_map : dict[Tuple[int, int], HC], clauses : ClauseBase, n_col : int, n_lig : int) -> bool:
     dimension = n_col * n_lig * 4
-    if HCInfoToGuardIndex(known_map[(position[0], position[1])].value) == GUARD_INDEX['blocking']:
+    if HCInfoToGuardIndex(known_map[position[0]][position[1]]) == GUARD_INDEX['blocking']:
         return True
     surroundings = get_surroundings(position, known_map, n_col, n_lig)
     for s in surroundings:
@@ -322,17 +322,17 @@ def is_position_safe(position : Tuple, known_map : dict[Tuple[int, int], HC], cl
             if s[1][2] == GUARD_INDEX['blocking'] or s[1] == GUARD_INDEX['empty']:
                 continue
             if s[1][2] == GUARD_INDEX['unknown']:
-                clauses += [[s[1][0] * n_lig * 15 + s[1][1] * 15 + GUARD_INDEX['guard'][0]]] #  a maj !!!
+                clauses += [[s[1][0] * n_lig * 4 + s[1][1] * 4 + GUARD_INDEX['guard']]]
                 sol = solveur(clauses, dimension)
                 if sol[0]:
                     return False
         if s[0][2] == GUARD_INDEX['unknown']:
-            clauses += [[s[0][0] * n_lig * 15 + s[0][1] * 15 + GUARD_INDEX['guard'][0]]] #  a maj !!!
+            clauses += [[s[0][0] * n_lig * 4 + s[0][1] * 4 + GUARD_INDEX['guard']]]
             sol = solveur(clauses, dimension)
             if sol[0]:
                 return False
             if s[1][2] == GUARD_INDEX['unknown']:
-                clauses += [[s[1][0] * n_lig * 15 + s[1][1] * 15 + GUARD_INDEX['guard'][0]]]
+                clauses += [[s[1][0] * n_lig * 4 + s[1][1] * 4 + GUARD_INDEX['guard']]]
                 sol = solveur(clauses, dimension)
                 if sol[0]:
                     return False

@@ -103,7 +103,7 @@ def createMap(n_col, n_lig):
         map.append([])
         for _ in range(n_col):
             map[i].append(-1)
-    print(map)
+    # print(map)
     return map
 
 def isInformationAlreadyKnown(map, information: Information) -> bool:
