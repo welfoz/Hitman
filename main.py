@@ -473,6 +473,8 @@ def phase2(referee: HitmanReferee, map):
     print("We are on the rope")
     print("we take the rope")
     status = referee.take_weapon()
+    # the case becomes empty
+    map[ropePosition[1]][ropePosition[0]] = OBJECTS_INDEX['empty']
     if status["has_weapon"] == False:
         raise Exception("We don't have the rope")
     print("we have the rope")
