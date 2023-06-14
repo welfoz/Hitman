@@ -366,22 +366,25 @@ class ActionChooser:
         else: 
             raise Exception("Error: action not found")
 
-    def choose_phase2(self, map, position: Position, goal: Tuple[int, int]):
+    def choose_phase2(self, map, position: Position, goal: Tuple[int, int], hasRope: bool):
         """
         return the best action to do according to the best path, which maximizes the total information gained
         @param stateTree: list of the values of the total information gained for each path
         """
 
-        diagram = SquareGrid(self.n_col, self.n_lig, map)
+        diagram = SquareGrid(self.n_col, self.n_lig, map, hasRope)
 
 
         path = astar_phase2(position, diagram, goal)
         result = fromPathToActions(path)
 
+        pathWithoutActions = []
+        for i in range(len(path)):
+            pathWithoutActions.append((path[i][0], path[i][1], path[i][2]))
         # if howManyUnknownVariable < bestHowManyUnknown: # favorise la découverte
         print("Result: " + str(result))
         print('number of actions: ', len(result))
-        draw_grid(diagram, start=(position[0], position[1], position[2]), path=path)
+        draw_grid(diagram, start=(position[0], position[1], position[2]), path=pathWithoutActions)
 
         if result[0] == "move":
             return 1
@@ -389,9 +392,9 @@ class ActionChooser:
             return 2
         elif result[0] == "turn -90":
             return 3
-        elif result[0] == "neutralize guard":
+        elif result[0] == "neutralize_guard":
             return 4
-        elif result[0] == "neutralize civil":
+        elif result[0] == "neutralize_civil":
             return 5
         else: 
             raise Exception("Error: action not found")
@@ -520,32 +523,35 @@ def fromPathToActions(path):
         return []
     actions = []
     for i in range(1, len(path)):
-        if path[i][0] != path[i - 1][0] or path[i][1] != path[i - 1][1]:
-            actions.append('move')
+        if path[i][3] == SPECIAL_ACTIONS["nothing_special"]:
+            if path[i][0] != path[i - 1][0] or path[i][1] != path[i - 1][1]:
+                actions.append('move')
         
-        if path[i][2] == 'N':
-            if path[i - 1][2] == 'E':
-                actions.append('turn -90')
-            elif path[i - 1][2] == 'W':
-                actions.append('turn 90')
-        
-        if path[i][2] == 'S':
-            if path[i - 1][2] == 'E':
-                actions.append('turn 90')
-            elif path[i - 1][2] == 'W':
-                actions.append('turn -90')
-        
-        if path[i][2] == 'E':
-            if path[i - 1][2] == 'N':
-                actions.append('turn 90')
-            elif path[i - 1][2] == 'S':
-                actions.append('turn -90')
+            if path[i][2] == 'N':
+                if path[i - 1][2] == 'E':
+                    actions.append('turn -90')
+                elif path[i - 1][2] == 'W':
+                    actions.append('turn 90')
             
-        if path[i][2] == 'W':
-            if path[i - 1][2] == 'N':
-                actions.append('turn -90')
-            elif path[i - 1][2] == 'S':
-                actions.append('turn 90')
+            if path[i][2] == 'S':
+                if path[i - 1][2] == 'E':
+                    actions.append('turn 90')
+                elif path[i - 1][2] == 'W':
+                    actions.append('turn -90')
+            
+            if path[i][2] == 'E':
+                if path[i - 1][2] == 'N':
+                    actions.append('turn 90')
+                elif path[i - 1][2] == 'S':
+                    actions.append('turn -90')
+                
+            if path[i][2] == 'W':
+                if path[i - 1][2] == 'N':
+                    actions.append('turn -90')
+                elif path[i - 1][2] == 'S':
+                    actions.append('turn 90')
+        elif path[i][3] == SPECIAL_ACTIONS["neutralize_guard"]:
+            actions.append('neutralize_guard')
     return actions 
 
 def getClusteringScore(map):
@@ -730,6 +736,9 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
     came_from[startTuple]= None, None
     cost_so_far[startTuple] = 0
 
+    state_map: dict[Tuple[PositionAction, Optional[PositionAction]], List[List[int]]] = {}
+    state_map[startTuple] = graph.map
+
     previous = {}
     previous[startTuple] = (None, None)
 
@@ -753,9 +762,14 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
             # print("next", next)
             new_cost = cost_so_far[currentTuple] + graph.cost_phase2(howManyGuardsAreSeeingUs) # every move costs 1 for now
+            nextMap = state_map[currentTuple]
+            if next[3] == SPECIAL_ACTIONS['neutralize_guard']:
+                nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[next[0], next[1], OBJECTS_INDEX["empty"]]])
             if nextTuple not in cost_so_far or new_cost < cost_so_far[nextTuple]:
                 # ok on a trouvé une nouvelle route pour aller à next moins chere
                 backtrack[nextTuple] = backtrack[currentTuple] + [nextTuple[0]]
+                state_map[nextTuple] = nextMap
+
                 cost_so_far[nextTuple] = new_cost
                 priority = new_cost + manhattan_distance((next[0], next[1]), goal) # manhattan distance
 

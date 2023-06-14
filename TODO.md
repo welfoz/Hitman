@@ -7,6 +7,7 @@
 
 ### phase 2 TODO 
 - apres opti petit à petit
+- neutralize: attention aux points
 
 Opti a*: 
 - red blob 
