@@ -405,21 +405,18 @@ def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPos
             actions.append(("turn -90", position))
             status = referee.turn_anti_clockwise()
         elif action == 4:
-            actions.append(("kill_target", position))
-            status = referee.kill_target()
-        elif action == 5:
             actions.append(("neutralize_guard", position))
             status = referee.neutralize_guard()
-        elif action == 6:
+        elif action == 5:
             actions.append(("neutralize_civil", position))
             status = referee.neutralize_civil()
-        elif action == 7:
+        elif action == 6:
             actions.append(("take_weapon", position))
             status = referee.take_weapon()
-        elif action == 8:
+        elif action == 7:
             actions.append(("take_suit", position))
             status = referee.take_suit()
-        elif action == 9:
+        elif action == 8:
             actions.append(("put_on_suit", position))
             status = referee.put_on_suit()
         else: 

@@ -389,6 +389,10 @@ class ActionChooser:
             return 2
         elif result[0] == "turn -90":
             return 3
+        elif result[0] == "neutralize guard":
+            return 4
+        elif result[0] == "neutralize civil":
+            return 5
         else: 
             raise Exception("Error: action not found")
 
@@ -473,14 +477,15 @@ def astar(start, diagram):
     return newpathBacktrack, howManyUnknown, clusteringScore
 
 def astar_phase2(start: Position, diagram, goal: Tuple[int, int]):
-    came_from, cost_so_far, new_goal = a_star_search_points_with_goal(diagram, start, goal)
+    came_from, cost_so_far, new_goal, backtrack = a_star_search_points_with_goal(diagram, start, goal)
+    newpathBacktrack = [tuple(start)] + backtrack
 
-    if new_goal != None:
-        goal: Position = new_goal
-        print("new_goal", new_goal)
+    # if new_goal != None:
+    #     goal: Position = new_goal
+    #     print("new_goal", new_goal)
 
-    path = reconstruct_path(came_from, start=start, goal=goal)
-    return path
+    # path = reconstruct_path(came_from, start=start, goal=goal)
+    return newpathBacktrack
 
 def reconstruct_path(came_from: dict[str, str], start: str, goal: Tuple[int, int, str|None]) -> list[str]:
     """
@@ -707,29 +712,43 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
     to go from start to goal
     """
     openList = PriorityQueue()
-    openList.put(start, 0)
-    came_from: dict[Position, Optional[Position]] = {}
-    cost_so_far: dict[Position, float] = {}
-    came_from[start] = None
-    cost_so_far[start] = 0
+    startTuple = (start, None)
+    openList.put(startTuple, 0)
+
+    came_from: dict[Tuple[Position, Optional[Position]], Tuple[Optional[Position], Optional[Position]]] = {}
+    cost_so_far: dict[Tuple[Position, Optional[Position]], float] = {}
+    came_from[startTuple]= None, None
+    cost_so_far[startTuple] = 0
+
+    previous = {}
+    previous[startTuple] = (None, None)
+
+    backtrack = {}
+    backtrack[startTuple] = []
     
     while not openList.empty():
-        current: Position = openList.get()
+        currentTuple: Tuple[Position, Optional[Position]]  = openList.get()
+        current = currentTuple[0]
         # print("current", current)
+
+        if backtrack.get(currentTuple, None) == None:
+            backtrack[currentTuple] = []
         
         if current[0] == goal[0] and current[1] == goal[1]:
             break
         
         for next in graph.neighbors_phase2(current):
+            nextTuple = (next, current)
             # new_cost = cost_so_far[current][0] + 1 #graph.cost(current, next) # every move costs 1 for now
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
             # print("next", next)
-            new_cost = cost_so_far[current] + graph.cost_phase2(howManyGuardsAreSeeingUs) # every move costs 1 for now
-            if next not in cost_so_far or new_cost < cost_so_far[next]:
+            new_cost = cost_so_far[currentTuple] + graph.cost_phase2(howManyGuardsAreSeeingUs) # every move costs 1 for now
+            if nextTuple not in cost_so_far or new_cost < cost_so_far[nextTuple]:
                 # ok on a trouvé une nouvelle route pour aller à next moins chere
-                cost_so_far[next] = new_cost
+                backtrack[nextTuple] = backtrack[currentTuple] + [nextTuple[0]]
+                cost_so_far[nextTuple] = new_cost
                 priority = new_cost + manhattan_distance((next[0], next[1]), goal) # manhattan distance
 
-                openList.put(next, priority)
-                came_from[next] = current
-    return came_from, cost_so_far, current
+                openList.put(nextTuple, priority)
+                came_from[nextTuple] = currentTuple
+    return came_from, cost_so_far, currentTuple, backtrack[currentTuple]
