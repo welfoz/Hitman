@@ -765,6 +765,8 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
             nextMap = state_map[currentTuple]
             if next[3] == SPECIAL_ACTIONS['neutralize_guard']:
                 nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[next[0], next[1], OBJECTS_INDEX["empty"]]])
+                # nb de personnes neutralisées * 20 
+                new_cost += 20
             if nextTuple not in cost_so_far or new_cost < cost_so_far[nextTuple]:
                 # ok on a trouvé une nouvelle route pour aller à next moins chere
                 backtrack[nextTuple] = backtrack[currentTuple] + [nextTuple[0]]

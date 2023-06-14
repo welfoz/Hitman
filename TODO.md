@@ -8,6 +8,7 @@
 ### phase 2 TODO 
 - apres opti petit à petit
 - neutralize: attention aux points
+- TODO: nb de fois vu en train de neutraliser quelqu’un * 100
 
 Opti a*: 
 - red blob 
