@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Iterator, Tuple, TypeVar, Optional, List, Dict
 T = TypeVar('T')
 from pprint import pprint
-from aliases import Position, OBJECTS_INDEX, Information
+from aliases import Position, OBJECTS_INDEX, Information, PositionAction, SPECIAL_ACTIONS
 import heapq
 
 GridLocation = Tuple[int, int]
@@ -105,12 +105,14 @@ class SquareGrid:
         self.height = height
         self.map = map
     
-    def in_bounds(self, id: Position) -> bool:
-        (x, y, direction) = id
+    def in_bounds(self, id: Position | PositionAction) -> bool:
+        x = id[0]
+        y = id[1]
         return 0 <= x < self.width and 0 <= y < self.height
     
-    def passable(self, id: Position) -> bool:
-        (x, y, direction) = id
+    def passable(self, id: Position | PositionAction) -> bool:
+        x = id[0]
+        y = id[1]
         newPositionValue = self.map[y][x]
         
         if newPositionValue == OBJECTS_INDEX['wall'] or newPositionValue in OBJECTS_INDEX['guard']:
@@ -144,18 +146,26 @@ class SquareGrid:
         results = filter(self.passable, results)
         return results
 
-    def neighbors_phase2(self, id: Position) -> Iterator[Position]:
+    def neighbors_phase2(self, id: Position) -> Iterator[PositionAction]:
         (x, y, direction) = id
         neighbors = []
         if direction == 'N':
             # move, turn 90, turn -90
-            neighbors = [(x, y+1, 'N'), (x, y, 'E'), (x, y, 'W')]
+            neighbors = [(x, y+1, 'N', SPECIAL_ACTIONS["nothing_special"]),
+                         (x, y, 'E', SPECIAL_ACTIONS["nothing_special"]),
+                         (x, y, 'W', SPECIAL_ACTIONS["nothing_special"])]   
         elif direction == 'S':
-            neighbors = [(x, y-1, 'S'), (x, y, 'W'), (x, y, 'E')]
+            neighbors = [(x, y-1, 'S', SPECIAL_ACTIONS["nothing_special"]), 
+                         (x, y, 'W', SPECIAL_ACTIONS["nothing_special"]),
+                         (x, y, 'E', SPECIAL_ACTIONS["nothing_special"])]
         elif direction == 'W':
-            neighbors = [(x-1, y, 'W'), (x, y, 'N'), (x, y, 'S')]
+            neighbors = [(x-1, y, 'W', SPECIAL_ACTIONS["nothing_special"]), 
+                         (x, y, 'N', SPECIAL_ACTIONS["nothing_special"]), 
+                         (x, y, 'S', SPECIAL_ACTIONS["nothing_special"])]
         elif direction == 'E':
-            neighbors = [(x+1, y, 'E'), (x, y, 'S'), (x, y, 'N')]
+            neighbors = [(x+1, y, 'E', SPECIAL_ACTIONS["nothing_special"]), 
+                         (x, y, 'S', SPECIAL_ACTIONS["nothing_special"]), 
+                         (x, y, 'N', SPECIAL_ACTIONS["nothing_special"])]
         else:
             raise ValueError('Invalid direction')
         

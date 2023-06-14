@@ -2,7 +2,7 @@ from typing import List, Tuple
 import copy
 from pprint import pprint
 
-from aliases import Position, OBJECTS_INDEX, Information
+from aliases import Position, OBJECTS_INDEX, Information, PositionAction, SPECIAL_ACTIONS
 from aStarUtils import SquareGrid, draw_grid, PriorityQueue, GridLocation, Position, Optional
 from utils import createMap, getAllNewInformation, howManyUnknown, isInformationAlreadyKnown, isOutsideTheMap, updateMap
 
@@ -711,12 +711,22 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
     """basic a star search
     to go from start to goal
     """
+    """"
+    neutralize guard or civils
+
+    in the a star we need to store the info or update the map ??    
+    -> map as we did phase 1
+
+    pass the map to the neighbors function
+
+    how the neighbors function return the neutralized action 
+    """
     openList = PriorityQueue()
-    startTuple = (start, None)
+    startTuple = ((start[0], start[1], start[2], SPECIAL_ACTIONS['nothing_special']), None)
     openList.put(startTuple, 0)
 
-    came_from: dict[Tuple[Position, Optional[Position]], Tuple[Optional[Position], Optional[Position]]] = {}
-    cost_so_far: dict[Tuple[Position, Optional[Position]], float] = {}
+    came_from: dict[Tuple[PositionAction, Optional[PositionAction]], Tuple[Optional[PositionAction], Optional[PositionAction]]] = {}
+    cost_so_far: dict[Tuple[PositionAction, Optional[PositionAction]], float] = {}
     came_from[startTuple]= None, None
     cost_so_far[startTuple] = 0
 
@@ -727,7 +737,7 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
     backtrack[startTuple] = []
     
     while not openList.empty():
-        currentTuple: Tuple[Position, Optional[Position]]  = openList.get()
+        currentTuple: Tuple[PositionAction, Optional[PositionAction]]  = openList.get()
         current = currentTuple[0]
         # print("current", current)
 
@@ -737,7 +747,7 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
         if current[0] == goal[0] and current[1] == goal[1]:
             break
         
-        for next in graph.neighbors_phase2(current):
+        for next in graph.neighbors_phase2((current[0], current[1], current[2])):
             nextTuple = (next, current)
             # new_cost = cost_so_far[current][0] + 1 #graph.cost(current, next) # every move costs 1 for now
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
