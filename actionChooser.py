@@ -226,7 +226,8 @@ def getAllCasesSeenByGuard(position, map) -> List[Tuple[int, int, int]]:
             casesSeen.append(info)
         elif info[2] == OBJECTS_INDEX['empty']: 
             casesSeen.append(info)
-        else: # can't see through objects
+        else: # only see the first objects
+            casesSeen.append(info)
             break
     return casesSeen
 
@@ -258,7 +259,9 @@ def howManyGuardsLookingAtUs(position, map) -> int:
     for guardPosition in guardsPositions:
         casesSeen = getAllCasesSeenByGuard(guardPosition, map)
         for caseSeen in casesSeen:
-            if caseSeen[0] == position[0] and caseSeen[1] == position[1]:
+            # if we are on the same case as a civil, the guard can't see us
+            # if caseSeen is not a civil and we are on it
+            if caseSeen[2] not in OBJECTS_INDEX["civil"] and caseSeen[0] == position[0] and caseSeen[1] == position[1]:
                 guardsLookingAtUs += 1
         
     return guardsLookingAtUs
