@@ -175,10 +175,11 @@ class SquareGrid:
         else:
             raise ValueError('Invalid direction')
         
-        # if we are looking directly at a guard or a civil AND if we have the rope
+        # if we are looking directly at a guard or a civil
+        # and if he is not looking at us
         # we can neutralize it
         specialActions = []
-        if self.hasRope and self.in_bounds(firstCase):
+        if self.in_bounds(firstCase):
             firstCase[3] = self.map[firstCase[1]][firstCase[0]]
 
             if firstCase[3] in OBJECTS_INDEX['guard']:
