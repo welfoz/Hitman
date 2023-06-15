@@ -7,9 +7,7 @@
 
 ### phase 2 TODO 
 - apres opti petit à petit
-- neutralize: attention aux points
-- TODO: nb de fois vu en train de neutraliser quelqu’un * 100
-neutraliser_garde et neutraliser_civil : il faut regarder le garde ou le civil, être sur une case adjacente et qu’il ne vous regarde pas. La corde de piano n’est pas nécessaire. Une fois neutralisée, la personne n’apparaît plus dans les visions et sa case est libérée.
+- neutralize tester sur plusieurs cartes, attention les points comptés par le a* ne sont pas les bons, il fait pas les meilleurs choix, à debug
 
 Opti a*: 
 - red blob 
