@@ -190,8 +190,48 @@ from utils import createMap, getAllNewInformation, howManyUnknown, isInformation
 #             raise Exception("Error: action not found")
 
 
-def getAllCasesSeenByGuard(position, map) -> List[Tuple[int, int, int]]:
-    vision = 2
+def getAllPositions(map, object) -> List[Tuple[int, int, int]]:
+    positions = []
+    for y in range(len(map)):
+        for x in range(len(map[y])):
+            if map[y][x] in OBJECTS_INDEX[object]:
+                positionValue = map[y][x]
+                direction = None
+
+                # can change with the arbitre
+                if positionValue == OBJECTS_INDEX[object][1]:
+                    direction = 'N'
+                elif positionValue == OBJECTS_INDEX[object][2]:
+                    direction = 'S'
+                elif positionValue == OBJECTS_INDEX[object][3]:
+                    direction = 'E'
+                elif positionValue == OBJECTS_INDEX[object][4]:
+                    direction = 'W'
+                
+                positions.append([x, y, direction])
+    return positions
+
+def howManyGuardsLookingAtUs(position, map) -> int:
+    guardsPositions = getAllPositions(map, "guard")
+
+    guardsLookingAtUs = 0
+    for guardPosition in guardsPositions:
+        casesSeen = getAllCasesSeenByObject(guardPosition, map, "guard")
+        for caseSeen in casesSeen:
+            # if we are on the same case as a civil, the guard can't see us
+            # if caseSeen is not a civil and we are on it
+            if caseSeen[2] not in OBJECTS_INDEX["civil"] and caseSeen[0] == position[0] and caseSeen[1] == position[1]:
+                guardsLookingAtUs += 1
+        
+    return guardsLookingAtUs
+
+def getAllCasesSeenByObject(position, map, object) -> List[Tuple[int, int, int]]:
+    vision = None
+    if object == "guard":
+        vision = 2
+    if object == "civil":
+        vision = 1
+
     x = position[0]
     y = position[1]
     direction = position[2]
@@ -231,40 +271,23 @@ def getAllCasesSeenByGuard(position, map) -> List[Tuple[int, int, int]]:
             break
     return casesSeen
 
-def getAllGuardsPositions(map) -> List[Tuple[int, int, int]]:
-    guardsPositions = []
-    for y in range(len(map)):
-        for x in range(len(map[y])):
-            if map[y][x] in OBJECTS_INDEX['guard']:
-                guardPositionValue = map[y][x]
-                direction = None
+# to test
+def howManyCivilsLookingAtUs(position, map) -> int:
+    civilsPosition = getAllPositions(map, "civil")
 
-                # can change with the arbitre
-                if guardPositionValue == OBJECTS_INDEX['guard'][1]:
-                    direction = 'N'
-                elif guardPositionValue == OBJECTS_INDEX['guard'][2]:
-                    direction = 'S'
-                elif guardPositionValue == OBJECTS_INDEX['guard'][3]:
-                    direction = 'E'
-                elif guardPositionValue == OBJECTS_INDEX['guard'][4]:
-                    direction = 'W'
-                
-                guardsPositions.append([x, y, direction])
-    return guardsPositions
-
-def howManyGuardsLookingAtUs(position, map) -> int:
-    guardsPositions = getAllGuardsPositions(map)
-
-    guardsLookingAtUs = 0
-    for guardPosition in guardsPositions:
-        casesSeen = getAllCasesSeenByGuard(guardPosition, map)
+    civilsLookingAtUs = 0
+    for civilPosition in civilsPosition:
+        casesSeen = getAllCasesSeenByObject(civilPosition, map, "civil")
         for caseSeen in casesSeen:
-            # if we are on the same case as a civil, the guard can't see us
+            # if we are on the same case as a civil, the civil can't see us
             # if caseSeen is not a civil and we are on it
             if caseSeen[2] not in OBJECTS_INDEX["civil"] and caseSeen[0] == position[0] and caseSeen[1] == position[1]:
-                guardsLookingAtUs += 1
+                civilsLookingAtUs += 1
+        # if we are on a civil, he can see us
+        if civilPosition[0] == position[0] and civilPosition[1] == position[1]:
+            civilsLookingAtUs += 1
         
-    return guardsLookingAtUs
+    return civilsLookingAtUs
 
 #     def informationGained(self, position, newInfo, map) -> int:
 #         """
@@ -760,6 +783,7 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
             nextTuple = (next, current)
             # new_cost = cost_so_far[current][0] + 1 #graph.cost(current, next) # every move costs 1 for now
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
+            howManyCivilsAreSeeingUs = howManyCivilsLookingAtUs(next, graph.map)
             # print("next", next)
             new_cost = cost_so_far[currentTuple] + graph.cost_phase2(howManyGuardsAreSeeingUs) # every move costs 1 for now
             nextMap = state_map[currentTuple]
@@ -767,6 +791,9 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
                 nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[next[0], next[1], OBJECTS_INDEX["empty"]]])
                 # nb de personnes neutralisées * 20 
                 new_cost += 20
+                # nb de fois vu en train de neutraliser * 100
+                # to test
+                new_cost += 100 * (howManyGuardsAreSeeingUs + howManyCivilsAreSeeingUs)
             if nextTuple not in cost_so_far or new_cost < cost_so_far[nextTuple]:
                 # ok on a trouvé une nouvelle route pour aller à next moins chere
                 backtrack[nextTuple] = backtrack[currentTuple] + [nextTuple[0]]
