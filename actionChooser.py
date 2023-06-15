@@ -575,6 +575,8 @@ def fromPathToActions(path):
                     actions.append('turn 90')
         elif path[i][3] == SPECIAL_ACTIONS["neutralize_guard"]:
             actions.append('neutralize_guard')
+        elif path[i][3] == SPECIAL_ACTIONS["neutralize_civil"]:
+            actions.append('neutralize_civil')
     return actions 
 
 def getClusteringScore(map):
@@ -787,7 +789,7 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
             # print("next", next)
             new_cost = cost_so_far[currentTuple] + graph.cost_phase2(howManyGuardsAreSeeingUs) # every move costs 1 for now
             nextMap = state_map[currentTuple]
-            if next[3] == SPECIAL_ACTIONS['neutralize_guard']:
+            if next[3] == SPECIAL_ACTIONS['neutralize_guard'] or next[3] == SPECIAL_ACTIONS['neutralize_civil']:
                 nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[next[0], next[1], OBJECTS_INDEX["empty"]]])
                 # nb de personnes neutralisées * 20 
                 new_cost += 20
