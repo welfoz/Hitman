@@ -4,7 +4,7 @@ from itertools import combinations
 
 from aliases import  Literal, ClauseBase, Orientation, Information, Position
 from arbitre_gitlab.hitman.hitman import HC, HitmanReferee
-from utils import getKeyFromValue
+from utils import getKeyFromValue, OBJECTS_INDEX, HCInfoToObjectIndexFull
 
 import subprocess
 import os
@@ -25,6 +25,22 @@ MAP_GUARD_INDEX = {
     'guard': 3,
     'civil': 4
 }
+
+def ObjectIndexToMapGuardIndex(value : int) -> int:
+    if value == OBJECTS_INDEX['empty']:
+        return MAP_GUARD_INDEX['empty']
+    if value == OBJECTS_INDEX['wall']:
+        return MAP_GUARD_INDEX['blocking']
+    if value == OBJECTS_INDEX['target']:
+        return MAP_GUARD_INDEX['blocking']
+    if value == OBJECTS_INDEX['rope']:
+        return MAP_GUARD_INDEX['blocking']
+    if value == OBJECTS_INDEX['costume']:
+        return MAP_GUARD_INDEX['blocking']
+    if value in OBJECTS_INDEX['guard']:
+        return MAP_GUARD_INDEX['guard']
+    if value in OBJECTS_INDEX['civil']:
+        return MAP_GUARD_INDEX['civil']
 
 def atMost(atMostNumber: int, literals: List[Literal]) -> ClauseBase:
     """
@@ -97,7 +113,7 @@ def addInfoVision(n_col : int, n_lig : int, info_vision : Information) -> Clause
     # print("Info vision : " + str(info_vision))
     x = info_vision[0]
     y = info_vision[1]
-    value = HCInfoToMapGuardIndex(info_vision[2])
+    value = ObjectIndexToMapGuardIndex(info_vision[2])
     # print("Clauses pour les infos de vision : ")
     # print(result)
     return [[x * n_lig * 4 + y * 4 + value]]
@@ -113,11 +129,10 @@ def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int,
             if i < 0 or i >= n_col or j < 0 or j >= n_lig:
                 continue
             if map[j][i] != -1:
-                if map[j][i] in range(HC.GUARD_N.value, HC.GUARD_S.value + 1):
+                if map[j][i] in range(HCInfoToObjectIndexFull(HC.GUARD_N.value), HCInfoToObjectIndexFull(HC.GUARD_S.value) + 1):
                     guardsOrCivils -= 1
-                if map[j][i] in range(HC.CIVIL_N.value, HC.CIVIL_S.value + 1):
+                if map[j][i] in range(HCInfoToObjectIndexFull(HC.CIVIL_N.value), HCInfoToObjectIndexFull(HC.CIVIL_S.value) + 1):
                     guardsOrCivils -= 1
-                # print("Case deja connue", i, j, map[j][i], guardsOrCivils)
                 continue
             
             litterals.append(i * n_lig * 4 + j * 4 + MAP_GUARD_INDEX['guard'])
@@ -304,7 +319,7 @@ def get_surroundings(position, map, n_col, n_lig) -> List[Information]:
 
 def is_position_safe(position : Tuple, known_map : dict[Tuple[int, int], HC], clauses : ClauseBase, n_col : int, n_lig : int) -> bool:
     dimension = n_col * n_lig * 4
-    if HCInfoToGuardIndex(known_map[position[0]][position[1]]) == GUARD_INDEX['blocking']:
+    if HCInfoToGuardIndex(known_map[position[1]][position[0]]) == GUARD_INDEX['blocking']:
         return True
     surroundings = get_surroundings(position, known_map, n_col, n_lig)
     for s in surroundings:

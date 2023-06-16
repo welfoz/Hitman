@@ -5,6 +5,51 @@ from aliases import  ClauseBase, Orientation, Information, Position, OBJECTS_IND
 
 from arbitre_gitlab.hitman.hitman import HC
 
+def HCInfoToObjectIndex(value : int) -> int:
+     if value in range(HC.GUARD_N._value_, HC.GUARD_W._value_ + 1):
+         return OBJECTS_INDEX['guard'][0]
+     if value in range(HC.CIVIL_N._value_, HC.CIVIL_W._value_ + 1):
+         return OBJECTS_INDEX['civil'][0]
+     if value == HC.EMPTY._value_:
+         return OBJECTS_INDEX['empty']
+     if value == HC.WALL._value_:
+         return OBJECTS_INDEX['wall']
+     if value == HC.TARGET._value_:
+         return OBJECTS_INDEX['target']
+     if value == HC.SUIT._value_:
+         return OBJECTS_INDEX['costume']
+     if value == HC.PIANO_WIRE._value_:
+         return OBJECTS_INDEX['rope']
+
+def HCInfoToObjectIndexFull(value : int) -> int:
+     # if value in range(HC.GUARD_N._value_, HC.GUARD_W._value_ + 1):
+     if value == HC.GUARD_N._value_:
+         return OBJECTS_INDEX['guard'][1]
+     if value == HC.GUARD_S._value_:
+         return OBJECTS_INDEX['guard'][2]
+     if value == HC.GUARD_E._value_:
+         return OBJECTS_INDEX['guard'][3]
+     if value == HC.GUARD_W._value_:
+         return OBJECTS_INDEX['guard'][4]
+     if value == HC.CIVIL_N._value_:
+         return OBJECTS_INDEX['civil'][1]
+     if value == HC.CIVIL_S._value_:
+         return OBJECTS_INDEX['civil'][2]
+     if value == HC.CIVIL_E._value_:
+         return OBJECTS_INDEX['civil'][3]
+     if value == HC.CIVIL_W._value_:
+         return OBJECTS_INDEX['civil'][4]
+     if value == HC.EMPTY._value_:
+         return OBJECTS_INDEX['empty']
+     if value == HC.WALL._value_:
+         return OBJECTS_INDEX['wall']
+     if value == HC.TARGET._value_:
+         return OBJECTS_INDEX['target']
+     if value == HC.SUIT._value_:
+         return OBJECTS_INDEX['costume']
+     if value == HC.PIANO_WIRE._value_:
+         return OBJECTS_INDEX['rope']
+
 def getKeyFromValue(obj: Dict[str, int], value: int) -> str:
     for key, v in obj.items():
         if v == value:
@@ -17,7 +62,7 @@ def getVisionsFromStatus(status_vision: List[Tuple[Tuple[int, int], HC]]) -> Lis
     # print("status vision", status_vision)
     visions = []
     for vision in status_vision:
-        visionValue = vision[1].value
+        visionValue = HCInfoToObjectIndexFull(vision[1].value)
         visions.append([vision[0][0], vision[0][1], visionValue])
     return visions
 
