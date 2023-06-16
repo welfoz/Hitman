@@ -257,7 +257,10 @@ def clausesToDimacs(clauses: ClauseBase, dimension: int) -> List[str]:
     # dimacs = "p cnf " + str(pow(dimension, 3)) + ' ' + str(len(clauses)) pas compris pk c'est dim^3
     dimacs = "p cnf " + str(dimension) + ' ' + str(len(clauses))
     result = [dimacs]
-    for clause in clauses:
+    # optimisation : pour enlever les doublons, passer en set de tuples puis retourner en liste de listes
+    set_clause = set([tuple(c) for c in clauses])
+    clean_clauses = list(set_clause)
+    for clause in clean_clauses:
         line = ""
         for literal in clause:
             line += str(literal) + " "
