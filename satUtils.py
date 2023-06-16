@@ -107,6 +107,7 @@ def generateInitialClauses(n_col : int, n_lig : int, n_guards : int, n_civils : 
     result += generateTypesGrid(n_col, n_lig)
     result += generateClausesForObject(n_col, n_lig, n_guards, MAP_GUARD_INDEX['guard'])
     result += generateClausesForObject(n_col, n_lig, n_civils, MAP_GUARD_INDEX['civil'])
+    result.append([(OBJECTS_INDEX['empty'])])
     return result
 
 def addInfoVision(n_col : int, n_lig : int, info_vision : Information) -> ClauseBase:
@@ -153,20 +154,20 @@ def addInfoIsInGuardRange(n_col : int, n_lig : int, position : Tuple) -> ClauseB
     for i in range(x-2, x):
         if i < 0 or i >= n_col:
             continue
-        litterals.append(i * n_lig * 3 + y * 3 + GUARD_INDEX['guard'])
+        litterals.append(i * n_lig * 4 + y * 4 + MAP_GUARD_INDEX['guard'])
     for i in range(x+1, x+3):
         if i < 0 or i >= n_col:
             continue
-        litterals.append(i * n_lig * 3 + y * 3 + GUARD_INDEX['guard'])
+        litterals.append(i * n_lig * 4 + y * 4 + MAP_GUARD_INDEX['guard'])
     # cases verticales
     for j in range(y-2, y):
         if j < 0 or j >= n_lig:
             continue
-        litterals.append(x * n_lig * 3 + j * 3 + GUARD_INDEX['guard'])
+        litterals.append(x * n_lig * 4 + j * 4 + MAP_GUARD_INDEX['guard'])
     for j in range(y+1, y+3):
         if j < 0 or j >= n_lig:
             continue
-        litterals.append(x * n_lig * 3 + j * 3 + GUARD_INDEX['guard'])
+        litterals.append(x * n_lig * 4 + j * 4 + MAP_GUARD_INDEX['guard'])
     # print(litterals)
     return atLeast(1, litterals)
 
@@ -342,16 +343,19 @@ def is_position_safe(position : Tuple, known_map : dict[Tuple[int, int], HC], cl
             if s[1][2] == GUARD_INDEX['unknown']:
                 clauses += [[s[1][0] * n_lig * 4 + s[1][1] * 4 + GUARD_INDEX['guard']]]
                 sol = solveur(clauses, dimension)
+                clauses.remove([s[1][0] * n_lig * 4 + s[1][1] * 4 + GUARD_INDEX['guard']])
                 if sol[0]:
                     return False
         if s[0][2] == GUARD_INDEX['unknown']:
             clauses += [[s[0][0] * n_lig * 4 + s[0][1] * 4 + GUARD_INDEX['guard']]]
             sol = solveur(clauses, dimension)
+            clauses.remove([s[0][0] * n_lig * 4 + s[0][1] * 4 + GUARD_INDEX['guard']])
             if sol[0]:
                 return False
             if s[1][2] == GUARD_INDEX['unknown']:
                 clauses += [[s[1][0] * n_lig * 4 + s[1][1] * 4 + GUARD_INDEX['guard']]]
                 sol = solveur(clauses, dimension)
+                clauses.remove([s[1][0] * n_lig * 4 + s[1][1] * 4 + GUARD_INDEX['guard']])
                 if sol[0]:
                     return False
     return True
