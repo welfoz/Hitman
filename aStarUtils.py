@@ -10,6 +10,7 @@ T = TypeVar('T')
 from pprint import pprint
 from aliases import Position, OBJECTS_INDEX, Information
 import heapq
+from satUtils import is_position_safe_opti
 
 GridLocation = Tuple[int, int]
 GridLocationDirection = Tuple[int, int, str]
@@ -118,7 +119,11 @@ class SquareGrid:
             return False
         return True
     
-    def cost(self, howManyGuardsAreSeeingUs: int) -> float:
+    def cost(self, howManyGuardsAreSeeingUs: int, sat_info : Tuple, next : Tuple, count : int) -> float:
+        if (count == 1):
+            sat_map, sat_heard_map, sat_seen_map, n_col, n_lig, sat_bonus = sat_info
+            if is_position_safe_opti(next, sat_map, sat_heard_map, sat_seen_map, n_col, n_lig):
+                return 1 + 5 * howManyGuardsAreSeeingUs + sat_bonus
         # each action costs 1
         return 1 + 5 * howManyGuardsAreSeeingUs
     

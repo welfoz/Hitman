@@ -586,7 +586,7 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, sat_in
             nextMap = updateMap(copy.deepcopy(state_map[current]), newInfos)
             # new_cost = cost_so_far[current][0] + 1 #graph.cost(current, next) # every move costs 1 for now
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
-            new_cost = cost_so_far[current][0] + graph.cost(howManyGuardsAreSeeingUs) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
+            new_cost = cost_so_far[current][0] + graph.cost(howManyGuardsAreSeeingUs, sat_info, next, count) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
             # score is the number of newInfos / the cost
             # goal: minimize the cost and maximize the number of newInfos
             # score means ratio combien de nouvelle info par action
@@ -611,15 +611,6 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, sat_in
                 came_from[nextTuple] = current[0], previous[current][0]
                 previous[nextTuple] = current
             
-            if (count == 1):
-                sat_map, sat_heard_map, sat_seen_map, n_col, n_lig, sat_bonus = sat_info
-                # print("Position : ", next)
-                if is_position_safe_opti(next, sat_map, sat_heard_map, sat_seen_map, n_col, n_lig):
-                    score += sat_bonus
-                #     print("safe")
-                # else:
-                #     print("pas safe")
-                # print("Score : ", score)
     print("total count: ", count)
     print('len nodes: ', len(list(cost_so_far.keys())))
 
