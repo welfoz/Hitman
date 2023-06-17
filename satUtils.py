@@ -382,9 +382,9 @@ def extract_sub_map(map : List[List[int]], position : Tuple) -> Tuple:
         sub_position_y = 2
     else:
         sub_position_y = y
-    for x in range(len(sub_map)):
-        for y in range(len(sub_map[0])):
-            sub_map[x][y] = HCInfoToGuardIndex(sub_map[x][y])
+    for y in range(len(sub_map)):
+        for x in range(len(sub_map[0])):
+            sub_map[y][x] = HCInfoToGuardIndex(sub_map[y][x])
     return sub_map, (sub_position_x, sub_position_y)
 
 def addInfoMap(n_col : int, n_lig : int, sub_map : List[List[int]]) -> ClauseBase:
