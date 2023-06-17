@@ -11,7 +11,7 @@ from utils import createMap, howManyUnknown, isInformationAlreadyKnown, updateMa
 from satUtils import addInfoListening, addInfoIsInGuardRange, addInfoVision, is_position_safe, generateInitialClauses, is_position_safe_opti
 
 # def addTurnInfo(status, heardMap, map, clauses):
-def addTurnInfo(status, heardMap, map):
+def addTurnInfo(status, heardMap, seenMap, map):
     # print()
     visions = getVisionsFromStatus(status["vision"])
     # print("visions", visions)
@@ -24,7 +24,12 @@ def addTurnInfo(status, heardMap, map):
             # print(len(clauses))
             map = updateMap(map, [vision])
 
-    # if status['is_in_guard_range']:
+    if status["is_in_guard_range"]:
+        seenInfo = 1
+    else:
+        seenInfo = 0
+    if (not isInformationAlreadyKnown(seenMap, (status["position"][0], status["position"][1], seenInfo))):
+        seenMap = updateMap(seenMap, [(status["position"][0], status["position"][1], seenInfo)])
     #     clauses += addInfoIsInGuardRange(status['n'], status['m'], status['position'])
 
     heardInfo: Information = [status["position"][0], status["position"][1], status["hear"]]
@@ -55,6 +60,7 @@ def phase1(referee):
     map = createMap(n_col, n_lig)
     solutionMap: Dict[Tuple[int, int], HC] = {} 
     heardMap = createMap(n_col, n_lig)
+    seenMap = createMap(n_col, n_lig)
 
     # clauses = generateInitialClauses(n_col, n_lig, status['guard_count'], status['civil_count'])
     
@@ -62,7 +68,7 @@ def phase1(referee):
     updateSolutionMap(solutionMap, [((0, 0), HC.EMPTY)])
 
     # addTurnInfo(status, heardMap, map, clauses)
-    addTurnInfo(status, heardMap, map)
+    addTurnInfo(status, heardMap, seenMap, map)
     updateSolutionMap(solutionMap, status["vision"])
 
     MAX = 100
@@ -82,7 +88,7 @@ def phase1(referee):
         # print(is_position_safe_opti(position, map, heardMap, n_col, n_lig))
         # safe  = is_position_safe(position, map, clauses, n_col, n_lig)
         # print(safe)
-        sat_info = (map, heardMap, n_col, n_lig, sat_bonus)
+        sat_info = (map, heardMap, seenMap, n_col, n_lig, sat_bonus)
         action = actionChooser.choose(map, position, sat_info)
 
         unknown = howManyUnknown(map)
@@ -107,7 +113,7 @@ def phase1(referee):
         # })
 
         # addTurnInfo(status, heardMap, map, clauses)
-        addTurnInfo(status, heardMap, map)
+        addTurnInfo(status, heardMap, seenMap, map)
         updateSolutionMap(solutionMap, status["vision"])
         count += 1
     print("count: ", count)

@@ -146,7 +146,7 @@ def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int,
     return []
 
 # prise en compte du is_in_guard_range
-def addInfoIsInGuardRange(n_col : int, n_lig : int, position : Tuple) -> ClauseBase:
+def addInfoIsInGuardRange(n_col : int, n_lig : int, position : Tuple, seen : int) -> ClauseBase:
     x = position[0]
     y = position[1]
     litterals = []
@@ -169,7 +169,10 @@ def addInfoIsInGuardRange(n_col : int, n_lig : int, position : Tuple) -> ClauseB
             continue
         litterals.append(x * n_lig * 4 + j * 4 + MAP_GUARD_INDEX['guard'])
     # print(litterals)
-    return atLeast(1, litterals)
+    if seen == 1:
+        return atLeast(1, litterals)
+    else:
+        return []
 
 def solveur(clauses: ClauseBase, dimension : int) -> Tuple[bool, List[int]]:
     filename = "temp.cnf"
@@ -392,7 +395,7 @@ def addInfoMap(n_col : int, n_lig : int, sub_map : List[List[int]]) -> ClauseBas
                 clauses += [[x * n_lig * 4 + y * 4 + sub_map[y][x]]]
     return clauses
 
-def is_position_safe_opti(position : Tuple, map : List[List[int]], heard_map : List[List[int]], n_col : int, n_lig : int) -> bool:
+def is_position_safe_opti(position : Tuple, map : List[List[int]], heard_map : List[List[int]], seen_map : List[List[int]], n_col : int, n_lig : int) -> bool:
     sub_map, sub_position = extract_sub_map(map, position)
     n_col_sub_map = len(sub_map[0])
     n_lig_sub_map = len(sub_map)
@@ -403,5 +406,8 @@ def is_position_safe_opti(position : Tuple, map : List[List[int]], heard_map : L
             if heard_map[y][x] == 0:
                 clauses += addInfoListening(n_col_sub_map, n_lig_sub_map, (x, y), heard_map[y][x], sub_map)
     clauses += addInfoMap(n_col_sub_map, n_lig_sub_map, sub_map)
+    for x in range(n_col_sub_map):
+        for y in range(n_lig_sub_map):
+            clauses += addInfoIsInGuardRange(n_col_sub_map, n_lig_sub_map, (x,y), seen_map[y][x])
     # print("Clauses : ", len(clauses))
     return is_position_safe(sub_position, sub_map, clauses, n_col_sub_map, n_lig_sub_map)
