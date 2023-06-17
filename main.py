@@ -68,7 +68,7 @@ def phase1(referee):
     MAX = 100
     count = 0
     actions = []
-    sat_bonus = 100000
+    sat_bonus = 3
 
     while count < MAX and not isMapComplete(map):
         print("------------------")

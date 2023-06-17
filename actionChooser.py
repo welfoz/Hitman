@@ -613,15 +613,14 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, sat_in
             
             if (count == 1):
                 sat_map, sat_heard_map, n_col, n_lig, sat_bonus = sat_info
-                print("Position : ", next)
+                # print("Position : ", next)
                 if is_position_safe_opti(next, sat_map, sat_heard_map, n_col, n_lig):
-                    score -= sat_bonus
-                    print("safe")
-                else:
                     score += sat_bonus
-                    print("pas safe")
-                print("Score : ", score)
-                input("continuer")
+                #     print("safe")
+                # else:
+                #     print("pas safe")
+                # print("Score : ", score)
+                # input("continuer")
     print("total count: ", count)
     print('len nodes: ', len(list(cost_so_far.keys())))
 
