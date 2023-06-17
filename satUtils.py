@@ -359,3 +359,39 @@ def is_position_safe(position : Tuple, known_map : dict[Tuple[int, int], HC], cl
                 if sol[0]:
                     return False
     return True
+
+def extract_sub_map(map : List[List[int]], position : Tuple):
+    x = position[0]
+    y = position[1]
+    sub_map = []
+    for i in range(x - 2, x + 3):
+        if 0 <= i < len(map):
+            ligne = map[i][max(0, y - 2):y + 3]
+            sub_map.append(ligne)
+    for x in range(len(sub_map)):
+        for y in range(len(sub_map[0])):
+            sub_map[x][y] = HCInfoToGuardIndex(sub_map[x][y])
+    return sub_map
+
+def addInfoMap(n_col : int, n_lig : int, sub_map : List[List[int]]) -> ClauseBase:
+    clauses = []
+    for x in range(n_col):
+        for y in range(n_lig):
+            if sub_map[y][x] != -1:
+                clauses += [[x * n_lig * 4 + y * 4 + sub_map[y][x]]]
+    return clauses
+
+def is_position_safe_opti(position : Tuple, map : List[List[int]], heard_map : List[List[int]], n_col : int, n_lig : int) -> bool:
+    sub_map = extract_sub_map(map, position)
+    n_col_sub_map = len(sub_map[0])
+    n_lig_sub_map = len(sub_map)
+    clauses = generateTypesGrid(n_col_sub_map, n_lig_sub_map)
+    clauses += addInfoListening(n_col_sub_map, n_lig_sub_map, position, heard_map[position[1]][position[0]], sub_map)
+    for x in range(n_col_sub_map):
+        for y in range(n_lig_sub_map):
+            if heard_map[y][x] == 0:
+                clauses += addInfoListening(n_col_sub_map, n_lig_sub_map, (x, y), heard_map[y][x], sub_map)
+    clauses += addInfoMap(n_col_sub_map, n_lig_sub_map, sub_map)
+    print("Clauses : ", len(clauses))
+    # faut passer la position relative à sub_map, pas la vraie position !!
+    return is_position_safe(position, sub_map, clauses, n_col_sub_map, n_lig_sub_map)

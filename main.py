@@ -8,9 +8,10 @@ from arbitre_gitlab.hitman.hitman import HC, HitmanReferee
 from actionChooser import ActionChooser, createMap, isInformationAlreadyKnown, updateMap
 from aliases import  Literal, ClauseBase, Orientation, Information, Position, OBJECTS_INDEX
 from utils import createMap, howManyUnknown, isInformationAlreadyKnown, updateMap, isMapComplete, updateSolutionMap, fromHCDirectionToOrientation, getVisionsFromStatus
-from satUtils import generateTypesGrid, generateClausesForObject, addInfoListening, addInfoIsInGuardRange, addInfoVision, count_dupplicate_clauses, is_position_safe, generateInitialClauses, solveur
+from satUtils import addInfoListening, addInfoIsInGuardRange, addInfoVision, is_position_safe, generateInitialClauses, is_position_safe_opti
 
-def addTurnInfo(status, heardMap, map, clauses):
+# def addTurnInfo(status, heardMap, map, clauses):
+def addTurnInfo(status, heardMap, map):
     # print()
     visions = getVisionsFromStatus(status["vision"])
     # print("visions", visions)
@@ -19,18 +20,18 @@ def addTurnInfo(status, heardMap, map, clauses):
         if (not isInformationAlreadyKnown(map, vision)):
             # print("add info vision")
             # print(len(clauses))
-            clauses += addInfoVision(status['n'], status['m'], vision)
+            # clauses += addInfoVision(status['n'], status['m'], vision)
             # print(len(clauses))
             map = updateMap(map, [vision])
 
-    if status['is_in_guard_range']:
-        clauses += addInfoIsInGuardRange(status['n'], status['m'], status['position'])
+    # if status['is_in_guard_range']:
+    #     clauses += addInfoIsInGuardRange(status['n'], status['m'], status['position'])
 
     heardInfo: Information = [status["position"][0], status["position"][1], status["hear"]]
     if (not isInformationAlreadyKnown(heardMap, heardInfo)):
         # print("add info listening")
         # print(len(clauses))
-        clauses += addInfoListening(status['n'], status['m'], status['position'], status['hear'], map)
+        # clauses += addInfoListening(status['n'], status['m'], status['position'], status['hear'], map)
         # print(len(clauses))
         heardMap = updateMap(heardMap, [heardInfo])
 
@@ -55,12 +56,13 @@ def phase1(referee):
     solutionMap: Dict[Tuple[int, int], HC] = {} 
     heardMap = createMap(n_col, n_lig)
 
-    clauses = generateInitialClauses(n_col, n_lig, status['guard_count'], status['civil_count'])
+    # clauses = generateInitialClauses(n_col, n_lig, status['guard_count'], status['civil_count'])
     
     map[0][0] = OBJECTS_INDEX['empty']
     updateSolutionMap(solutionMap, [((0, 0), HC.EMPTY)])
 
-    addTurnInfo(status, heardMap, map, clauses)
+    # addTurnInfo(status, heardMap, map, clauses)
+    addTurnInfo(status, heardMap, map)
     updateSolutionMap(solutionMap, status["vision"])
 
     MAX = 100
@@ -74,10 +76,11 @@ def phase1(referee):
         position: Position = [status["position"][0], status["position"][1], orientation]
         print("position: ", position)
 
-        print(len(clauses))
+        # print(len(clauses))
         print(status["hear"])
-        safe  = is_position_safe(position, map, clauses, n_col, n_lig)
-        print(safe)
+        print(is_position_safe_opti(position, map, heardMap, n_col, n_lig))
+        # safe  = is_position_safe(position, map, clauses, n_col, n_lig)
+        # print(safe)
 
         action = actionChooser.choose(map, position)
 
@@ -102,7 +105,8 @@ def phase1(referee):
         #     "status": status['status']
         # })
 
-        addTurnInfo(status, heardMap, map, clauses)
+        # addTurnInfo(status, heardMap, map, clauses)
+        addTurnInfo(status, heardMap, map)
         updateSolutionMap(solutionMap, status["vision"])
         count += 1
     print("count: ", count)
