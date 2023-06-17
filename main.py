@@ -68,6 +68,7 @@ def phase1(referee):
     MAX = 100
     count = 0
     actions = []
+    sat_bonus = 100000
 
     while count < MAX and not isMapComplete(map):
         print("------------------")
@@ -77,12 +78,12 @@ def phase1(referee):
         print("position: ", position)
 
         # print(len(clauses))
-        print(status["hear"])
-        print(is_position_safe_opti(position, map, heardMap, n_col, n_lig))
+        # print(status["hear"])
+        # print(is_position_safe_opti(position, map, heardMap, n_col, n_lig))
         # safe  = is_position_safe(position, map, clauses, n_col, n_lig)
         # print(safe)
-
-        action = actionChooser.choose(map, position)
+        sat_info = (map, heardMap, n_col, n_lig, sat_bonus)
+        action = actionChooser.choose(map, position, sat_info)
 
         unknown = howManyUnknown(map)
         if action == 1:

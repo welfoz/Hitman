@@ -5,6 +5,7 @@ from pprint import pprint
 from aliases import Position, OBJECTS_INDEX, Information
 from aStarUtils import SquareGrid, draw_grid, PriorityQueue, GridLocation, GridLocationDirection, Optional
 from utils import createMap, getAllNewInformation, howManyUnknown, isInformationAlreadyKnown, isOutsideTheMap, updateMap
+from satUtils import is_position_safe_opti
 
 # class ActionChoice:
 #     def __init__(self, n_col, n_lig):
@@ -308,7 +309,7 @@ class ActionChooser:
         self.n_col = n_col 
         self.n_lig = n_lig
 
-    def choose(self, map, position):
+    def choose(self, map, position, sat_info : Tuple):
         """
         return the best action to do according to the best path, which maximizes the total information gained
         @param stateTree: list of the values of the total information gained for each path
@@ -346,7 +347,7 @@ class ActionChooser:
             # print("score: " + str(score))
             # print("clusteringScore: " + str(clusteringScore))
 
-        path, howManyUnknownVariable, clusteringScore = astar(position, diagram)
+        path, howManyUnknownVariable, clusteringScore = astar(position, diagram, sat_info)
         result = fromPathToActions(path)
 
         # if howManyUnknownVariable < bestHowManyUnknown: # favorise la découverte
@@ -400,8 +401,8 @@ class ActionChooser:
         """
         return abs(case1[0] - case2[0]) + abs(case1[1] - case2[1])
 
-def astar(start, diagram):
-    came_from, cost_so_far, new_goal, howManyUnknown, clusteringScore, backtrack = a_star_search_points(diagram, tuple(start))
+def astar(start, diagram, sat_info : Tuple):
+    came_from, cost_so_far, new_goal, howManyUnknown, clusteringScore, backtrack = a_star_search_points(diagram, tuple(start), sat_info)
     newpathBacktrack = [tuple(start)] + backtrack
 
     # pprint("newpathBacktrack")
@@ -525,7 +526,7 @@ def getClusteringScore(map):
 
     return sum(distances) / len(distances)
 
-def a_star_search_points(graph: SquareGrid, start: GridLocationDirection):
+def a_star_search_points(graph: SquareGrid, start: GridLocationDirection, sat_info : Tuple):
     '''
     but: voir la case goal en gagnant le plus de nouvelles cases possible
 
@@ -609,6 +610,18 @@ def a_star_search_points(graph: SquareGrid, start: GridLocationDirection):
                 # to test
                 came_from[nextTuple] = current[0], previous[current][0]
                 previous[nextTuple] = current
+            
+            if (count == 1):
+                sat_map, sat_heard_map, n_col, n_lig, sat_bonus = sat_info
+                print("Position : ", next)
+                if is_position_safe_opti(next, sat_map, sat_heard_map, n_col, n_lig):
+                    score -= sat_bonus
+                    print("safe")
+                else:
+                    score += sat_bonus
+                    print("pas safe")
+                print("Score : ", score)
+                input("continuer")
     print("total count: ", count)
     print('len nodes: ', len(list(cost_so_far.keys())))
 

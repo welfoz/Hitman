@@ -403,5 +403,5 @@ def is_position_safe_opti(position : Tuple, map : List[List[int]], heard_map : L
             if heard_map[y][x] == 0:
                 clauses += addInfoListening(n_col_sub_map, n_lig_sub_map, (x, y), heard_map[y][x], sub_map)
     clauses += addInfoMap(n_col_sub_map, n_lig_sub_map, sub_map)
-    print("Clauses : ", len(clauses))
+    # print("Clauses : ", len(clauses))
     return is_position_safe(sub_position, sub_map, clauses, n_col_sub_map, n_lig_sub_map)
