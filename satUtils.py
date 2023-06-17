@@ -360,18 +360,29 @@ def is_position_safe(position : Tuple, known_map : dict[Tuple[int, int], HC], cl
                     return False
     return True
 
-def extract_sub_map(map : List[List[int]], position : Tuple):
+def extract_sub_map(map : List[List[int]], position : Tuple) -> Tuple:
     x = position[0]
     y = position[1]
     sub_map = []
-    for i in range(x - 2, x + 3):
+    for i in range(y - 2, y + 3):
         if 0 <= i < len(map):
-            ligne = map[i][max(0, y - 2):y + 3]
+            if x-2 > 0:
+                ligne = map[i][x - 2:x + 3]
+            else:
+                ligne = map[i][0:x + 3]
             sub_map.append(ligne)
+    if x-2 > 0:
+        sub_position_x = 2
+    else:
+        sub_position_x = x
+    if y-2 > 0:
+        sub_position_y = 2
+    else:
+        sub_position_y = y
     for x in range(len(sub_map)):
         for y in range(len(sub_map[0])):
             sub_map[x][y] = HCInfoToGuardIndex(sub_map[x][y])
-    return sub_map
+    return sub_map, (sub_position_x, sub_position_y)
 
 def addInfoMap(n_col : int, n_lig : int, sub_map : List[List[int]]) -> ClauseBase:
     clauses = []
@@ -382,16 +393,15 @@ def addInfoMap(n_col : int, n_lig : int, sub_map : List[List[int]]) -> ClauseBas
     return clauses
 
 def is_position_safe_opti(position : Tuple, map : List[List[int]], heard_map : List[List[int]], n_col : int, n_lig : int) -> bool:
-    sub_map = extract_sub_map(map, position)
+    sub_map, sub_position = extract_sub_map(map, position)
     n_col_sub_map = len(sub_map[0])
     n_lig_sub_map = len(sub_map)
     clauses = generateTypesGrid(n_col_sub_map, n_lig_sub_map)
-    clauses += addInfoListening(n_col_sub_map, n_lig_sub_map, position, heard_map[position[1]][position[0]], sub_map)
+    clauses += addInfoListening(n_col_sub_map, n_lig_sub_map, sub_position, heard_map[sub_position[1]][sub_position[0]], sub_map)
     for x in range(n_col_sub_map):
         for y in range(n_lig_sub_map):
             if heard_map[y][x] == 0:
                 clauses += addInfoListening(n_col_sub_map, n_lig_sub_map, (x, y), heard_map[y][x], sub_map)
     clauses += addInfoMap(n_col_sub_map, n_lig_sub_map, sub_map)
     print("Clauses : ", len(clauses))
-    # faut passer la position relative à sub_map, pas la vraie position !!
-    return is_position_safe(position, sub_map, clauses, n_col_sub_map, n_lig_sub_map)
+    return is_position_safe(sub_position, sub_map, clauses, n_col_sub_map, n_lig_sub_map)
