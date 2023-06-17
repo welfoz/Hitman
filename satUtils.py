@@ -329,6 +329,8 @@ def is_position_safe(position : Tuple, known_map : dict[Tuple[int, int], HC], cl
     if HCInfoToGuardIndex(known_map[position[1]][position[0]]) == GUARD_INDEX['blocking']:
         return True
     surroundings = get_surroundings(position, known_map, n_col, n_lig)
+    # mais
+    # s[0][2] veut dire quoi ?
     for s in surroundings:
         # pour chaque direction
         if s[0][2] == GUARD_INDEX['guard']:
@@ -397,17 +399,28 @@ def addInfoMap(n_col : int, n_lig : int, sub_map : List[List[int]]) -> ClauseBas
 
 def is_position_safe_opti(position : Tuple, map : List[List[int]], heard_map : List[List[int]], seen_map : List[List[int]], n_col : int, n_lig : int) -> bool:
     sub_map, sub_position = extract_sub_map(map, position)
+    
+    if seen_map[position[1]][position[0]] == 1:
+        return False
+    if seen_map[position[1]][position[0]] == 0:
+        return True
+
     n_col_sub_map = len(sub_map[0])
     n_lig_sub_map = len(sub_map)
+
     clauses = generateTypesGrid(n_col_sub_map, n_lig_sub_map)
     clauses += addInfoListening(n_col_sub_map, n_lig_sub_map, sub_position, heard_map[sub_position[1]][sub_position[0]], sub_map)
+    
     for x in range(n_col_sub_map):
         for y in range(n_lig_sub_map):
             if heard_map[y][x] == 0:
                 clauses += addInfoListening(n_col_sub_map, n_lig_sub_map, (x, y), heard_map[y][x], sub_map)
+
     clauses += addInfoMap(n_col_sub_map, n_lig_sub_map, sub_map)
+
     for x in range(n_col_sub_map):
         for y in range(n_lig_sub_map):
             clauses += addInfoIsInGuardRange(n_col_sub_map, n_lig_sub_map, (x,y), seen_map[y][x])
     # print("Clauses : ", len(clauses))
+    
     return is_position_safe(sub_position, sub_map, clauses, n_col_sub_map, n_lig_sub_map)
