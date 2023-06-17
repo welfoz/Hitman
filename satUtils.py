@@ -329,8 +329,6 @@ def is_position_safe(position : Tuple, known_map : dict[Tuple[int, int], HC], cl
     if HCInfoToGuardIndex(known_map[position[1]][position[0]]) == GUARD_INDEX['blocking']:
         return True
     surroundings = get_surroundings(position, known_map, n_col, n_lig)
-    # mais
-    # s[0][2] veut dire quoi ?
     for s in surroundings:
         # pour chaque direction
         if s[0][2] == GUARD_INDEX['guard']:
