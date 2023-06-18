@@ -6,10 +6,7 @@
 - utiliser SAT @Fabien
 
 ### phase 2 TODO 
-- prg exploitant la modélisation
-- d'abord le faire marcher
 - apres opti petit à petit
-- prise en compte des gardes A*, essayer de minimiser les points
 
 Opti a*: 
 - red blob 
