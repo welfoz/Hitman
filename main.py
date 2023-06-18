@@ -85,7 +85,7 @@ def phase1(referee: HitmanReferee):
     MAX = 100
     count = 0
     actions = []
-    sat_bonus = 2
+    sat_bonus = 0
 
     while count < MAX and not isMapComplete(map):
         print("------------------")
@@ -275,7 +275,7 @@ def phase2(referee: HitmanReferee, map):
 def main():
 
     referee = HitmanReferee()
-    # map = phase1(referee)
+    map = phase1(referee)
 
     """
     phase 2
@@ -288,7 +288,7 @@ def main():
     same in a minimum of penalties (include guards seen, rope, costume...)
     come back to the start position
     """
-    phase2(referee, map)
+    # phase2(referee, map)
 
 
 if __name__ == "__main__":
