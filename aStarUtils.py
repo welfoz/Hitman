@@ -13,7 +13,6 @@ import heapq
 from satUtils import is_position_safe_opti
 
 GridLocation = Tuple[int, int]
-GridLocationDirection = Tuple[int, int, str]
 
 def draw_tile(graph: SquareGrid, id, style):
     r = " . "
@@ -107,11 +106,11 @@ class SquareGrid:
         self.height = height
         self.map = map
     
-    def in_bounds(self, id: GridLocationDirection) -> bool:
+    def in_bounds(self, id: Position) -> bool:
         (x, y, direction) = id
         return 0 <= x < self.width and 0 <= y < self.height
     
-    def passable(self, id: GridLocationDirection) -> bool:
+    def passable(self, id: Position) -> bool:
         (x, y, direction) = id
         newPositionValue = self.map[y][x]
         
@@ -127,7 +126,11 @@ class SquareGrid:
         # each action costs 1
         return 1 + 5 * howManyGuardsAreSeeingUs
     
-    def neighbors(self, id: GridLocationDirection) -> Iterator[GridLocationDirection]:
+    def cost_phase2(self, howManyGuardsAreSeeingUs: int) -> float:
+        # each action costs 1
+        return 1 + 5 * howManyGuardsAreSeeingUs
+    
+    def neighbors(self, id: Position) -> Iterator[Position]:
         (x, y, direction) = id
         neighbors = []
         if direction == 'N':
@@ -145,6 +148,26 @@ class SquareGrid:
         results = filter(self.in_bounds, neighbors)
         results = filter(self.passable, results)
         return results
+
+    def neighbors_phase2(self, id: Position) -> Iterator[Position]:
+        (x, y, direction) = id
+        neighbors = []
+        if direction == 'N':
+            # move, turn 90, turn -90
+            neighbors = [(x, y+1, 'N'), (x, y, 'E'), (x, y, 'W')]
+        elif direction == 'S':
+            neighbors = [(x, y-1, 'S'), (x, y, 'W'), (x, y, 'E')]
+        elif direction == 'W':
+            neighbors = [(x-1, y, 'W'), (x, y, 'N'), (x, y, 'S')]
+        elif direction == 'E':
+            neighbors = [(x+1, y, 'E'), (x, y, 'S'), (x, y, 'N')]
+        else:
+            raise ValueError('Invalid direction')
+        
+        results = filter(self.in_bounds, neighbors)
+        results = filter(self.passable, results)
+        return results
+
 
 class PriorityQueue:
     def __init__(self):
@@ -167,32 +190,32 @@ def heuristic(a: GridLocation, b: GridLocation) -> float:
     (x2, y2) = b
     return abs(x1 - x2) + abs(y1 - y2)
 
-def a_star_search(graph: SquareGrid, start: GridLocationDirection, goal: GridLocation):
+def a_star_search(graph: SquareGrid, start: Position, goal: GridLocation):
     """basic a star search
     to go from start to goal
     """
     openList = PriorityQueue()
     openList.put(start, 0)
-    came_from: dict[GridLocationDirection, Optional[GridLocationDirection]] = {}
-    cost_so_far: dict[GridLocationDirection, float] = {}
+    came_from: dict[Position, Optional[Position]] = {}
+    cost_so_far: dict[Position, float] = {}
     came_from[start] = None
     cost_so_far[start] = 0
     
     while not openList.empty():
-        current: GridLocationDirection = openList.get()
+        current: Position = openList.get()
         # print("current", current)
         
         if current[0] == goal[0] and current[1] == goal[1]:
             break
         
-        for next in graph.neighbors(current):
+        for next in graph.neighbors_phase2(current):
             # print("next", next)
-            new_cost = cost_so_far[current] + graph.cost(current, next) # every move costs 1 for now
+            new_cost = cost_so_far[current] + graph.cost_phase2(current, next) # every move costs 1 for now
             if next not in cost_so_far or new_cost < cost_so_far[next]:
                 # ok on a trouvé une nouvelle route pour aller à next moins chere
                 cost_so_far[next] = new_cost
-                priority = new_cost + heuristic((next[0], next[1]), goal)
-                # priority = new_cost
+                priority = new_cost + heuristic((next[0], next[1]), goal) # manhattan distance
+
                 openList.put(next, priority)
                 came_from[next] = current
     return came_from, cost_so_far
