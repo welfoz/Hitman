@@ -653,6 +653,8 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     print("total count: ", count)
     print('len nodes: ', len(list(cost_so_far.keys())))
 
+
+    print("(chelou de ne pas trouver toutes les cases), minimum VAlue: ", minimumValue)
     return came_from, cost_so_far, (minimumCostPosition, previous[minimumCostPosition]), minimumValue, getClusteringScore(state_map[minimum]), backtrack[minimumCostPosition]
 
 def heuristic_pts(map) -> float:

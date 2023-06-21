@@ -1,4 +1,9 @@
 # TO DO 
+a*: il faut privilégier de prévoir de voir les cases quand on est proche de la case 
+(car peut avoir des imprévus)
+là on admet que sur toutes les cases qu'on regarde elles vont être vides donc on va pouvoir voir à 3
+faudrait genre plus privilégier de voir les cases quand on est proche et de moins en moins quand on est éloignés
+
 ### phase 1 todo 
 - on est sûr de connaitre la premiere case ? -> tjrs (0, 0)
 - comment les infos de l'ouie peuvent nous servir dans le choix du déplacement ? (pour plus tard)
