@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Iterator, Tuple, TypeVar, Optional, List, Dict
 T = TypeVar('T')
 from pprint import pprint
-from aliases import Position, OBJECTS_INDEX, Information
+from aliases import Position, OBJECTS_INDEX, Information, PositionAction, SPECIAL_ACTIONS
 import heapq
 from satUtils import is_position_safe_opti
 
@@ -101,17 +101,20 @@ def draw_grid(graph, **style):
     print("~~~" * graph.width)
 
 class SquareGrid:
-    def __init__(self, width: int, height: int, map):
+    def __init__(self, width: int, height: int, map, hasRope: bool = False):
         self.width = width
         self.height = height
         self.map = map
+        self.hasRope = hasRope
     
-    def in_bounds(self, id: Position) -> bool:
-        (x, y, direction) = id
+    def in_bounds(self, id: Position | PositionAction) -> bool:
+        x = id[0]
+        y = id[1]
         return 0 <= x < self.width and 0 <= y < self.height
     
-    def passable(self, id: Position) -> bool:
-        (x, y, direction) = id
+    def passable(self, id: Position | PositionAction) -> bool:
+        x = id[0]
+        y = id[1]
         newPositionValue = self.map[y][x]
         
         if newPositionValue == OBJECTS_INDEX['wall'] or newPositionValue in OBJECTS_INDEX['guard']:
@@ -149,24 +152,71 @@ class SquareGrid:
         results = filter(self.passable, results)
         return results
 
-    def neighbors_phase2(self, id: Position) -> Iterator[Position]:
+    def neighbors_phase2(self, id: Position) -> List[PositionAction]:
         (x, y, direction) = id
         neighbors = []
+        firstCase = None
         if direction == 'N':
             # move, turn 90, turn -90
-            neighbors = [(x, y+1, 'N'), (x, y, 'E'), (x, y, 'W')]
+            neighbors = [(x, y+1, 'N', SPECIAL_ACTIONS["nothing_special"]),
+                         (x, y, 'E', SPECIAL_ACTIONS["nothing_special"]),
+                         (x, y, 'W', SPECIAL_ACTIONS["nothing_special"])]   
+            firstCase = [x, y+1, 'N', OBJECTS_INDEX["empty"]]
         elif direction == 'S':
-            neighbors = [(x, y-1, 'S'), (x, y, 'W'), (x, y, 'E')]
+            neighbors = [(x, y-1, 'S', SPECIAL_ACTIONS["nothing_special"]), 
+                         (x, y, 'W', SPECIAL_ACTIONS["nothing_special"]),
+                         (x, y, 'E', SPECIAL_ACTIONS["nothing_special"])]
+            firstCase = [x, y-1, "S", OBJECTS_INDEX["empty"]]
         elif direction == 'W':
-            neighbors = [(x-1, y, 'W'), (x, y, 'N'), (x, y, 'S')]
+            neighbors = [(x-1, y, 'W', SPECIAL_ACTIONS["nothing_special"]), 
+                         (x, y, 'N', SPECIAL_ACTIONS["nothing_special"]), 
+                         (x, y, 'S', SPECIAL_ACTIONS["nothing_special"])]
+            firstCase = [x-1, y, "W", OBJECTS_INDEX["empty"]]
         elif direction == 'E':
-            neighbors = [(x+1, y, 'E'), (x, y, 'S'), (x, y, 'N')]
+            neighbors = [(x+1, y, 'E', SPECIAL_ACTIONS["nothing_special"]), 
+                         (x, y, 'S', SPECIAL_ACTIONS["nothing_special"]), 
+                         (x, y, 'N', SPECIAL_ACTIONS["nothing_special"])]
+            firstCase = [x+1, y, "E", OBJECTS_INDEX["empty"]]
         else:
             raise ValueError('Invalid direction')
         
+        # if we are looking directly at a guard or a civil
+        # and if he is not looking at us
+        # we can neutralize it
+        specialActions = []
+        if self.in_bounds(firstCase):
+            firstCase[3] = self.map[firstCase[1]][firstCase[0]]
+
+            # we can neutralize if 
+            # - we are looking at a guard
+            # - the guard isn't looking at us OR we are hidden by a civil
+            # to test well
+            if firstCase[3] in OBJECTS_INDEX["guard"] \
+                and (
+                    self.map[y][x] in OBJECTS_INDEX["civil"] \
+                    or (firstCase[3] == OBJECTS_INDEX['guard'][1] and direction != 'S' \
+                        or firstCase[3] == OBJECTS_INDEX['guard'][2] and direction != 'N' \
+                        or firstCase[3] == OBJECTS_INDEX['guard'][3] and direction != 'W' \
+                        or firstCase[3] == OBJECTS_INDEX['guard'][4] and direction != 'E'
+                        )
+                    ):
+                specialActions.append((firstCase[0], firstCase[1], firstCase[2], SPECIAL_ACTIONS["neutralize_guard"]))
+                
+            # to test well
+            if firstCase[3] in OBJECTS_INDEX["civil"] \
+                and (
+                    self.map[y][x] in OBJECTS_INDEX["civil"] \
+                    or (firstCase[3] == OBJECTS_INDEX['civil'][1] and direction != 'S' \
+                        or firstCase[3] == OBJECTS_INDEX['civil'][2] and direction != 'N' \
+                        or firstCase[3] == OBJECTS_INDEX['civil'][3] and direction != 'W' \
+                        or firstCase[3] == OBJECTS_INDEX['civil'][4] and direction != 'E'
+                        )
+                    ):
+                specialActions.append((firstCase[0], firstCase[1], firstCase[2], SPECIAL_ACTIONS["neutralize_civil"]))
+            
         results = filter(self.in_bounds, neighbors)
         results = filter(self.passable, results)
-        return results
+        return list(results) + specialActions
 
 
 class PriorityQueue:
