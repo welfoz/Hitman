@@ -9,6 +9,7 @@
 - apres opti petit à petit
 
 Opti a*: 
+- calculer les points sur la suite d'actions et ne pas séparer les actions de prendre la rope, puis tuer, puis revenir (tout faire en 1 a* --> meilleur calcul des points)
 - red blob 
 - algo zobrist
 - utiliser numpy (et non des tableaux) pour optimiser la recherche (pour plus tard)

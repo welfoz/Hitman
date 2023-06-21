@@ -2,7 +2,7 @@ from typing import List, Tuple
 import copy
 from pprint import pprint
 
-from aliases import Position, OBJECTS_INDEX, Information
+from aliases import Position, OBJECTS_INDEX, Information, PositionAction, SPECIAL_ACTIONS
 from aStarUtils import SquareGrid, draw_grid, PriorityQueue, GridLocation, Position, Optional
 from utils import createMap, getAllNewInformation, howManyUnknown, isInformationAlreadyKnown, isOutsideTheMap, updateMap
 
@@ -190,8 +190,48 @@ from utils import createMap, getAllNewInformation, howManyUnknown, isInformation
 #             raise Exception("Error: action not found")
 
 
-def getAllCasesSeenByGuard(position, map) -> List[Tuple[int, int, int]]:
-    vision = 2
+def getAllPositions(map, object) -> List[Tuple[int, int, int]]:
+    positions = []
+    for y in range(len(map)):
+        for x in range(len(map[y])):
+            if map[y][x] in OBJECTS_INDEX[object]:
+                positionValue = map[y][x]
+                direction = None
+
+                # can change with the arbitre
+                if positionValue == OBJECTS_INDEX[object][1]:
+                    direction = 'N'
+                elif positionValue == OBJECTS_INDEX[object][2]:
+                    direction = 'S'
+                elif positionValue == OBJECTS_INDEX[object][3]:
+                    direction = 'E'
+                elif positionValue == OBJECTS_INDEX[object][4]:
+                    direction = 'W'
+                
+                positions.append([x, y, direction])
+    return positions
+
+def howManyGuardsLookingAtUs(position, map) -> int:
+    guardsPositions = getAllPositions(map, "guard")
+
+    guardsLookingAtUs = 0
+    for guardPosition in guardsPositions:
+        casesSeen = getAllCasesSeenByObject(guardPosition, map, "guard")
+        for caseSeen in casesSeen:
+            # if we are on the same case as a civil, the guard can't see us
+            # if caseSeen is not a civil and we are on it
+            if caseSeen[2] not in OBJECTS_INDEX["civil"] and caseSeen[0] == position[0] and caseSeen[1] == position[1]:
+                guardsLookingAtUs += 1
+        
+    return guardsLookingAtUs
+
+def getAllCasesSeenByObject(position, map, object) -> List[Tuple[int, int, int]]:
+    vision = None
+    if object == "guard":
+        vision = 2
+    if object == "civil":
+        vision = 1
+
     x = position[0]
     y = position[1]
     direction = position[2]
@@ -231,40 +271,23 @@ def getAllCasesSeenByGuard(position, map) -> List[Tuple[int, int, int]]:
             break
     return casesSeen
 
-def getAllGuardsPositions(map) -> List[Tuple[int, int, int]]:
-    guardsPositions = []
-    for y in range(len(map)):
-        for x in range(len(map[y])):
-            if map[y][x] in OBJECTS_INDEX['guard']:
-                guardPositionValue = map[y][x]
-                direction = None
+# to test
+def howManyCivilsLookingAtUs(position, map) -> int:
+    civilsPosition = getAllPositions(map, "civil")
 
-                # can change with the arbitre
-                if guardPositionValue == OBJECTS_INDEX['guard'][1]:
-                    direction = 'N'
-                elif guardPositionValue == OBJECTS_INDEX['guard'][2]:
-                    direction = 'S'
-                elif guardPositionValue == OBJECTS_INDEX['guard'][3]:
-                    direction = 'E'
-                elif guardPositionValue == OBJECTS_INDEX['guard'][4]:
-                    direction = 'W'
-                
-                guardsPositions.append([x, y, direction])
-    return guardsPositions
-
-def howManyGuardsLookingAtUs(position, map) -> int:
-    guardsPositions = getAllGuardsPositions(map)
-
-    guardsLookingAtUs = 0
-    for guardPosition in guardsPositions:
-        casesSeen = getAllCasesSeenByGuard(guardPosition, map)
+    civilsLookingAtUs = 0
+    for civilPosition in civilsPosition:
+        casesSeen = getAllCasesSeenByObject(civilPosition, map, "civil")
         for caseSeen in casesSeen:
-            # if we are on the same case as a civil, the guard can't see us
+            # if we are on the same case as a civil, the civil can't see us
             # if caseSeen is not a civil and we are on it
             if caseSeen[2] not in OBJECTS_INDEX["civil"] and caseSeen[0] == position[0] and caseSeen[1] == position[1]:
-                guardsLookingAtUs += 1
+                civilsLookingAtUs += 1
+        # if we are on a civil, he can see us
+        if civilPosition[0] == position[0] and civilPosition[1] == position[1]:
+            civilsLookingAtUs += 1
         
-    return guardsLookingAtUs
+    return civilsLookingAtUs
 
 #     def informationGained(self, position, newInfo, map) -> int:
 #         """
@@ -366,22 +389,25 @@ class ActionChooser:
         else: 
             raise Exception("Error: action not found")
 
-    def choose_phase2(self, map, position: Position, goal: Tuple[int, int]):
+    def choose_phase2(self, map, position: Position, goal: Tuple[int, int], hasRope: bool):
         """
         return the best action to do according to the best path, which maximizes the total information gained
         @param stateTree: list of the values of the total information gained for each path
         """
 
-        diagram = SquareGrid(self.n_col, self.n_lig, map)
+        diagram = SquareGrid(self.n_col, self.n_lig, map, hasRope)
 
 
         path = astar_phase2(position, diagram, goal)
         result = fromPathToActions(path)
 
+        pathWithoutActions = []
+        for i in range(len(path)):
+            pathWithoutActions.append((path[i][0], path[i][1], path[i][2]))
         # if howManyUnknownVariable < bestHowManyUnknown: # favorise la découverte
         print("Result: " + str(result))
         print('number of actions: ', len(result))
-        draw_grid(diagram, start=(position[0], position[1], position[2]), path=path)
+        draw_grid(diagram, start=(position[0], position[1], position[2]), path=pathWithoutActions)
 
         if result[0] == "move":
             return 1
@@ -389,6 +415,10 @@ class ActionChooser:
             return 2
         elif result[0] == "turn -90":
             return 3
+        elif result[0] == "neutralize_guard":
+            return 4
+        elif result[0] == "neutralize_civil":
+            return 5
         else: 
             raise Exception("Error: action not found")
 
@@ -473,14 +503,15 @@ def astar(start, diagram):
     return newpathBacktrack, howManyUnknown, clusteringScore
 
 def astar_phase2(start: Position, diagram, goal: Tuple[int, int]):
-    came_from, cost_so_far, new_goal = a_star_search_points_with_goal(diagram, start, goal)
+    came_from, cost_so_far, new_goal, backtrack = a_star_search_points_with_goal(diagram, start, goal)
+    newpathBacktrack = [tuple(start)] + backtrack
 
-    if new_goal != None:
-        goal: Position = new_goal
-        print("new_goal", new_goal)
+    # if new_goal != None:
+    #     goal: Position = new_goal
+    #     print("new_goal", new_goal)
 
-    path = reconstruct_path(came_from, start=start, goal=goal)
-    return path
+    # path = reconstruct_path(came_from, start=start, goal=goal)
+    return newpathBacktrack
 
 def reconstruct_path(came_from: dict[str, str], start: str, goal: Tuple[int, int, str|None]) -> list[str]:
     """
@@ -515,32 +546,37 @@ def fromPathToActions(path):
         return []
     actions = []
     for i in range(1, len(path)):
-        if path[i][0] != path[i - 1][0] or path[i][1] != path[i - 1][1]:
-            actions.append('move')
+        if path[i][3] == SPECIAL_ACTIONS["nothing_special"]:
+            if path[i][0] != path[i - 1][0] or path[i][1] != path[i - 1][1]:
+                actions.append('move')
         
-        if path[i][2] == 'N':
-            if path[i - 1][2] == 'E':
-                actions.append('turn -90')
-            elif path[i - 1][2] == 'W':
-                actions.append('turn 90')
-        
-        if path[i][2] == 'S':
-            if path[i - 1][2] == 'E':
-                actions.append('turn 90')
-            elif path[i - 1][2] == 'W':
-                actions.append('turn -90')
-        
-        if path[i][2] == 'E':
-            if path[i - 1][2] == 'N':
-                actions.append('turn 90')
-            elif path[i - 1][2] == 'S':
-                actions.append('turn -90')
+            if path[i][2] == 'N':
+                if path[i - 1][2] == 'E':
+                    actions.append('turn -90')
+                elif path[i - 1][2] == 'W':
+                    actions.append('turn 90')
             
-        if path[i][2] == 'W':
-            if path[i - 1][2] == 'N':
-                actions.append('turn -90')
-            elif path[i - 1][2] == 'S':
-                actions.append('turn 90')
+            if path[i][2] == 'S':
+                if path[i - 1][2] == 'E':
+                    actions.append('turn 90')
+                elif path[i - 1][2] == 'W':
+                    actions.append('turn -90')
+            
+            if path[i][2] == 'E':
+                if path[i - 1][2] == 'N':
+                    actions.append('turn 90')
+                elif path[i - 1][2] == 'S':
+                    actions.append('turn -90')
+                
+            if path[i][2] == 'W':
+                if path[i - 1][2] == 'N':
+                    actions.append('turn -90')
+                elif path[i - 1][2] == 'S':
+                    actions.append('turn 90')
+        elif path[i][3] == SPECIAL_ACTIONS["neutralize_guard"]:
+            actions.append('neutralize_guard')
+        elif path[i][3] == SPECIAL_ACTIONS["neutralize_civil"]:
+            actions.append('neutralize_civil')
     return actions 
 
 def getClusteringScore(map):
@@ -706,30 +742,68 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
     """basic a star search
     to go from start to goal
     """
+    """"
+    neutralize guard or civils
+
+    in the a star we need to store the info or update the map ??    
+    -> map as we did phase 1
+
+    pass the map to the neighbors function
+
+    how the neighbors function return the neutralized action 
+    """
     openList = PriorityQueue()
-    openList.put(start, 0)
-    came_from: dict[Position, Optional[Position]] = {}
-    cost_so_far: dict[Position, float] = {}
-    came_from[start] = None
-    cost_so_far[start] = 0
+    startTuple = ((start[0], start[1], start[2], SPECIAL_ACTIONS['nothing_special']), None)
+    openList.put(startTuple, 0)
+
+    came_from: dict[Tuple[PositionAction, Optional[PositionAction]], Tuple[Optional[PositionAction], Optional[PositionAction]]] = {}
+    cost_so_far: dict[Tuple[PositionAction, Optional[PositionAction]], float] = {}
+    came_from[startTuple]= None, None
+    cost_so_far[startTuple] = 0
+
+    state_map: dict[Tuple[PositionAction, Optional[PositionAction]], List[List[int]]] = {}
+    state_map[startTuple] = graph.map
+
+    previous = {}
+    previous[startTuple] = (None, None)
+
+    backtrack = {}
+    backtrack[startTuple] = []
     
     while not openList.empty():
-        current: Position = openList.get()
+        currentTuple: Tuple[PositionAction, Optional[PositionAction]]  = openList.get()
+        current = currentTuple[0]
         # print("current", current)
+
+        if backtrack.get(currentTuple, None) == None:
+            backtrack[currentTuple] = []
         
         if current[0] == goal[0] and current[1] == goal[1]:
             break
         
-        for next in graph.neighbors_phase2(current):
+        for next in graph.neighbors_phase2((current[0], current[1], current[2])):
+            nextTuple = (next, current)
             # new_cost = cost_so_far[current][0] + 1 #graph.cost(current, next) # every move costs 1 for now
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
+            howManyCivilsAreSeeingUs = howManyCivilsLookingAtUs(next, graph.map)
             # print("next", next)
-            new_cost = cost_so_far[current] + graph.cost_phase2(howManyGuardsAreSeeingUs) # every move costs 1 for now
-            if next not in cost_so_far or new_cost < cost_so_far[next]:
+            new_cost = cost_so_far[currentTuple] + graph.cost_phase2(howManyGuardsAreSeeingUs) # every move costs 1 for now
+            nextMap = state_map[currentTuple]
+            if next[3] == SPECIAL_ACTIONS['neutralize_guard'] or next[3] == SPECIAL_ACTIONS['neutralize_civil']:
+                nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[next[0], next[1], OBJECTS_INDEX["empty"]]])
+                # nb de personnes neutralisées * 20 
+                new_cost += 20
+                # nb de fois vu en train de neutraliser * 100
+                # to test
+                new_cost += 100 * (howManyGuardsAreSeeingUs + howManyCivilsAreSeeingUs)
+            if nextTuple not in cost_so_far or new_cost < cost_so_far[nextTuple]:
                 # ok on a trouvé une nouvelle route pour aller à next moins chere
-                cost_so_far[next] = new_cost
+                backtrack[nextTuple] = backtrack[currentTuple] + [nextTuple[0]]
+                state_map[nextTuple] = nextMap
+
+                cost_so_far[nextTuple] = new_cost
                 priority = new_cost + manhattan_distance((next[0], next[1]), goal) # manhattan distance
 
-                openList.put(next, priority)
-                came_from[next] = current
-    return came_from, cost_so_far, current
+                openList.put(nextTuple, priority)
+                came_from[nextTuple] = currentTuple
+    return came_from, cost_so_far, currentTuple, backtrack[currentTuple]
