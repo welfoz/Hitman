@@ -578,6 +578,10 @@ def fromPathToActionsPhase2(path):
             actions.append('neutralize_guard')
         elif path[i][3] == SPECIAL_ACTIONS["neutralize_civil"]:
             actions.append('neutralize_civil')
+        elif path[i][3] == SPECIAL_ACTIONS["take_costume"]:
+            actions.append("take_suit")
+        elif path[i][3] == SPECIAL_ACTIONS["put_costume"]:
+            actions.append("put_suit")
     return actions 
 
 def fromPathToActionPhase1(path):

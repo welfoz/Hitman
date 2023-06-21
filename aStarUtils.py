@@ -216,9 +216,14 @@ class SquareGrid:
                     ):
                 specialActions.append((firstCase[0], firstCase[1], firstCase[2], SPECIAL_ACTIONS["neutralize_civil"]))
             
-        # take costume
+        # take costume, need to be on the same case as the costume
+        if self.map[y][x] == OBJECTS_INDEX["costume"]:
+            print("I can take my costume")
 
-        # put costume
+        # put costume, need to have the costume
+        if self.hasCostume and not self.wearCostume: 
+            print("I can put my costume")
+
         results = filter(self.in_bounds, neighbors)
         results = filter(self.passable, results)
         return list(results) + specialActions

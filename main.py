@@ -192,7 +192,7 @@ def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPos
             status = referee.take_suit()
             hasObjects["hasCostume"] = True
         elif action == 8:
-            actions.append(("put_on_suit", position))
+            actions.append(("put_suit", position))
             status = referee.put_on_suit()
             hasObjects["wearCostume"] = True
         else: 
