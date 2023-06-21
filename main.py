@@ -46,7 +46,18 @@ def addTurnInfo(status, heardMap, seenMap, map):
     # input("Press Enter to continue...")
     return
 
-def phase1(referee):
+def fromHCDirectionToOrientation(direction: HC) -> Orientation:
+    if direction == HC.N:
+        return "N"
+    elif direction == HC.S:
+        return "S"
+    elif direction == HC.E:
+        return "E"
+    elif direction == HC.W:
+        return "W"
+    raise Exception("Unknown direction")
+
+def phase1(referee: HitmanReferee):
     start_time = time.time()
 
     status = referee.start_phase1()
@@ -130,6 +141,136 @@ def phase1(referee):
     pprint(actions)
     print("is good solution for referee....", end=" ")
     print(referee.send_content(solutionMap))
+    print("end phase1....")
+    pprint(referee.end_phase1())
+    return map
+
+def findObject(map, object):
+    for i in range(len(map)):
+        for j in range(len(map[i])):
+            if map[i][j] == object:
+                return (j, i)
+    return None
+
+def isInCase(position, goal):
+    if (position[0], position[1]) == (goal[0], goal[1]):
+        return True
+    return False
+
+def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPosition, goal, position: Position, status, MAX):
+    count = 0
+    actions = []
+    while count < MAX and not isInCase(position, goal):
+        print("------------------")        
+
+        action = actionChooser.choose_phase2(map, position, goal)
+
+        # all actions 
+        if action == 1:
+            actions.append(('move', position))
+            status = referee.move()
+        elif action == 2:
+            actions.append(("turn 90", position))
+            status = referee.turn_clockwise()
+        elif action == 3:
+            actions.append(("turn -90", position))
+            status = referee.turn_anti_clockwise()
+        elif action == 4:
+            actions.append(("kill_target", position))
+            status = referee.kill_target()
+        elif action == 5:
+            actions.append(("neutralize_guard", position))
+            status = referee.neutralize_guard()
+        elif action == 6:
+            actions.append(("neutralize_civil", position))
+            status = referee.neutralize_civil()
+        elif action == 7:
+            actions.append(("take_weapon", position))
+            status = referee.take_weapon()
+        elif action == 8:
+            actions.append(("take_suit", position))
+            status = referee.take_suit()
+        elif action == 9:
+            actions.append(("put_on_suit", position))
+            status = referee.put_on_suit()
+        else: 
+            raise Exception("action not found")
+
+        orientation = fromHCDirectionToOrientation(status["orientation"])
+        position = (status["position"][0], status["position"][1], orientation)
+        count += 1
+    print("count: ", count)
+    pprint(status)
+    return status, position
+
+def phase2(referee: HitmanReferee, map):
+    map = [[1, 1, 2, 2, 1, 4, 1], # default map 6*7
+            [1, 1, 1, 1, 1, 1, 1],
+            [2, 2, 1, 10, 1, 14, 15],
+            [3, 2, 1, 1, 1, 12, 1],
+            [1, 2, 1, 1, 1, 1, 1],
+            [1, 1, 1, 5, 9, 2, 2]]
+    start_time = time.time()
+
+    status = referee.start_phase2()
+    pprint(status)
+    
+    ropePosition = findObject(map, OBJECTS_INDEX['rope'])
+    if ropePosition is None:
+        raise Exception("No rope found")
+    costumePosition = findObject(map, OBJECTS_INDEX['costume'])
+    if costumePosition is None:
+        raise Exception("No costume found")
+    targetPosition = findObject(map, OBJECTS_INDEX['target'])
+    if targetPosition is None:
+        raise Exception("No target found")
+
+    orientation = fromHCDirectionToOrientation(status["orientation"])
+    startPosition: Position = (status["position"][0], status["position"][1], orientation)
+    position: Position = startPosition
+    print("ropePosition: ", ropePosition)
+    print("costumePosition: ", costumePosition)
+    print("targetPosition: ", targetPosition)
+    print("startPosition: ", startPosition)
+
+
+    n_col = status['n']
+    n_lig = status['m']
+
+    actionChooser = ActionChooser(n_col, n_lig)
+
+    status, position = goToGoal(actionChooser, referee, map, startPosition, (ropePosition[0], ropePosition[1]), position, status, 100)
+
+    print("We are on the rope")
+    print("we take the rope")
+    status = referee.take_weapon()
+    # the case becomes empty
+    map[ropePosition[1]][ropePosition[0]] = OBJECTS_INDEX['empty']
+    if status["has_weapon"] == False:
+        raise Exception("We don't have the rope")
+    print("we have the rope")
+
+    print("now go kill the target")
+
+    status, position = goToGoal(actionChooser, referee, map, position, (targetPosition[0], targetPosition[1]), position, status, 100)
+    ### then go to the target
+
+    print("We are on the target")
+    ### then kill the target
+    print("we kill the target")
+    status = referee.kill_target()
+    pprint(status)
+
+    ### then come back to the start position
+    status, position = goToGoal(actionChooser, referee, map, position, (startPosition[0], startPosition[1]), position, status, 100)
+
+    end_time = time.time()
+    print("total time: ", end_time - start_time)
+    # ne fonctionne pas pour le moment car on ne met pas les infos des orientations des civils & gardes
+    # pprint(actions)
+    print("is good solution for referee....", end=" ")
+    pprint(referee.end_phase2())
+    return 
 
 def main():
 
@@ -147,6 +288,7 @@ def main():
     same in a minimum of penalties (include guards seen, rope, costume...)
     come back to the start position
     """
+    # phase2(referee, map)
 
 
 if __name__ == "__main__":
