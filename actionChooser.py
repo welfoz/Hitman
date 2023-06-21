@@ -396,7 +396,7 @@ class ActionChooser:
         @param stateTree: list of the values of the total information gained for each path
         """
 
-        diagram = SquareGrid(self.n_col, self.n_lig, map, hasRope)
+        diagram = SquareGrid(self.n_col, self.n_lig, map, hasRope, hasCostume, wearCostume)
 
 
         path = astar_phase2(position, diagram, goal)

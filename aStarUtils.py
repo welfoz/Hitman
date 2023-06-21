@@ -101,11 +101,13 @@ def draw_grid(graph, **style):
     print("~~~" * graph.width)
 
 class SquareGrid:
-    def __init__(self, width: int, height: int, map, hasRope: bool = False):
+    def __init__(self, width: int, height: int, map, hasRope: bool = False, hasCostume: bool = False, wearCostume: bool = False):
         self.width = width
         self.height = height
         self.map = map
         self.hasRope = hasRope
+        self.hasCostume = hasCostume
+        self.wearCostume = wearCostume
     
     def in_bounds(self, id: Position | PositionAction) -> bool:
         x = id[0]
@@ -214,6 +216,9 @@ class SquareGrid:
                     ):
                 specialActions.append((firstCase[0], firstCase[1], firstCase[2], SPECIAL_ACTIONS["neutralize_civil"]))
             
+        # take costume
+
+        # put costume
         results = filter(self.in_bounds, neighbors)
         results = filter(self.passable, results)
         return list(results) + specialActions
