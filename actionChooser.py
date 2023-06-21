@@ -374,7 +374,7 @@ class ActionChooser:
             # print("clusteringScore: " + str(clusteringScore))
 
         path, howManyUnknownVariable, clusteringScore = astar(position, diagram, sat_info)
-        result = fromPathToActions(path)
+        result = fromPathToActionPhase1(path)
 
         # if howManyUnknownVariable < bestHowManyUnknown: # favorise la découverte
         print("Result: " + str(result))
@@ -400,7 +400,7 @@ class ActionChooser:
 
 
         path = astar_phase2(position, diagram, goal)
-        result = fromPathToActions(path)
+        result = fromPathToActionsPhase2(path)
 
         pathWithoutActions = []
         for i in range(len(path)):
@@ -538,7 +538,7 @@ def reconstruct_path(came_from: dict[str, str], start: str, goal: Tuple[int, int
     path.reverse() # optional
     return path
 
-def fromPathToActions(path):
+def fromPathToActionsPhase2(path):
     """
     input: [(0, 0, 'N'), (0, 0, 'E'), (1, 0, 'E')]
     output: ['move', 'turn 90', 'move']
@@ -578,6 +578,43 @@ def fromPathToActions(path):
             actions.append('neutralize_guard')
         elif path[i][3] == SPECIAL_ACTIONS["neutralize_civil"]:
             actions.append('neutralize_civil')
+    return actions 
+
+def fromPathToActionPhase1(path):
+    """
+    input: [(0, 0, 'N'), (0, 0, 'E'), (1, 0, 'E')]
+    output: ['move', 'turn 90', 'move']
+    """
+    if len(path) == 0:
+        return []
+    actions = []
+    for i in range(1, len(path)):
+        if path[i][0] != path[i - 1][0] or path[i][1] != path[i - 1][1]:
+            actions.append('move')
+        
+        if path[i][2] == 'N':
+            if path[i - 1][2] == 'E':
+                actions.append('turn -90')
+            elif path[i - 1][2] == 'W':
+                actions.append('turn 90')
+        
+        if path[i][2] == 'S':
+            if path[i - 1][2] == 'E':
+                actions.append('turn 90')
+            elif path[i - 1][2] == 'W':
+                actions.append('turn -90')
+        
+        if path[i][2] == 'E':
+            if path[i - 1][2] == 'N':
+                actions.append('turn 90')
+            elif path[i - 1][2] == 'S':
+                actions.append('turn -90')
+            
+        if path[i][2] == 'W':
+            if path[i - 1][2] == 'N':
+                actions.append('turn -90')
+            elif path[i - 1][2] == 'S':
+                actions.append('turn 90')
     return actions 
 
 def getClusteringScore(map):
