@@ -217,7 +217,7 @@ class SquareGrid:
                 specialActions.append((firstCase[0], firstCase[1], firstCase[2], SPECIAL_ACTIONS["neutralize_civil"]))
             
         # take costume, need to be on the same case as the costume
-        if self.map[y][x] == OBJECTS_INDEX["costume"]:
+        if not self.hasCostume and self.map[y][x] == OBJECTS_INDEX["costume"]:
             print("I can take my costume")
 
         # put costume, need to have the costume
