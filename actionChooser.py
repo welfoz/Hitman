@@ -390,7 +390,7 @@ class ActionChooser:
         else: 
             raise Exception("Error: action not found")
 
-    def choose_phase2(self, map, position: Position, goal: Tuple[int, int], hasRope: bool):
+    def choose_phase2(self, map, position: Position, goal: Tuple[int, int], hasRope: bool, hasCostume: bool, wearCostume: bool):
         """
         return the best action to do according to the best path, which maximizes the total information gained
         @param stateTree: list of the values of the total information gained for each path
