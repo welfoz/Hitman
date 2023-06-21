@@ -5,6 +5,7 @@ from pprint import pprint
 from aliases import Position, OBJECTS_INDEX, Information, PositionAction, SPECIAL_ACTIONS
 from aStarUtils import SquareGrid, draw_grid, PriorityQueue, GridLocation, Position, Optional
 from utils import createMap, getAllNewInformation, howManyUnknown, isInformationAlreadyKnown, isOutsideTheMap, updateMap
+from satUtils import is_position_safe_opti
 
 # class ActionChoice:
 #     def __init__(self, n_col, n_lig):
@@ -334,7 +335,7 @@ class ActionChooser:
         self.n_col = n_col 
         self.n_lig = n_lig
 
-    def choose(self, map, position):
+    def choose(self, map, position, sat_info : Tuple):
         """
         return the best action to do according to the best path, which maximizes the total information gained
         @param stateTree: list of the values of the total information gained for each path
@@ -372,8 +373,8 @@ class ActionChooser:
             # print("score: " + str(score))
             # print("clusteringScore: " + str(clusteringScore))
 
-        path, howManyUnknownVariable, clusteringScore = astar(position, diagram)
-        result = fromPathToActions(path)
+        path, howManyUnknownVariable, clusteringScore = astar(position, diagram, sat_info)
+        result = fromPathToActionPhase1(path)
 
         # if howManyUnknownVariable < bestHowManyUnknown: # favorise la découverte
         print("Result: " + str(result))
@@ -399,7 +400,7 @@ class ActionChooser:
 
 
         path = astar_phase2(position, diagram, goal)
-        result = fromPathToActions(path)
+        result = fromPathToActionsPhase2(path)
 
         pathWithoutActions = []
         for i in range(len(path)):
@@ -459,8 +460,8 @@ class ActionChooser:
         """
         return abs(case1[0] - case2[0]) + abs(case1[1] - case2[1])
 
-def astar(start, diagram):
-    came_from, cost_so_far, new_goal, howManyUnknown, clusteringScore, backtrack = a_star_search_points(diagram, tuple(start))
+def astar(start, diagram, sat_info : Tuple):
+    came_from, cost_so_far, new_goal, howManyUnknown, clusteringScore, backtrack = a_star_search_points(diagram, tuple(start), sat_info)
     newpathBacktrack = [tuple(start)] + backtrack
 
     # pprint("newpathBacktrack")
@@ -537,7 +538,7 @@ def reconstruct_path(came_from: dict[str, str], start: str, goal: Tuple[int, int
     path.reverse() # optional
     return path
 
-def fromPathToActions(path):
+def fromPathToActionsPhase2(path):
     """
     input: [(0, 0, 'N'), (0, 0, 'E'), (1, 0, 'E')]
     output: ['move', 'turn 90', 'move']
@@ -579,6 +580,43 @@ def fromPathToActions(path):
             actions.append('neutralize_civil')
     return actions 
 
+def fromPathToActionPhase1(path):
+    """
+    input: [(0, 0, 'N'), (0, 0, 'E'), (1, 0, 'E')]
+    output: ['move', 'turn 90', 'move']
+    """
+    if len(path) == 0:
+        return []
+    actions = []
+    for i in range(1, len(path)):
+        if path[i][0] != path[i - 1][0] or path[i][1] != path[i - 1][1]:
+            actions.append('move')
+        
+        if path[i][2] == 'N':
+            if path[i - 1][2] == 'E':
+                actions.append('turn -90')
+            elif path[i - 1][2] == 'W':
+                actions.append('turn 90')
+        
+        if path[i][2] == 'S':
+            if path[i - 1][2] == 'E':
+                actions.append('turn 90')
+            elif path[i - 1][2] == 'W':
+                actions.append('turn -90')
+        
+        if path[i][2] == 'E':
+            if path[i - 1][2] == 'N':
+                actions.append('turn 90')
+            elif path[i - 1][2] == 'S':
+                actions.append('turn -90')
+            
+        if path[i][2] == 'W':
+            if path[i - 1][2] == 'N':
+                actions.append('turn -90')
+            elif path[i - 1][2] == 'S':
+                actions.append('turn 90')
+    return actions 
+
 def getClusteringScore(map):
     """
     return the clustering score of the map
@@ -600,7 +638,7 @@ def getClusteringScore(map):
 
     return sum(distances) / len(distances)
 
-def a_star_search_points(graph: SquareGrid, start: Position):
+def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     '''
     but: voir la case goal en gagnant le plus de nouvelles cases possible
 
@@ -660,7 +698,7 @@ def a_star_search_points(graph: SquareGrid, start: Position):
             nextMap = updateMap(copy.deepcopy(state_map[current]), newInfos)
             # new_cost = cost_so_far[current][0] + 1 #graph.cost(current, next) # every move costs 1 for now
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
-            new_cost = cost_so_far[current][0] + graph.cost(howManyGuardsAreSeeingUs) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
+            new_cost = cost_so_far[current][0] + graph.cost(howManyGuardsAreSeeingUs, sat_info, next, count) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
             # score is the number of newInfos / the cost
             # goal: minimize the cost and maximize the number of newInfos
             # score means ratio combien de nouvelle info par action
@@ -684,9 +722,12 @@ def a_star_search_points(graph: SquareGrid, start: Position):
                 # to test
                 came_from[nextTuple] = current[0], previous[current][0]
                 previous[nextTuple] = current
+            
     print("total count: ", count)
     print('len nodes: ', len(list(cost_so_far.keys())))
 
+
+    print("(chelou de ne pas trouver toutes les cases), minimum VAlue: ", minimumValue)
     return came_from, cost_so_far, (minimumCostPosition, previous[minimumCostPosition]), minimumValue, getClusteringScore(state_map[minimum]), backtrack[minimumCostPosition]
 
 def heuristic_pts(map) -> float:
