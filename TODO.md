@@ -7,9 +7,9 @@
 
 ### phase 2 TODO 
 - apres opti petit à petit
-- neutralize tester sur plusieurs cartes, attention les points comptés par le a* ne sont pas les bons, il fait pas les meilleurs choix, à debug
 
 Opti a*: 
+- calculer les points sur la suite d'actions et ne pas séparer les actions de prendre la rope, puis tuer, puis revenir (tout faire en 1 a* --> meilleur calcul des points)
 - red blob 
 - algo zobrist
 - utiliser numpy (et non des tableaux) pour optimiser la recherche (pour plus tard)
