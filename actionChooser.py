@@ -646,7 +646,7 @@ def getClusteringScore(map):
         for j in range(i + 1, len(allUnkownCases)):
             distances.append(abs(allUnkownCases[i][0] - allUnkownCases[j][0]) + abs(allUnkownCases[i][1] - allUnkownCases[j][1]))
 
-    return sum(distances) / len(distances)
+    return sum(distances)
 
 def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     '''
@@ -713,7 +713,6 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             howManyNewInfosSinceBeginning = howManyUnknown(graph.map) - howManyUnknown(nextMap)
             score = howManyNewInfosSinceBeginning / new_cost
             if nextTuple not in cost_so_far or howManyUnknown(nextMap) < cost_so_far[nextTuple][1] or (howManyUnknown(nextMap) == cost_so_far[nextTuple][1] and new_cost < cost_so_far[nextTuple][0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
-                doWeWantToExplore = True
                 # si on trouve une route apportant plus d'information pour aller à nextTuple, on la prend
                 backtrack[nextTuple] = backtrack[current] + [nextTuple[0]]
 
@@ -721,7 +720,8 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
 
                 state_map[nextTuple] = nextMap
 
-                priority = new_cost + howManyUnknown(nextMap) # pretty efficient but not best result
+                # priority = new_cost + howManyUnknown(nextMap) # pretty efficient but not best result
+                priority = new_cost + getClusteringScore(nextMap) 
                 # priority = howManyUnknown(nextMap) # pretty efficient but not best result
                 # priority = new_cost + score # inneficient but find the best result as it expends more than others
                 # priority = new_cost + score * 10 # get stuck, why ? circular path
@@ -735,7 +735,8 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     print('len nodes: ', len(list(cost_so_far.keys())))
 
 
-    print("(chelou de ne pas trouver toutes les cases), minimum VAlue: ", minimumValue)
+    if minimumValue > 0:
+        print("(chelou de ne pas trouver toutes les cases), minimum VAlue: ", minimumValue)
     return minimumCostPosition, minimumValue, getClusteringScore(state_map[minimum]), backtrack[minimumCostPosition]
 
 def heuristic_pts(map) -> float:
@@ -817,17 +818,18 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
         if backtrack.get(currentTuple, None) == None:
             backtrack[currentTuple] = []
         
-        x, y, direction, action = current
-        if x == goal[0] and y == goal[1]:
+        current_x, current_y, current_direction, current_action = current
+        if current_x == goal[0] and current_y == goal[1]:
             break
         
-        for next in graph.neighbors_phase2((x, y, direction), hasObjects[currentTuple]):
+        for next in graph.neighbors_phase2((current_x, current_y, current_direction), hasObjects[currentTuple]):
             nextTuple = (next, current)
             nextMap = state_map[currentTuple]
+            # need to build the map according to graph.map and all infos
             x_next, y_next, direction_next, action_next = next
 
-            howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
-            howManyCivilsAreSeeingUs = howManyCivilsLookingAtUs(next, graph.map)
+            howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, nextMap)
+            howManyCivilsAreSeeingUs = howManyCivilsLookingAtUs(next, nextMap)
 
             new_cost = cost_so_far[currentTuple] + graph.cost_phase2(
                 next=next, 
