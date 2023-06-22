@@ -8,7 +8,7 @@ from arbitre_gitlab.hitman.hitman import HC, HitmanReferee
 from actionChooser import ActionChooser, createMap, isInformationAlreadyKnown, updateMap
 from aliases import  Literal, ClauseBase, Orientation, Information, Position, OBJECTS_INDEX
 from utils import createMap, howManyUnknown, isInformationAlreadyKnown, updateMap, isMapComplete, updateSolutionMap, fromHCDirectionToOrientation, getVisionsFromStatus
-from satUtils import addInfoListening, addInfoIsInGuardRange, addInfoVision, is_position_safe, generateInitialClauses, is_position_safe_opti
+from satUtils import addInfoListening, addInfoIsInGuardRange, addInfoVision, is_position_safe, generateInitialClauses, is_position_safe_opti, are_surrondings_safe
 
 # def addTurnInfo(status, heardMap, map, clauses):
 def addTurnInfo(status, heardMap, seenMap, map):
