@@ -145,6 +145,12 @@ class SquareGrid:
             if not wearingCostume:
                 new_cost += 100 * (howManyGuardsAreSeeingUs + howManyCivilsAreSeeingUs)
         
+        
+        if next[3] == SPECIAL_ACTIONS["take_costume"]:
+            # reward de 10 pour prendre un costume
+            # to do, estimate
+            new_cost -= 10
+
         if next[3] == SPECIAL_ACTIONS["put_costume"]:
             # nb de fois vu en train de mettre un costume * 100
             new_cost += 100 * (howManyGuardsAreSeeingUs + howManyCivilsAreSeeingUs)
