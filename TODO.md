@@ -10,7 +10,6 @@ faudrait genre plus privilégier de voir les cases quand on est proche et de moi
 ### phase 2 TODO 
 
 - apres opti petit à petit
-- put costume marche po car heuristique manattan distance et on s'arrete des qu'on est à la case --> go tout développer et prendre le cout minimum
 - changer l'heuristique ? pour se rapprocher ET minimiser le cout ?
 - heuristic = manhattan distance + potentialPenalies
 potentialPenalties depend du nb de garde, de si on a le costume, de si on a la rope
