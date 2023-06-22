@@ -669,9 +669,6 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     minimum = start
     minimumValue = howManyUnknown(graph.map)
 
-    # previous = {}
-    # previous[startTuple] = (None, None)
-
     minimumCostPosition = start
     minimumCostValue = 10000
 
@@ -681,8 +678,6 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     surrondings = are_surrondings_safe(start, sat_info)
 
     count = 0
-    countNotExapnded = 0
-    MAX = 30000
     while not openList.empty():
         count += 1
         current: Tuple[Position, Optional[Position]] = openList.get()
@@ -704,7 +699,6 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             print("goal found")
             break
 
-        doWeWantToExplore = False
         for next in graph.neighbors(current[0]):
             nextTuple = (next, current[0])
 
@@ -823,12 +817,14 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
         if backtrack.get(currentTuple, None) == None:
             backtrack[currentTuple] = []
         
-        if current[0] == goal[0] and current[1] == goal[1]:
+        x, y, direction, action = current
+        if x == goal[0] and y == goal[1]:
             break
         
-        for next in graph.neighbors_phase2((current[0], current[1], current[2]), hasObjects[currentTuple]):
+        for next in graph.neighbors_phase2((x, y, direction), hasObjects[currentTuple]):
             nextTuple = (next, current)
             nextMap = state_map[currentTuple]
+            x_next, y_next, direction_next, action_next = next
 
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
             howManyCivilsAreSeeingUs = howManyCivilsLookingAtUs(next, graph.map)
@@ -845,13 +841,13 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
                 backtrack[nextTuple] = backtrack[currentTuple] + [nextTuple[0]]
                 state_map[nextTuple] = nextMap
 
-                if next[3] == SPECIAL_ACTIONS['neutralize_guard'] or next[3] == SPECIAL_ACTIONS['neutralize_civil']:
-                    nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[next[0], next[1], OBJECTS_INDEX["empty"]]])
+                if action_next == SPECIAL_ACTIONS['neutralize_guard'] or action_next == SPECIAL_ACTIONS['neutralize_civil']:
+                    nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next, y_next, OBJECTS_INDEX["empty"]]])
 
-                if next[3] == SPECIAL_ACTIONS["take_costume"]:
+                if action_next == SPECIAL_ACTIONS["take_costume"]:
                     hasObjects[nextTuple] = (True, hasObjects[currentTuple][1])
-                    nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[next[0], next[1], OBJECTS_INDEX["empty"]]])
-                elif next[3] == SPECIAL_ACTIONS["put_costume"]:
+                    nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next, y_next, OBJECTS_INDEX["empty"]]])
+                elif action_next == SPECIAL_ACTIONS["put_costume"]:
                     hasObjects[nextTuple] = (hasObjects[currentTuple][0], True)
                 else:
                     hasObjects[nextTuple] = hasObjects[currentTuple]

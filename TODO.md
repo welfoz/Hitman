@@ -37,6 +37,7 @@ Opti a*:
 - algo zobrist
 - utiliser numpy (et non des tableaux) pour optimiser la recherche (pour plus tard)
 - typer stateTree
+- a t on besoin de dico aussi grand ? a t on besoin de stocker tous les states
 
 ### rapport
 - finir le readme
