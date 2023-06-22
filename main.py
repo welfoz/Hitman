@@ -216,12 +216,18 @@ def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPos
     return status, position
 
 def phase2(referee: HitmanReferee, map):
-    map = [[1, 1, 2, 2, 1, 4, 1], # default map 6*7
-            [1, 1, 1, 1, 1, 1, 1],
-            [2, 2, 1, 10, 1, 14, 15],
-            [3, 2, 1, 1, 1, 12, 1],
-            [1, 2, 1, 1, 1, 1, 1],
-            [1, 1, 1, 5, 9, 2, 2]]
+    # map = [[1, 1, 2, 2, 1, 4, 1], # default map 6*7
+    #         [1, 1, 1, 1, 1, 1, 1],
+    #         [2, 2, 1, 10, 1, 14, 15],
+    #         [3, 2, 1, 1, 1, 12, 1],
+    #         [1, 2, 1, 1, 1, 1, 1],
+    #         [1, 1, 1, 5, 9, 2, 2]]
+    map = [ [1,  1,  2,  2,  1,  4,  1], # default map 6*7
+            [1,  1,  1,  1,  1,  1,  1],
+            [2,  2,  7,  9,  5,  1,  1],
+            [3,  2,  1,  1,  1,  12, 7],
+            [1,  2,  1,  1,  1,  1,  1],
+            [1,  1,  1,  1,  10, 2,  2]]
     start_time = time.time()
 
     status = referee.start_phase2()
