@@ -847,7 +847,6 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
 
             new_cost = cost_so_far[currentTuple] + graph.cost_phase2(
                 next=next, 
-                hasCostume=hasObjects[currentTuple][0], 
                 wearingCostume=hasObjects[currentTuple][1], 
                 howManyCivilsAreSeeingUs=howManyCivilsAreSeeingUs,
                 howManyGuardsAreSeeingUs=howManyGuardsAreSeeingUs

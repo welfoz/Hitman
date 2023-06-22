@@ -130,7 +130,7 @@ class SquareGrid:
         # each action costs 1
         return 1 + 5 * howManyGuardsAreSeeingUs
     
-    def cost_phase2(self, next, howManyGuardsAreSeeingUs, howManyCivilsAreSeeingUs, hasCostume, wearingCostume) -> float:
+    def cost_phase2(self, next, howManyGuardsAreSeeingUs, howManyCivilsAreSeeingUs, wearingCostume) -> float:
         new_cost = 1
         
         if not wearingCostume and howManyGuardsAreSeeingUs > 0:
@@ -147,7 +147,7 @@ class SquareGrid:
         
         if next[3] == SPECIAL_ACTIONS["take_costume"]:
             # reward de 10 pour prendre un costume
-            # to do, estimate
+            # to do, estimate how many guard will see us in the future
             new_cost -= 10
 
         if next[3] == SPECIAL_ACTIONS["put_costume"]:
