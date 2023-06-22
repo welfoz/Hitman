@@ -131,9 +131,25 @@ class SquareGrid:
         # each action costs 1
         return 1 + 5 * howManyGuardsAreSeeingUs
     
-    def cost_phase2(self, howManyGuardsAreSeeingUs: int) -> float:
-        # each action costs 1
-        return 1 + 5 * howManyGuardsAreSeeingUs
+    def cost_phase2(self, next, howManyGuardsAreSeeingUs, howManyCivilsAreSeeingUs, hasCostume, wearingCostume) -> float:
+        new_cost = 1
+        
+        if not wearingCostume and howManyGuardsAreSeeingUs > 0:
+            # nb de fois vu par un garde * 5
+            new_cost += 5 * howManyGuardsAreSeeingUs
+
+        if next[3] == SPECIAL_ACTIONS['neutralize_guard'] or next[3] == SPECIAL_ACTIONS['neutralize_civil']:
+            # nb de personnes neutralisées * 20 
+            new_cost += 20
+            # nb de fois vu en train de neutraliser * 100
+            if not wearingCostume:
+                new_cost += 100 * (howManyGuardsAreSeeingUs + howManyCivilsAreSeeingUs)
+        
+        if next[3] == SPECIAL_ACTIONS["put_costume"]:
+            # nb de fois vu en train de mettre un costume * 100
+            new_cost += 100 * (howManyGuardsAreSeeingUs + howManyCivilsAreSeeingUs)
+
+        return new_cost
     
     def neighbors(self, id: Position) -> Iterator[Position]:
         (x, y, direction) = id
@@ -154,7 +170,7 @@ class SquareGrid:
         results = filter(self.passable, results)
         return results
 
-    def neighbors_phase2(self, id: Position) -> List[PositionAction]:
+    def neighbors_phase2(self, id: Position, hasObjects) -> List[PositionAction]:
         (x, y, direction) = id
         neighbors = []
         firstCase = None
@@ -217,12 +233,14 @@ class SquareGrid:
                 specialActions.append((firstCase[0], firstCase[1], firstCase[2], SPECIAL_ACTIONS["neutralize_civil"]))
             
         # take costume, need to be on the same case as the costume
-        if not self.hasCostume and self.map[y][x] == OBJECTS_INDEX["costume"]:
-            print("I can take my costume")
+        hasCostume = hasObjects[0]
+        wearingCostume = hasObjects[1]
+        if not hasCostume and self.map[y][x] == OBJECTS_INDEX["costume"]:
+            specialActions.append((x, y, direction, SPECIAL_ACTIONS["take_costume"]))
 
         # put costume, need to have the costume
-        if self.hasCostume and not self.wearCostume: 
-            print("I can put my costume")
+        if hasCostume and not wearingCostume: 
+            specialActions.append((x, y, direction, SPECIAL_ACTIONS["put_costume"]))
 
         results = filter(self.in_bounds, neighbors)
         results = filter(self.passable, results)

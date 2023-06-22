@@ -12,6 +12,26 @@ faudrait genre plus privilégier de voir les cases quand on est proche et de moi
 
 ### phase 2 TODO 
 - apres opti petit à petit
+- put costume marche po car heuristique manattan distance et on s'arrete des qu'on est à la case --> go tout développer et prendre le cout minimum
+- changer l'heuristique ? pour se rapprocher ET minimiser le cout ?
+- heuristic = manhattan distance + potentialPenalies
+potentialPenalties depend du nb de garde, de si on a le costume, de si on a la rope
+si on a le costume = 0
+manhattan distance means le nb d'actions minimale restante à faire 
+plus la manhattan distance est grande plus on a de chances de se faire voir par un garde
+peut on calculer le nb de gardes entre nous et le goal ?
+manhattan distance * (nb de gardes (restants ou pas ?)/cases) * 5 
+faudrait genre une estimation du nb de penalité sur le chemin qu'on peut prendre
+
+Décompte des points (de furtivité) :
+nb d’actions effectuées + OK
+nb de fois vu par un garde * 5 + OK
+nb de personnes neutralisées * 20 + OK
+nb de fois vu en train de passer le costume * 100 + OK
+nb de fois vu en train de neutraliser quelqu’un * 100 + OK
+nb de fois vu en train de tuer la cible * 100 TODO
+
+
 
 Opti a*: 
 - calculer les points sur la suite d'actions et ne pas séparer les actions de prendre la rope, puis tuer, puis revenir (tout faire en 1 a* --> meilleur calcul des points)

@@ -184,12 +184,22 @@ def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPos
         elif action == 5:
             actions.append(("neutralize_civil", position))
             status = referee.neutralize_civil()
+            # case becomes empty
+            visions = status["vision"]
+            map[visions[0][0][1]][visions[0][0][0]] = OBJECTS_INDEX['empty']
         elif action == 6:
             actions.append(("take_weapon", position))
+            # case becomes empty
             status = referee.take_weapon()
+            position = (status["position"][0], status["position"][1])
+            map[position[1]][position[0]] = OBJECTS_INDEX['empty']
+
         elif action == 7:
             actions.append(("take_suit", position))
             status = referee.take_suit()
+            # case becomes empty
+            position = (status["position"][0], status["position"][1])
+            map[position[1]][position[0]] = OBJECTS_INDEX['empty']
             hasObjects["hasCostume"] = True
         elif action == 8:
             actions.append(("put_suit", position))
@@ -283,7 +293,7 @@ def phase2(referee: HitmanReferee, map):
 def main():
 
     referee = HitmanReferee()
-    map = phase1(referee)
+    # map = phase1(referee)
 
     """
     phase 2
