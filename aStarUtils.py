@@ -148,7 +148,13 @@ class SquareGrid:
         if next[3] == SPECIAL_ACTIONS["take_costume"]:
             # reward de 10 pour prendre un costume
             # to do, estimate how many guard will see us in the future
-            new_cost -= 10
+            count = 0
+            for y in range(len(self.map)):
+                for x in range(len(self.map[y])):
+                    if self.map[y][x] in OBJECTS_INDEX['guard']:
+                        count += 1
+            new_cost -= 5 * count # pretty bad estimation, but it's a start
+            
 
         if next[3] == SPECIAL_ACTIONS["put_costume"]:
             # nb de fois vu en train de mettre un costume * 100
