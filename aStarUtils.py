@@ -123,11 +123,10 @@ class SquareGrid:
             return False
         return True
     
-    def cost(self, howManyGuardsAreSeeingUs: int, sat_info : Tuple, next : Tuple, count : int) -> float:
-        if (count == 1):
-            sat_map, sat_heard_map, sat_seen_map, n_col, n_lig, sat_bonus = sat_info
-            if not is_position_safe_opti(next, sat_map, sat_heard_map, sat_seen_map, n_col, n_lig):
-                return 1 + 5 * howManyGuardsAreSeeingUs + sat_bonus
+    def cost(self, howManyGuardsAreSeeingUs: int, next : Tuple, surroundings : List[Tuple], sat_bonus : float) -> float:
+        x, y, d = next
+        if (x, y, False) in surroundings:
+            return 1 + 5 * howManyGuardsAreSeeingUs + sat_bonus
         # each action costs 1
         return 1 + 5 * howManyGuardsAreSeeingUs
     

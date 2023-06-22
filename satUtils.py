@@ -239,7 +239,7 @@ def exec_gophersat(
 ) -> Tuple[bool, List[int]]:
     # Vérifier si l'OS est macOS
     if platform.system() == 'Darwin':
-        cmd = os.getcwd() + "/gophersat"
+        cmd = os.getcwd() + "/gophersat/gophersat"
     # Vérifier si l'OS est Windows
     if platform.system() == 'Windows':
         cmd = os.getcwd() + "\gophersat\gophersat.exe"
@@ -422,3 +422,17 @@ def is_position_safe_opti(position : Tuple, map : List[List[int]], heard_map : L
     # print("Clauses : ", len(clauses))
     
     return is_position_safe(sub_position, sub_map, clauses, n_col_sub_map, n_lig_sub_map)
+
+def are_surrondings_safe(position : Tuple, sat_info) -> List[Tuple]:
+    map, heard_map, seen_map, n_col, n_lig, bonus = sat_info
+    x = position[0]
+    y = position[1]
+    result = []
+    surroundings = [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
+    for case in surroundings:
+        i = case[0]
+        j = case[1]
+        if i < 0 or i >= n_col or j < 0 or j >= n_lig:
+            continue
+        result.append((i, j, is_position_safe_opti((i, j), map, heard_map, seen_map, n_col, n_lig)))
+    return result

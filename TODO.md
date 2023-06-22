@@ -1,16 +1,14 @@
 # TO DO 
-a*: il faut privilégier de prévoir de voir les cases quand on est proche de la case 
+
+### phase 1 todo 
+- bug A* si bonus = 3
+- privilégier de prévoir de voir les cases quand on est proche de la case 
 (car peut avoir des imprévus)
 là on admet que sur toutes les cases qu'on regarde elles vont être vides donc on va pouvoir voir à 3
 faudrait genre plus privilégier de voir les cases quand on est proche et de moins en moins quand on est éloignés
 
-### phase 1 todo 
-- on est sûr de connaitre la premiere case ? -> tjrs (0, 0)
-- comment les infos de l'ouie peuvent nous servir dans le choix du déplacement ? (pour plus tard)
-- SAT pour l'ouie @Pol
-- utiliser SAT @Fabien
-
 ### phase 2 TODO 
+
 - apres opti petit à petit
 - put costume marche po car heuristique manattan distance et on s'arrete des qu'on est à la case --> go tout développer et prendre le cout minimum
 - changer l'heuristique ? pour se rapprocher ET minimiser le cout ?
@@ -33,6 +31,7 @@ nb de fois vu en train de tuer la cible * 100 TODO
 
 
 
+
 Opti a*: 
 - calculer les points sur la suite d'actions et ne pas séparer les actions de prendre la rope, puis tuer, puis revenir (tout faire en 1 a* --> meilleur calcul des points)
 - red blob 
@@ -40,8 +39,17 @@ Opti a*:
 - utiliser numpy (et non des tableaux) pour optimiser la recherche (pour plus tard)
 - typer stateTree
 
-### rapport ? 
-- readme
+### rapport
+- finir le readme
+
+
+
+
+
+
+
+
+
 
 # rules 
 
