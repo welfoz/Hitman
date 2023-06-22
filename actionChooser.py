@@ -5,7 +5,7 @@ from pprint import pprint
 from aliases import Position, OBJECTS_INDEX, Information, PositionAction, SPECIAL_ACTIONS
 from aStarUtils import SquareGrid, draw_grid, PriorityQueue, GridLocation, Position, Optional
 from utils import createMap, getAllNewInformation, howManyUnknown, isInformationAlreadyKnown, isOutsideTheMap, updateMap
-from satUtils import is_position_safe_opti
+from satUtils import is_position_safe_opti, are_surrondings_safe
 
 # class ActionChoice:
 #     def __init__(self, n_col, n_lig):
@@ -678,6 +678,8 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     backtrack = {}
     backtrack[startTuple] = []
 
+    surrondings = are_surrondings_safe(start, sat_info)
+
     count = 0
     MAX = 30000
     while not openList.empty():
@@ -708,7 +710,7 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             nextMap = updateMap(copy.deepcopy(state_map[current]), newInfos)
             # new_cost = cost_so_far[current][0] + 1 #graph.cost(current, next) # every move costs 1 for now
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
-            new_cost = cost_so_far[current][0] + graph.cost(howManyGuardsAreSeeingUs, sat_info, next, count) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
+            new_cost = cost_so_far[current][0] + graph.cost(howManyGuardsAreSeeingUs, next, surrondings, sat_info[-1]) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
             # score is the number of newInfos / the cost
             # goal: minimize the cost and maximize the number of newInfos
             # score means ratio combien de nouvelle info par action
