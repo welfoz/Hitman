@@ -314,7 +314,7 @@ def main():
     same in a minimum of penalties (include guards seen, rope, costume...)
     come back to the start position
     """
-    phase2(referee, map)
+    # phase2(referee, map)
 
 
 if __name__ == "__main__":

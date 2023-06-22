@@ -1,3 +1,4 @@
+import sys
 from typing import List, Tuple
 import copy
 from pprint import pprint
@@ -373,7 +374,7 @@ class ActionChooser:
             # print("score: " + str(score))
             # print("clusteringScore: " + str(clusteringScore))
 
-        path, howManyUnknownVariable, clusteringScore = astar(position, diagram, sat_info)
+        path, howManyUnknownVariable = astar(position, diagram, sat_info)
         result = fromPathToActionPhase1(path)
 
         # if howManyUnknownVariable < bestHowManyUnknown: # favorise la découverte
@@ -465,7 +466,7 @@ class ActionChooser:
         return abs(case1[0] - case2[0]) + abs(case1[1] - case2[1])
 
 def astar(start, diagram, sat_info : Tuple):
-    new_goal, howManyUnknown, clusteringScore, backtrack = a_star_search_points(diagram, tuple(start), sat_info)
+    new_goal, howManyUnknown, backtrack = a_star_search_points(diagram, tuple(start), sat_info)
     newpathBacktrack = [tuple(start)] + backtrack
 
     # pprint("newpathBacktrack")
@@ -505,7 +506,7 @@ def astar(start, diagram, sat_info : Tuple):
     
     # pprint(new_path)
 
-    return newpathBacktrack, howManyUnknown, clusteringScore
+    return newpathBacktrack, howManyUnknown
 
 def astar_phase2(start: Position, diagram, goal: Tuple[int, int]):
     came_from, cost_so_far, new_goal, backtrack = a_star_search_points_with_goal(diagram, start, goal)
@@ -663,8 +664,9 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     cost_so_far: dict[Tuple[Position, Optional[Position]], Tuple[float, float, float]] = {}
     came_from[startTuple]= None, None
     cost_so_far[startTuple] = (0, howManyUnknown(graph.map), 0)
-    state_map: dict[Tuple[Position, Optional[Position]], List[List[int]]] = {}
-    state_map[startTuple] = graph.map
+
+    state_map_new_infos: dict[Tuple[Position, Optional[Position]], List[Tuple[int, int, int]]] = {}
+    state_map_new_infos[startTuple] = []
 
     minimum = start
     minimumValue = howManyUnknown(graph.map)
@@ -694,7 +696,11 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             minimumCostValue = cost_so_far[current][0]
             minimumCostPosition = current
 
-        if howManyUnknown(state_map[current]) == 0:
+        currentMap = [lign[:] for lign in graph.map]
+        for info in state_map_new_infos[current]:
+            currentMap[info[1]][info[0]] = info[2]
+
+        if howManyUnknown(currentMap) == 0:
             # the first solution is the best one if we have a good heuristic
             print("goal found")
             break
@@ -702,23 +708,24 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
         for next in graph.neighbors(current[0]):
             nextTuple = (next, current[0])
 
-            newInfos = getAllNewInformation(graph.width, graph.height, state_map[current], next)
-            nextMap = updateMap(copy.deepcopy(state_map[current]), newInfos)
-            # new_cost = cost_so_far[current][0] + 1 #graph.cost(current, next) # every move costs 1 for now
-            howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
+            newInfos = getAllNewInformation(graph.width, graph.height, currentMap, next)
+            nextMap = [lign[:] for lign in currentMap]
+            for newInfo in newInfos:
+                nextMap[newInfo[1]][newInfo[0]] = newInfo[2]
+
+            howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, nextMap)
             new_cost = cost_so_far[current][0] + graph.cost(howManyGuardsAreSeeingUs, next, surrondings, sat_info[-1]) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
-            # score is the number of newInfos / the cost
-            # goal: minimize the cost and maximize the number of newInfos
-            # score means ratio combien de nouvelle info par action
-            howManyNewInfosSinceBeginning = howManyUnknown(graph.map) - howManyUnknown(nextMap)
-            score = howManyNewInfosSinceBeginning / new_cost
-            if nextTuple not in cost_so_far or howManyUnknown(nextMap) < cost_so_far[nextTuple][1] or (howManyUnknown(nextMap) == cost_so_far[nextTuple][1] and new_cost < cost_so_far[nextTuple][0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
+
+            howManyCasesUnknown = howManyUnknown(nextMap)
+            if nextTuple not in cost_so_far or howManyCasesUnknown < cost_so_far[nextTuple][1] or (howManyCasesUnknown == cost_so_far[nextTuple][1] and new_cost < cost_so_far[nextTuple][0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
                 # si on trouve une route apportant plus d'information pour aller à nextTuple, on la prend
                 backtrack[nextTuple] = backtrack[current] + [nextTuple[0]]
 
-                cost_so_far[nextTuple] = (new_cost, howManyUnknown(nextMap), score)
+                cost_so_far[nextTuple] = (new_cost, howManyCasesUnknown)
 
-                state_map[nextTuple] = nextMap
+                state_map_new_infos[nextTuple] = [info for info in state_map_new_infos[current]]
+                for info in newInfos:
+                    state_map_new_infos[nextTuple] += [info]
 
                 # priority = new_cost + howManyUnknown(nextMap) # pretty efficient but not best result
                 priority = new_cost + getClusteringScore(nextMap) 
@@ -728,7 +735,6 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
                 # priority = new_cost # diskstra
                 
                 openList.put(nextTuple, priority)
-                # to test
                 came_from[nextTuple] = current
             
     print("total count: ", count)
@@ -737,7 +743,17 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
 
     if minimumValue > 0:
         print("(chelou de ne pas trouver toutes les cases), minimum VAlue: ", minimumValue)
-    return minimumCostPosition, minimumValue, getClusteringScore(state_map[minimum]), backtrack[minimumCostPosition]
+    # print("size of the map: ", sys.getsizeof(state_map))
+    print("size of cost so far: ", sys.getsizeof(cost_so_far))
+    print("size of backtrack: ", sys.getsizeof(backtrack))
+    print("size of came from: ", sys.getsizeof(came_from))
+    print("size of open list: ", sys.getsizeof(openList))
+    print("size of minimum: ", sys.getsizeof(minimum))
+    print("size of minimum value: ", sys.getsizeof(minimumValue))
+    print("size of minimum cost position: ", sys.getsizeof(minimumCostPosition))
+    print("size of minimum cost value: ", sys.getsizeof(minimumCostValue))
+
+    return minimumCostPosition, minimumValue, backtrack[minimumCostPosition]
 
 def heuristic_pts(map) -> float:
     """
