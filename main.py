@@ -102,6 +102,8 @@ def phase1(referee: HitmanReferee):
         sat_info = (map, heardMap, seenMap, n_col, n_lig, sat_bonus)
         action = actionChooser.choose(map, position, sat_info)
 
+        
+
         unknown = howManyUnknown(map)
         if action == 1:
             actions.append(('move', position, unknown))
@@ -293,7 +295,7 @@ def main():
     same in a minimum of penalties (include guards seen, rope, costume...)
     come back to the start position
     """
-    phase2(referee, map)
+    # phase2(referee, map)
 
 
 if __name__ == "__main__":
