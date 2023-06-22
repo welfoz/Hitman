@@ -465,7 +465,7 @@ class ActionChooser:
         return abs(case1[0] - case2[0]) + abs(case1[1] - case2[1])
 
 def astar(start, diagram, sat_info : Tuple):
-    came_from, cost_so_far, new_goal, howManyUnknown, clusteringScore, backtrack = a_star_search_points(diagram, tuple(start), sat_info)
+    new_goal, howManyUnknown, clusteringScore, backtrack = a_star_search_points(diagram, tuple(start), sat_info)
     newpathBacktrack = [tuple(start)] + backtrack
 
     # pprint("newpathBacktrack")
@@ -669,8 +669,8 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     minimum = start
     minimumValue = howManyUnknown(graph.map)
 
-    previous = {}
-    previous[startTuple] = (None, None)
+    # previous = {}
+    # previous[startTuple] = (None, None)
 
     minimumCostPosition = start
     minimumCostValue = 10000
@@ -681,6 +681,7 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     surrondings = are_surrondings_safe(start, sat_info)
 
     count = 0
+    countNotExapnded = 0
     MAX = 30000
     while not openList.empty():
         count += 1
@@ -703,6 +704,7 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             print("goal found")
             break
 
+        doWeWantToExplore = False
         for next in graph.neighbors(current[0]):
             nextTuple = (next, current[0])
 
@@ -717,6 +719,7 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             howManyNewInfosSinceBeginning = howManyUnknown(graph.map) - howManyUnknown(nextMap)
             score = howManyNewInfosSinceBeginning / new_cost
             if nextTuple not in cost_so_far or howManyUnknown(nextMap) < cost_so_far[nextTuple][1] or (howManyUnknown(nextMap) == cost_so_far[nextTuple][1] and new_cost < cost_so_far[nextTuple][0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
+                doWeWantToExplore = True
                 # si on trouve une route apportant plus d'information pour aller à nextTuple, on la prend
                 backtrack[nextTuple] = backtrack[current] + [nextTuple[0]]
 
@@ -732,15 +735,14 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
                 
                 openList.put(nextTuple, priority)
                 # to test
-                came_from[nextTuple] = current[0], previous[current][0]
-                previous[nextTuple] = current
+                came_from[nextTuple] = current
             
     print("total count: ", count)
     print('len nodes: ', len(list(cost_so_far.keys())))
 
 
     print("(chelou de ne pas trouver toutes les cases), minimum VAlue: ", minimumValue)
-    return came_from, cost_so_far, (minimumCostPosition, previous[minimumCostPosition]), minimumValue, getClusteringScore(state_map[minimum]), backtrack[minimumCostPosition]
+    return minimumCostPosition, minimumValue, getClusteringScore(state_map[minimum]), backtrack[minimumCostPosition]
 
 def heuristic_pts(map) -> float:
     """
@@ -795,16 +797,6 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
     """basic a star search
     to go from start to goal
     """
-    """"
-    neutralize guard or civils
-
-    in the a star we need to store the info or update the map ??    
-    -> map as we did phase 1
-
-    pass the map to the neighbors function
-
-    how the neighbors function return the neutralized action 
-    """
     openList = PriorityQueue()
     startTuple = ((start[0], start[1], start[2], SPECIAL_ACTIONS['nothing_special']), None)
     openList.put(startTuple, 0)
@@ -821,16 +813,12 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
     state_map: dict[Tuple[PositionAction, Optional[PositionAction]], List[List[int]]] = {}
     state_map[startTuple] = graph.map
 
-    previous = {}
-    previous[startTuple] = (None, None)
-
     backtrack = {}
     backtrack[startTuple] = []
     
     while not openList.empty():
         currentTuple: Tuple[PositionAction, Optional[PositionAction]]  = openList.get()
         current = currentTuple[0]
-        # print("current", current)
 
         if backtrack.get(currentTuple, None) == None:
             backtrack[currentTuple] = []
