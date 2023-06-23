@@ -9,7 +9,7 @@ from utils import createMap, getAllNewInformation, howManyUnknown, isInformation
 from satUtils import is_position_safe_opti, are_surrondings_safe
 from collections import namedtuple
 
-Global_Tuple = namedtuple('Global_Tuple', ['came_from', 'cost_so_far', 'state_map_new_infos', 'backtrack'])
+Global_Tuple = namedtuple('Global_Tuple', ['cost_so_far', 'state_map_new_infos', 'backtrack'])
 
 # class ActionChoice:
 #     def __init__(self, n_col, n_lig):
@@ -680,17 +680,10 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     minimumCostValue = 10000
 
     global_dict[startTuple] = Global_Tuple(
-        came_from=(None, None), 
         cost_so_far=(0, base_clustering),
         state_map_new_infos=[],
         backtrack=[]
     )
-    # global_dict[startTuple] = (
-
-    #     (0, base_clustering),
-    #     [],
-    #     []
-    # )
 
     surrondings = are_surrondings_safe(start, sat_info)
 
@@ -705,7 +698,6 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
         current_cost_so_far = global_dict[current].cost_so_far
         current_state_map_new_infos = global_dict[current].state_map_new_infos
         current_backtrack = global_dict[current].backtrack
-        current_came_from = global_dict[current].came_from
 
         if current_backtrack == None:
             global_dict[current] = global_dict[current]._replace(backtrack=[])
@@ -781,14 +773,12 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
                     global_dict[nextTuple] = global_dict[nextTuple]._replace(
                         cost_so_far=next_cost_so_far,
                         state_map_new_infos=next_state_map_new_infos,
-                        came_from=next_came_from,
                         backtrack=next_backtrack
                     )
                 else: 
                     global_dict[nextTuple] = Global_Tuple(
                         cost_so_far=next_cost_so_far,
                         state_map_new_infos=next_state_map_new_infos,
-                        came_from=next_came_from,
                         backtrack=next_backtrack
                     )
             
