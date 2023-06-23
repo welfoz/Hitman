@@ -301,7 +301,8 @@ def phase2(referee: HitmanReferee, map):
 
 def main():
 
-    scores = []
+    scores_p1 = []
+    scores_p2 = []
 
     for map_int in range(0, 9):
         """ dans arbitre :
@@ -318,7 +319,7 @@ class HitmanReferee:
         referee = HitmanReferee(map_int)
 
         map, time, score = phase1(referee)
-        scores.append([map_int, time, score])
+        scores_p1.append([map_int, time, score])
         """
         phase 2
 
@@ -330,9 +331,11 @@ class HitmanReferee:
         same in a minimum of penalties (include guards seen, rope, costume...)
         come back to the start position
         """
-        # phase2(referee, map)
+        time, score = phase2(referee, map)
+        scores_p2.append([map_int, time, score])
     
-    pprint(scores)
+    pprint(scores_p1)
+    pprint(scores_p2)
 
 
 if __name__ == "__main__":
