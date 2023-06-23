@@ -661,9 +661,9 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     openList.put(startTuple, 0)
     
     came_from: dict[Tuple[Position, Optional[Position]], Tuple[Optional[Position], Optional[Position]]] = {}
-    cost_so_far: dict[Tuple[Position, Optional[Position]], Tuple[float, float, float]] = {}
+    cost_so_far: dict[Tuple[Position, Optional[Position]], Tuple[float, float]] = {}
     came_from[startTuple]= None, None
-    cost_so_far[startTuple] = (0, howManyUnknown(graph.map), 0)
+    cost_so_far[startTuple] = (0, howManyUnknown(graph.map))
 
     state_map_new_infos: dict[Tuple[Position, Optional[Position]], List[Tuple[int, int, int]]] = {}
     state_map_new_infos[startTuple] = []
@@ -746,7 +746,9 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     print("size of minimum value: ", sys.getsizeof(minimumValue))
     print("size of minimum cost position: ", sys.getsizeof(minimumCostPosition))
     print("size of minimum cost value: ", sys.getsizeof(minimumCostValue))
-
+    print("len of backtrack: ", len(backtrack))
+    print("len of came from: ", len(came_from))
+    
     return minimumCostPosition, minimumValue, backtrack[minimumCostPosition]
 
 def heuristic_pts(map) -> float:
