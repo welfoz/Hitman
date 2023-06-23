@@ -628,7 +628,7 @@ def fromPathToActionPhase1(path):
                 actions.append('turn 90')
     return actions 
 
-def getClusteringScore(map):
+def getClusteringScore(map, additionalInfos):
     """
     return the clustering score of the map
     """
@@ -636,7 +636,7 @@ def getClusteringScore(map):
     allUnkownCases = []
     for y in range(len(map)):
         for x in range(len(map[y])):
-            if map[y][x] == -1:
+            if [x, y, -2] not in additionalInfos and map[y][x] == -1:
                 allUnkownCases.append([x, y])
     
     if len(allUnkownCases) == 0 or len(allUnkownCases) == 1:
@@ -680,6 +680,9 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     surrondings = are_surrondings_safe(start, sat_info)
 
     count = 0
+    howManyUnknownBase = howManyUnknown(graph.map)
+    allInfosBase = [[x, y, graph.map[y][x]] for y in range(len(graph.map)) for x in range(len(graph.map[y])) if graph.map[y][x] != -1]
+
     while not openList.empty():
         count += 1
         current: Tuple[Position, Optional[Position]] = openList.get()
@@ -696,39 +699,30 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             minimumCostValue = cost_so_far[current][0]
             minimumCostPosition = current
 
-        currentMap = [lign[:] for lign in graph.map]
-        for info in state_map_new_infos[current]:
-            currentMap[info[1]][info[0]] = info[2]
-
-        if howManyUnknown(currentMap) == 0:
-            # the first solution is the best one if we have a good heuristic
+        howManyUnknownCurrent = howManyUnknownBase - len(state_map_new_infos[current]) 
+        if howManyUnknownCurrent == 0:
             print("goal found")
             break
 
         for next in graph.neighbors(current[0]):
             nextTuple = (next, current[0])
 
-            newInfos = getAllNewInformation(graph.width, graph.height, currentMap, next)
-            nextMap = [lign[:] for lign in currentMap]
-            for newInfo in newInfos:
-                nextMap[newInfo[1]][newInfo[0]] = newInfo[2]
+            caseSeen = getAllNewInformation(graph.width, graph.height, graph.map, next)
+            newInfos = [info for info in caseSeen if info not in state_map_new_infos[current] and info not in allInfosBase] # we only keep the new information
 
-            howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, nextMap)
+            howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
             new_cost = cost_so_far[current][0] + graph.cost(howManyGuardsAreSeeingUs, next, surrondings, sat_info[-1]) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
 
-            howManyCasesUnknown = howManyUnknown(nextMap)
+            howManyCasesUnknown = howManyUnknownCurrent - len(newInfos)
             if nextTuple not in cost_so_far or howManyCasesUnknown < cost_so_far[nextTuple][1] or (howManyCasesUnknown == cost_so_far[nextTuple][1] and new_cost < cost_so_far[nextTuple][0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
                 # si on trouve une route apportant plus d'information pour aller à nextTuple, on la prend
                 backtrack[nextTuple] = backtrack[current] + [nextTuple[0]]
 
                 cost_so_far[nextTuple] = (new_cost, howManyCasesUnknown)
 
-                state_map_new_infos[nextTuple] = [info for info in state_map_new_infos[current]]
-                for info in newInfos:
-                    state_map_new_infos[nextTuple] += [info]
+                state_map_new_infos[nextTuple] = [info for info in state_map_new_infos[current]] + newInfos
 
-                # priority = new_cost + howManyUnknown(nextMap) # pretty efficient but not best result
-                priority = new_cost + getClusteringScore(nextMap) 
+                priority = new_cost + getClusteringScore(graph.map, state_map_new_infos[nextTuple]) 
                 # priority = howManyUnknown(nextMap) # pretty efficient but not best result
                 # priority = new_cost + score # inneficient but find the best result as it expends more than others
                 # priority = new_cost + score * 10 # get stuck, why ? circular path
