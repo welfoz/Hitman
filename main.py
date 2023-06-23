@@ -165,7 +165,7 @@ def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPos
     while count < MAX and not isInCase(position, goal):
         print("------------------")        
 
-        action = actionChooser.choose_phase2(map, position, goal, hasObjects["hasRope"])
+        action = actionChooser.choose_phase2(map, position, goal, hasObjects["hasRope"], hasObjects["hasCostume"], hasObjects["wearCostume"])
 
         # all actions 
         if action == 1:
@@ -186,15 +186,27 @@ def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPos
         elif action == 5:
             actions.append(("neutralize_civil", position))
             status = referee.neutralize_civil()
+            # case becomes empty
+            visions = status["vision"]
+            map[visions[0][0][1]][visions[0][0][0]] = OBJECTS_INDEX['empty']
         elif action == 6:
             actions.append(("take_weapon", position))
+            # case becomes empty
             status = referee.take_weapon()
+            position = (status["position"][0], status["position"][1])
+            map[position[1]][position[0]] = OBJECTS_INDEX['empty']
+
         elif action == 7:
             actions.append(("take_suit", position))
             status = referee.take_suit()
+            # case becomes empty
+            position = (status["position"][0], status["position"][1])
+            map[position[1]][position[0]] = OBJECTS_INDEX['empty']
+            hasObjects["hasCostume"] = True
         elif action == 8:
-            actions.append(("put_on_suit", position))
+            actions.append(("put_suit", position))
             status = referee.put_on_suit()
+            hasObjects["wearCostume"] = True
         else: 
             raise Exception("action not found")
 
@@ -206,12 +218,18 @@ def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPos
     return status, position
 
 def phase2(referee: HitmanReferee, map):
-    map = [[1, 1, 2, 2, 1, 4, 1], # default map 6*7
-            [1, 1, 1, 1, 1, 1, 1],
-            [2, 2, 1, 10, 1, 14, 15],
-            [3, 2, 1, 1, 1, 12, 1],
-            [1, 2, 1, 1, 1, 1, 1],
-            [1, 1, 1, 5, 9, 2, 2]]
+    # map = [[1, 1, 2, 2, 1, 4, 1], # default map 6*7
+    #         [1, 1, 1, 1, 1, 1, 1],
+    #         [2, 2, 1, 10, 1, 14, 15],
+    #         [3, 2, 1, 1, 1, 12, 1],
+    #         [1, 2, 1, 1, 1, 1, 1],
+    #         [1, 1, 1, 5, 9, 2, 2]]
+    # map = [ [1,  1,  2,  2,  1,  4,  1], # default map 6*7
+    #         [1,  1,  1,  1,  1,  1,  1],
+    #         [2,  2,  7,  9,  5,  1,  1],
+    #         [3,  2,  1,  1,  1,  12, 7],
+    #         [1,  2,  1,  1,  1,  1,  1],
+    #         [1,  1,  1,  1,  10, 2,  2]]
     start_time = time.time()
 
     status = referee.start_phase2()
@@ -243,7 +261,8 @@ def phase2(referee: HitmanReferee, map):
 
     hasObjects = {
         "hasRope": False,
-        "hasCostume": False
+        "hasCostume": False,
+        "wearCostume": False
     }
     status, position = goToGoal(actionChooser, referee, map, startPosition, (ropePosition[0], ropePosition[1]), position, status, 100, hasObjects)
 

@@ -1,3 +1,4 @@
+import sys
 from typing import List, Tuple
 import copy
 from pprint import pprint
@@ -6,6 +7,9 @@ from aliases import Position, OBJECTS_INDEX, Information, PositionAction, SPECIA
 from aStarUtils import SquareGrid, draw_grid, PriorityQueue, GridLocation, Position, Optional
 from utils import createMap, getAllNewInformation, howManyUnknown, isInformationAlreadyKnown, isOutsideTheMap, updateMap
 from satUtils import is_position_safe_opti, are_surrondings_safe
+from collections import namedtuple
+
+Global_Tuple = namedtuple('Global_Tuple', ['cost_so_far', 'state_map_new_infos', 'backtrack'])
 
 # class ActionChoice:
 #     def __init__(self, n_col, n_lig):
@@ -373,7 +377,7 @@ class ActionChooser:
             # print("score: " + str(score))
             # print("clusteringScore: " + str(clusteringScore))
 
-        path, howManyUnknownVariable, clusteringScore = astar(position, diagram, sat_info)
+        path, howManyUnknownVariable = astar(position, diagram, sat_info)
         result = fromPathToActionPhase1(path)
 
         # if howManyUnknownVariable < bestHowManyUnknown: # favorise la découverte
@@ -390,13 +394,13 @@ class ActionChooser:
         else: 
             raise Exception("Error: action not found")
 
-    def choose_phase2(self, map, position: Position, goal: Tuple[int, int], hasRope: bool):
+    def choose_phase2(self, map, position: Position, goal: Tuple[int, int], hasRope: bool, hasCostume: bool, wearCostume: bool):
         """
         return the best action to do according to the best path, which maximizes the total information gained
         @param stateTree: list of the values of the total information gained for each path
         """
 
-        diagram = SquareGrid(self.n_col, self.n_lig, map, hasRope)
+        diagram = SquareGrid(self.n_col, self.n_lig, map, hasRope, hasCostume, wearCostume)
 
 
         path = astar_phase2(position, diagram, goal)
@@ -420,6 +424,10 @@ class ActionChooser:
             return 4
         elif result[0] == "neutralize_civil":
             return 5
+        elif result[0] == "take_costume":
+            return 7
+        elif result[0] == "put_costume":
+            return 8
         else: 
             raise Exception("Error: action not found")
 
@@ -461,7 +469,7 @@ class ActionChooser:
         return abs(case1[0] - case2[0]) + abs(case1[1] - case2[1])
 
 def astar(start, diagram, sat_info : Tuple):
-    came_from, cost_so_far, new_goal, howManyUnknown, clusteringScore, backtrack = a_star_search_points(diagram, tuple(start), sat_info)
+    new_goal, howManyUnknown, backtrack = a_star_search_points(diagram, tuple(start), sat_info)
     newpathBacktrack = [tuple(start)] + backtrack
 
     # pprint("newpathBacktrack")
@@ -501,7 +509,7 @@ def astar(start, diagram, sat_info : Tuple):
     
     # pprint(new_path)
 
-    return newpathBacktrack, howManyUnknown, clusteringScore
+    return newpathBacktrack, howManyUnknown
 
 def astar_phase2(start: Position, diagram, goal: Tuple[int, int]):
     came_from, cost_so_far, new_goal, backtrack = a_star_search_points_with_goal(diagram, start, goal)
@@ -578,6 +586,12 @@ def fromPathToActionsPhase2(path):
             actions.append('neutralize_guard')
         elif path[i][3] == SPECIAL_ACTIONS["neutralize_civil"]:
             actions.append('neutralize_civil')
+        elif path[i][3] == SPECIAL_ACTIONS["take_costume"]:
+            actions.append("take_costume")
+        elif path[i][3] == SPECIAL_ACTIONS["put_costume"]:
+            actions.append("put_costume")
+        else: 
+            raise Exception("Unknown action")
     return actions 
 
 def fromPathToActionPhase1(path):
@@ -617,120 +631,163 @@ def fromPathToActionPhase1(path):
                 actions.append('turn 90')
     return actions 
 
-def getClusteringScore(map):
+def getClusteringScore(allUnkownCases):
     """
     return the clustering score of the map
     """
     # compute the distance between each unknown cell
-    allUnkownCases = []
-    for y in range(len(map)):
-        for x in range(len(map[y])):
-            if map[y][x] == -1:
-                allUnkownCases.append([x, y])
-    
-    if len(allUnkownCases) == 0 or len(allUnkownCases) == 1:
+
+    if len(allUnkownCases) == 0:
         return 0
+    if len(allUnkownCases) == 1:
+        return 1
     
     distances = []
     for i in range(len(allUnkownCases)):
         for j in range(i + 1, len(allUnkownCases)):
-            distances.append(abs(allUnkownCases[i][0] - allUnkownCases[j][0]) + abs(allUnkownCases[i][1] - allUnkownCases[j][1]))
+            distance = abs(allUnkownCases[i][0] - allUnkownCases[j][0]) + abs(allUnkownCases[i][1] - allUnkownCases[j][1])
+            distances.append(distance)
 
-    return sum(distances) / len(distances)
+    return sum(distances)
 
 def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     '''
     but: voir la case goal en gagnant le plus de nouvelles cases possible
-
-    explosion en mémoire on stocke bcp de trucs
-    a t on besoin de tout stocker ?
     '''
     openList = PriorityQueue()
     startTuple = (start, None)
     openList.put(startTuple, 0)
     
-    came_from: dict[Tuple[Position, Optional[Position]], Tuple[Optional[Position], Optional[Position]]] = {}
-    cost_so_far: dict[Tuple[Position, Optional[Position]], Tuple[float, float, float]] = {}
-    came_from[startTuple]= None, None
-    cost_so_far[startTuple] = (0, howManyUnknown(graph.map), 0)
-    state_map: dict[Tuple[Position, Optional[Position]], List[List[int]]] = {}
-    state_map[startTuple] = graph.map
+    global_dict: dict[Tuple[Position, Optional[Position]], 
+        Global_Tuple
+    ] = {}
+    allUnkownCases = []
+    for y in range(len(graph.map)):
+        for x in range(len(graph.map[y])):
+            if graph.map[y][x] == -1:
+                allUnkownCases.append([x, y])
+
+    base_clustering = getClusteringScore(allUnkownCases) 
 
     minimum = start
-    minimumValue = howManyUnknown(graph.map)
-
-    previous = {}
-    previous[startTuple] = (None, None)
+    minimumValue = base_clustering 
 
     minimumCostPosition = start
     minimumCostValue = 10000
 
-    backtrack = {}
-    backtrack[startTuple] = []
+    global_dict[startTuple] = Global_Tuple(
+        cost_so_far=(0, base_clustering),
+        state_map_new_infos=[],
+        backtrack=[]
+    )
 
     surrondings = are_surrondings_safe(start, sat_info)
 
     count = 0
-    MAX = 30000
+    howManyUnknownBase = howManyUnknown(graph.map)
+    allInfosBase = [[x, y, graph.map[y][x]] for y in range(len(graph.map)) for x in range(len(graph.map[y])) if graph.map[y][x] != -1]
+
     while not openList.empty():
         count += 1
         current: Tuple[Position, Optional[Position]] = openList.get()
 
-        if backtrack.get(current, None) == None:
-            backtrack[current] = []
+        current_cost_so_far = global_dict[current].cost_so_far
+        current_state_map_new_infos = global_dict[current].state_map_new_infos
+        current_backtrack = global_dict[current].backtrack
+
+        if current_backtrack == None:
+            global_dict[current] = global_dict[current]._replace(backtrack=[])
         
-        # if we have multiple minimums equals (= 0, =1....)
-        # then we take the one with the minimum cost
-        if cost_so_far[current][1] < minimumValue \
-                or (cost_so_far[current][1] == minimumValue and cost_so_far[current][0] < minimumCostValue):
+        
+        if current_cost_so_far[1] < minimumValue \
+                or (current_cost_so_far[1] == minimumValue and current_cost_so_far[0] < minimumCostValue):
             minimum = current
-            minimumValue = cost_so_far[current][1]
-            minimumCostValue = cost_so_far[current][0]
+            minimumValue = current_cost_so_far[1]
+            minimumCostValue = current_cost_so_far[0]
             minimumCostPosition = current
 
-        if howManyUnknown(state_map[current]) == 0:
-            # the first solution is the best one if we have a good heuristic
+        allUnkownCases = []
+        for y in range(len(graph.map)):
+            for x in range(len(graph.map[y])):
+                if [x, y, -2] not in current_state_map_new_infos and graph.map[y][x] == -1:
+                    allUnkownCases.append([x, y])
+
+        howManyUnknownCurrent = howManyUnknownBase - len(current_state_map_new_infos) 
+        if howManyUnknownCurrent == 0:
             print("goal found")
             break
 
         for next in graph.neighbors(current[0]):
             nextTuple = (next, current[0])
 
-            newInfos = getAllNewInformation(graph.width, graph.height, state_map[current], next)
-            nextMap = updateMap(copy.deepcopy(state_map[current]), newInfos)
-            # new_cost = cost_so_far[current][0] + 1 #graph.cost(current, next) # every move costs 1 for now
+            caseSeen = getAllNewInformation(graph.width, graph.height, graph.map, next)
+            newInfos = [info for info in caseSeen if info not in current_state_map_new_infos and info not in allInfosBase] # we only keep the new information
+
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
-            new_cost = cost_so_far[current][0] + graph.cost(howManyGuardsAreSeeingUs, next, surrondings, sat_info[-1]) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
-            # score is the number of newInfos / the cost
-            # goal: minimize the cost and maximize the number of newInfos
-            # score means ratio combien de nouvelle info par action
-            howManyNewInfosSinceBeginning = howManyUnknown(graph.map) - howManyUnknown(nextMap)
-            score = howManyNewInfosSinceBeginning / new_cost
-            if nextTuple not in cost_so_far or howManyUnknown(nextMap) < cost_so_far[nextTuple][1] or (howManyUnknown(nextMap) == cost_so_far[nextTuple][1] and new_cost < cost_so_far[nextTuple][0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
+            new_cost = current_cost_so_far[0] + graph.cost(howManyGuardsAreSeeingUs, next, surrondings, sat_info[-1]) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
+
+            next_state_map_new_infos = [info for info in current_state_map_new_infos] + newInfos
+            allUnkownCases = []
+            for y in range(len(graph.map)):
+                for x in range(len(graph.map[y])):
+                    if [x, y, -2] not in next_state_map_new_infos and graph.map[y][x] == -1:
+                        allUnkownCases.append([x, y])
+            clustering = getClusteringScore(allUnkownCases) 
+            if nextTuple not in global_dict or clustering < global_dict[nextTuple].cost_so_far[1] or (clustering == global_dict[nextTuple].cost_so_far[1] and new_cost < global_dict[nextTuple].cost_so_far[0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
                 # si on trouve une route apportant plus d'information pour aller à nextTuple, on la prend
-                backtrack[nextTuple] = backtrack[current] + [nextTuple[0]]
+                next_backtrack = current_backtrack + [nextTuple[0]]
 
-                cost_so_far[nextTuple] = (new_cost, howManyUnknown(nextMap), score)
+                next_cost_so_far = (new_cost, clustering)
 
-                state_map[nextTuple] = nextMap
 
-                priority = new_cost + howManyUnknown(nextMap) # pretty efficient but not best result
+
+                # closiestUnknownDistance = 1000
+                # for unknown in allUnkownCases:
+                #     distance = manhattan_distance(unknown, (next[0], next[1]))
+                #     if distance < closiestUnknownDistance:
+                #         closiestUnknownDistance = distance
+                # # print(closiestUnknownDistance)
+                # if len(allUnkownCases) == 0:
+                #     closiestUnknownDistance = 0
+                
+                # if closiestUnknownDistance > 2:
+                #     closiestUnknownDistance -= 2
+
+                # but de l'heuristique: estimer le mieux la penalité restante jusqu'à ne plus avoir de case inconnue
+                # priority = new_cost + fartherUnknownDistance + getClusteringScore(allUnkownCases)
+                priority = new_cost + getClusteringScore(allUnkownCases) / 2 #+ closiestUnknownDistance
                 # priority = howManyUnknown(nextMap) # pretty efficient but not best result
                 # priority = new_cost + score # inneficient but find the best result as it expends more than others
                 # priority = new_cost + score * 10 # get stuck, why ? circular path
                 # priority = new_cost # diskstra
                 
                 openList.put(nextTuple, priority)
-                # to test
-                came_from[nextTuple] = current[0], previous[current][0]
-                previous[nextTuple] = current
+
+                global_dict[nextTuple] = Global_Tuple(
+                    cost_so_far=next_cost_so_far,
+                    state_map_new_infos=next_state_map_new_infos,
+                    backtrack=next_backtrack
+                )
             
     print("total count: ", count)
-    print('len nodes: ', len(list(cost_so_far.keys())))
+    print('len nodes: ', len(list(global_dict.keys())))
 
 
-    print("(chelou de ne pas trouver toutes les cases), minimum VAlue: ", minimumValue)
-    return came_from, cost_so_far, (minimumCostPosition, previous[minimumCostPosition]), minimumValue, getClusteringScore(state_map[minimum]), backtrack[minimumCostPosition]
+    if minimumValue > 0:
+        print("(chelou de ne pas trouver toutes les cases), minimum VAlue: ", minimumValue)
+    # print("size of the map: ", sys.getsizeof(state_map))
+    print("size of cost so far: ", sys.getsizeof(global_dict))
+    # print("size of backtrack: ", sys.getsizeof(backtrack))
+    # print("size of came from: ", sys.getsizeof(came_from))
+    # print("size of open list: ", sys.getsizeof(openList))
+    print("size of minimum: ", sys.getsizeof(minimum))
+    print("size of minimum value: ", sys.getsizeof(minimumValue))
+    print("size of minimum cost position: ", sys.getsizeof(minimumCostPosition))
+    print("size of minimum cost value: ", sys.getsizeof(minimumCostValue))
+    # print("len of backtrack: ", len(backtrack))
+    # print("len of came from: ", len(came_from))
+    
+    return minimumCostPosition, minimumValue, global_dict[minimumCostPosition].backtrack
 
 def heuristic_pts(map) -> float:
     """
@@ -779,21 +836,11 @@ def reconstruct_path_new(
 def manhattan_distance(a: GridLocation, b: GridLocation) -> float:
     (x1, y1) = a
     (x2, y2) = b
-    return abs(x1 - x2) + abs(y1 - y2)
+    return abs(x1 - x2) + abs(y1 - y2) 
 
 def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tuple[int, int]):
     """basic a star search
     to go from start to goal
-    """
-    """"
-    neutralize guard or civils
-
-    in the a star we need to store the info or update the map ??    
-    -> map as we did phase 1
-
-    pass the map to the neighbors function
-
-    how the neighbors function return the neutralized action 
     """
     openList = PriorityQueue()
     startTuple = ((start[0], start[1], start[2], SPECIAL_ACTIONS['nothing_special']), None)
@@ -801,14 +848,15 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
 
     came_from: dict[Tuple[PositionAction, Optional[PositionAction]], Tuple[Optional[PositionAction], Optional[PositionAction]]] = {}
     cost_so_far: dict[Tuple[PositionAction, Optional[PositionAction]], float] = {}
+    # Tuple[bool, bool] = (hasCostume, wearingCostume)
+    hasObjects: dict[Tuple[PositionAction, Optional[PositionAction]], Tuple[bool, bool]] = {}
+
     came_from[startTuple]= None, None
     cost_so_far[startTuple] = 0
+    hasObjects[startTuple] = (graph.hasCostume, graph.wearCostume)
 
     state_map: dict[Tuple[PositionAction, Optional[PositionAction]], List[List[int]]] = {}
     state_map[startTuple] = graph.map
-
-    previous = {}
-    previous[startTuple] = (None, None)
 
     backtrack = {}
     backtrack[startTuple] = []
@@ -816,37 +864,54 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
     while not openList.empty():
         currentTuple: Tuple[PositionAction, Optional[PositionAction]]  = openList.get()
         current = currentTuple[0]
-        # print("current", current)
 
         if backtrack.get(currentTuple, None) == None:
             backtrack[currentTuple] = []
         
-        if current[0] == goal[0] and current[1] == goal[1]:
+        current_x, current_y, current_direction, current_action = current
+        if current_x == goal[0] and current_y == goal[1]:
             break
         
-        for next in graph.neighbors_phase2((current[0], current[1], current[2])):
+        for next in graph.neighbors_phase2((current_x, current_y, current_direction), hasObjects[currentTuple]):
             nextTuple = (next, current)
-            # new_cost = cost_so_far[current][0] + 1 #graph.cost(current, next) # every move costs 1 for now
-            howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
-            howManyCivilsAreSeeingUs = howManyCivilsLookingAtUs(next, graph.map)
-            # print("next", next)
-            new_cost = cost_so_far[currentTuple] + graph.cost_phase2(howManyGuardsAreSeeingUs) # every move costs 1 for now
             nextMap = state_map[currentTuple]
-            if next[3] == SPECIAL_ACTIONS['neutralize_guard'] or next[3] == SPECIAL_ACTIONS['neutralize_civil']:
-                nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[next[0], next[1], OBJECTS_INDEX["empty"]]])
-                # nb de personnes neutralisées * 20 
-                new_cost += 20
-                # nb de fois vu en train de neutraliser * 100
-                # to test
-                new_cost += 100 * (howManyGuardsAreSeeingUs + howManyCivilsAreSeeingUs)
+            # need to build the map according to graph.map and all infos
+            x_next, y_next, direction_next, action_next = next
+
+            howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, nextMap)
+            howManyCivilsAreSeeingUs = howManyCivilsLookingAtUs(next, nextMap)
+
+            new_cost = cost_so_far[currentTuple] + graph.cost_phase2(
+                next=next, 
+                wearingCostume=hasObjects[currentTuple][1], 
+                howManyCivilsAreSeeingUs=howManyCivilsAreSeeingUs,
+                howManyGuardsAreSeeingUs=howManyGuardsAreSeeingUs
+            ) 
+            
             if nextTuple not in cost_so_far or new_cost < cost_so_far[nextTuple]:
                 # ok on a trouvé une nouvelle route pour aller à next moins chere
                 backtrack[nextTuple] = backtrack[currentTuple] + [nextTuple[0]]
                 state_map[nextTuple] = nextMap
+
+                if action_next == SPECIAL_ACTIONS['neutralize_guard'] or action_next == SPECIAL_ACTIONS['neutralize_civil']:
+                    nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next, y_next, OBJECTS_INDEX["empty"]]])
+
+                if action_next == SPECIAL_ACTIONS["take_costume"]:
+                    hasObjects[nextTuple] = (True, hasObjects[currentTuple][1])
+                    nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next, y_next, OBJECTS_INDEX["empty"]]])
+                elif action_next == SPECIAL_ACTIONS["put_costume"]:
+                    hasObjects[nextTuple] = (hasObjects[currentTuple][0], True)
+                else:
+                    hasObjects[nextTuple] = hasObjects[currentTuple]
 
                 cost_so_far[nextTuple] = new_cost
                 priority = new_cost + manhattan_distance((next[0], next[1]), goal) # manhattan distance
 
                 openList.put(nextTuple, priority)
                 came_from[nextTuple] = currentTuple
+    print("cost prevu: ", cost_so_far[currentTuple])
+    if cost_so_far[currentTuple] != len(backtrack[currentTuple]):
+        print("diff")
+        print("cost_so_far[currentTuple]", cost_so_far[currentTuple])
+        print("len(backtrack[currentTuple])", len(backtrack[currentTuple]))
     return came_from, cost_so_far, currentTuple, backtrack[currentTuple]
