@@ -653,14 +653,10 @@ def getClusteringScore(allUnkownCases):
 def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     '''
     but: voir la case goal en gagnant le plus de nouvelles cases possible
-
-    explosion en mémoire on stocke bcp de trucs
-    a t on besoin de tout stocker ?
     '''
     openList = PriorityQueue()
     startTuple = (start, None)
     openList.put(startTuple, 0)
-    
     
     global_dict: dict[Tuple[Position, Optional[Position]], 
         Global_Tuple
@@ -730,7 +726,6 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
             new_cost = current_cost_so_far[0] + graph.cost(howManyGuardsAreSeeingUs, next, surrondings, sat_info[-1]) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
 
-            # howManyCasesUnknown = howManyUnknownCurrent - len(newInfos)
             next_state_map_new_infos = [info for info in current_state_map_new_infos] + newInfos
             allUnkownCases = []
             for y in range(len(graph.map)):
@@ -740,7 +735,6 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             clustering = getClusteringScore(allUnkownCases) 
             if nextTuple not in global_dict or clustering < global_dict[nextTuple].cost_so_far[1] or (clustering == global_dict[nextTuple].cost_so_far[1] and new_cost < global_dict[nextTuple].cost_so_far[0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
                 # si on trouve une route apportant plus d'information pour aller à nextTuple, on la prend
-                # backtrack[nextTuple] = backtrack[current] + [nextTuple[0]]
                 next_backtrack = current_backtrack + [nextTuple[0]]
 
                 next_cost_so_far = (new_cost, clustering)
@@ -768,19 +762,12 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
                 # priority = new_cost # diskstra
                 
                 openList.put(nextTuple, priority)
-                next_came_from = current
-                if nextTuple in global_dict:
-                    global_dict[nextTuple] = global_dict[nextTuple]._replace(
-                        cost_so_far=next_cost_so_far,
-                        state_map_new_infos=next_state_map_new_infos,
-                        backtrack=next_backtrack
-                    )
-                else: 
-                    global_dict[nextTuple] = Global_Tuple(
-                        cost_so_far=next_cost_so_far,
-                        state_map_new_infos=next_state_map_new_infos,
-                        backtrack=next_backtrack
-                    )
+
+                global_dict[nextTuple] = Global_Tuple(
+                    cost_so_far=next_cost_so_far,
+                    state_map_new_infos=next_state_map_new_infos,
+                    backtrack=next_backtrack
+                )
             
     print("total count: ", count)
     print('len nodes: ', len(list(global_dict.keys())))
