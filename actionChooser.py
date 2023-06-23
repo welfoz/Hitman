@@ -7,6 +7,9 @@ from aliases import Position, OBJECTS_INDEX, Information, PositionAction, SPECIA
 from aStarUtils import SquareGrid, draw_grid, PriorityQueue, GridLocation, Position, Optional
 from utils import createMap, getAllNewInformation, howManyUnknown, isInformationAlreadyKnown, isOutsideTheMap, updateMap
 from satUtils import is_position_safe_opti, are_surrondings_safe
+from collections import namedtuple
+
+Global_Tuple = namedtuple('Global_Tuple', ['came_from', 'cost_so_far', 'state_map_new_infos', 'backtrack'])
 
 # class ActionChoice:
 #     def __init__(self, n_col, n_lig):
@@ -628,17 +631,13 @@ def fromPathToActionPhase1(path):
                 actions.append('turn 90')
     return actions 
 
-def getClusteringScore(map, additionalInfos):
+def getClusteringScore(allUnkownCases, position):
     """
     return the clustering score of the map
     """
     # compute the distance between each unknown cell
-    allUnkownCases = []
-    for y in range(len(map)):
-        for x in range(len(map[y])):
-            if [x, y, -2] not in additionalInfos and map[y][x] == -1:
-                allUnkownCases.append([x, y])
-    
+    # allUnkownCases.append(position)
+
     if len(allUnkownCases) == 0 or len(allUnkownCases) == 1:
         return 0
     
@@ -660,13 +659,10 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     startTuple = (start, None)
     openList.put(startTuple, 0)
     
-    came_from: dict[Tuple[Position, Optional[Position]], Tuple[Optional[Position], Optional[Position]]] = {}
-    cost_so_far: dict[Tuple[Position, Optional[Position]], Tuple[float, float]] = {}
-    came_from[startTuple]= None, None
-    cost_so_far[startTuple] = (0, howManyUnknown(graph.map))
-
-    state_map_new_infos: dict[Tuple[Position, Optional[Position]], List[Tuple[int, int, int]]] = {}
-    state_map_new_infos[startTuple] = []
+    
+    global_dict: dict[Tuple[Position, Optional[Position]], 
+        Global_Tuple
+    ] = {}
 
     minimum = start
     minimumValue = howManyUnknown(graph.map)
@@ -674,8 +670,12 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     minimumCostPosition = start
     minimumCostValue = 10000
 
-    backtrack = {}
-    backtrack[startTuple] = []
+    global_dict[startTuple] = Global_Tuple(
+        came_from=(None, None), 
+        cost_so_far=(0, howManyUnknown(graph.map)),
+        state_map_new_infos=[],
+        backtrack=[]
+    )
 
     surrondings = are_surrondings_safe(start, sat_info)
 
@@ -687,19 +687,23 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
         count += 1
         current: Tuple[Position, Optional[Position]] = openList.get()
 
-        if backtrack.get(current, None) == None:
-            backtrack[current] = []
+        current_cost_so_far = global_dict[current].cost_so_far
+        current_state_map_new_infos = global_dict[current].state_map_new_infos
+        current_backtrack = global_dict[current].backtrack
+        current_came_from = global_dict[current].came_from
+
+        if current_backtrack == None:
+            global_dict[current] = global_dict[current]._replace(backtrack=[])
         
-        # if we have multiple minimums equals (= 0, =1....)
-        # then we take the one with the minimum cost
-        if cost_so_far[current][1] < minimumValue \
-                or (cost_so_far[current][1] == minimumValue and cost_so_far[current][0] < minimumCostValue):
+        
+        if current_cost_so_far[1] < minimumValue \
+                or (current_cost_so_far[1] == minimumValue and current_cost_so_far[0] < minimumCostValue):
             minimum = current
-            minimumValue = cost_so_far[current][1]
-            minimumCostValue = cost_so_far[current][0]
+            minimumValue = current_cost_so_far[1]
+            minimumCostValue = current_cost_so_far[0]
             minimumCostPosition = current
 
-        howManyUnknownCurrent = howManyUnknownBase - len(state_map_new_infos[current]) 
+        howManyUnknownCurrent = howManyUnknownBase - len(current_state_map_new_infos) 
         if howManyUnknownCurrent == 0:
             print("goal found")
             break
@@ -708,48 +712,77 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             nextTuple = (next, current[0])
 
             caseSeen = getAllNewInformation(graph.width, graph.height, graph.map, next)
-            newInfos = [info for info in caseSeen if info not in state_map_new_infos[current] and info not in allInfosBase] # we only keep the new information
+            newInfos = [info for info in caseSeen if info not in current_state_map_new_infos and info not in allInfosBase] # we only keep the new information
 
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
-            new_cost = cost_so_far[current][0] + graph.cost(howManyGuardsAreSeeingUs, next, surrondings, sat_info[-1]) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
+            new_cost = current_cost_so_far[0] + graph.cost(howManyGuardsAreSeeingUs, next, surrondings, sat_info[-1]) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
 
             howManyCasesUnknown = howManyUnknownCurrent - len(newInfos)
-            if nextTuple not in cost_so_far or howManyCasesUnknown < cost_so_far[nextTuple][1] or (howManyCasesUnknown == cost_so_far[nextTuple][1] and new_cost < cost_so_far[nextTuple][0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
+            if nextTuple not in global_dict or howManyCasesUnknown < global_dict[nextTuple].cost_so_far[1] or (howManyCasesUnknown == global_dict[nextTuple].cost_so_far[1] and new_cost < global_dict[nextTuple].cost_so_far[0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
                 # si on trouve une route apportant plus d'information pour aller à nextTuple, on la prend
-                backtrack[nextTuple] = backtrack[current] + [nextTuple[0]]
+                # backtrack[nextTuple] = backtrack[current] + [nextTuple[0]]
+                next_backtrack = current_backtrack + [nextTuple[0]]
 
-                cost_so_far[nextTuple] = (new_cost, howManyCasesUnknown)
+                next_cost_so_far = (new_cost, howManyCasesUnknown)
 
-                state_map_new_infos[nextTuple] = [info for info in state_map_new_infos[current]] + newInfos
+                next_state_map_new_infos = [info for info in current_state_map_new_infos] + newInfos
 
-                priority = new_cost + getClusteringScore(graph.map, state_map_new_infos[nextTuple]) 
+                allUnkownCases = []
+                for y in range(len(graph.map)):
+                    for x in range(len(graph.map[y])):
+                        if [x, y, -2] not in next_state_map_new_infos and graph.map[y][x] == -1:
+                            allUnkownCases.append([x, y])
+
+                fartherUnknownDistance = 1000
+                for unknown in allUnkownCases:
+                    distance = manhattan_distance(unknown, (next[0], next[1]))
+                    if distance < fartherUnknownDistance:
+                        fartherUnknownDistance = distance
+
+                # but de l'heuristique: estimer le mieux la penalité restante jusqu'à ne plus avoir de case inconnue
+                # priority = new_cost + fartherUnknownDistance + getClusteringScore(allUnkownCases)
+                priority = new_cost + getClusteringScore(allUnkownCases, next)
                 # priority = howManyUnknown(nextMap) # pretty efficient but not best result
                 # priority = new_cost + score # inneficient but find the best result as it expends more than others
                 # priority = new_cost + score * 10 # get stuck, why ? circular path
                 # priority = new_cost # diskstra
                 
                 openList.put(nextTuple, priority)
-                came_from[nextTuple] = current
+                next_came_from = current
+                if nextTuple in global_dict:
+                    global_dict[nextTuple] = global_dict[nextTuple]._replace(
+                        cost_so_far=next_cost_so_far,
+                        state_map_new_infos=next_state_map_new_infos,
+                        came_from=next_came_from,
+                        backtrack=next_backtrack
+                    )
+                else: 
+                    global_dict[nextTuple] = Global_Tuple(
+                        cost_so_far=next_cost_so_far,
+                        state_map_new_infos=next_state_map_new_infos,
+                        came_from=next_came_from,
+                        backtrack=next_backtrack
+                    )
             
     print("total count: ", count)
-    print('len nodes: ', len(list(cost_so_far.keys())))
+    print('len nodes: ', len(list(global_dict.keys())))
 
 
     if minimumValue > 0:
         print("(chelou de ne pas trouver toutes les cases), minimum VAlue: ", minimumValue)
     # print("size of the map: ", sys.getsizeof(state_map))
-    print("size of cost so far: ", sys.getsizeof(cost_so_far))
-    print("size of backtrack: ", sys.getsizeof(backtrack))
-    print("size of came from: ", sys.getsizeof(came_from))
-    print("size of open list: ", sys.getsizeof(openList))
+    print("size of cost so far: ", sys.getsizeof(global_dict))
+    # print("size of backtrack: ", sys.getsizeof(backtrack))
+    # print("size of came from: ", sys.getsizeof(came_from))
+    # print("size of open list: ", sys.getsizeof(openList))
     print("size of minimum: ", sys.getsizeof(minimum))
     print("size of minimum value: ", sys.getsizeof(minimumValue))
     print("size of minimum cost position: ", sys.getsizeof(minimumCostPosition))
     print("size of minimum cost value: ", sys.getsizeof(minimumCostValue))
-    print("len of backtrack: ", len(backtrack))
-    print("len of came from: ", len(came_from))
+    # print("len of backtrack: ", len(backtrack))
+    # print("len of came from: ", len(came_from))
     
-    return minimumCostPosition, minimumValue, backtrack[minimumCostPosition]
+    return minimumCostPosition, minimumValue, global_dict[minimumCostPosition].backtrack
 
 def heuristic_pts(map) -> float:
     """
