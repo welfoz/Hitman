@@ -2,6 +2,7 @@ from typing import List, Tuple, Dict
 from pprint import pprint
 from itertools import combinations
 import time
+from pprint import pprint
 
 from arbitre_gitlab.hitman.hitman import HC, HitmanReferee
 
@@ -145,7 +146,7 @@ def phase1(referee: HitmanReferee):
     print(referee.send_content(solutionMap))
     print("end phase1....")
     pprint(referee.end_phase1())
-    return map
+    return map, end_time - start_time, status["penalties"]
 
 def findObject(map, object):
     for i in range(len(map)):
@@ -277,25 +278,42 @@ def phase2(referee: HitmanReferee, map):
     # pprint(actions)
     print("is good solution for referee....", end=" ")
     pprint(referee.end_phase2())
-    return 
+    return end_time - start_time, status["penalties"]
 
 def main():
 
-    referee = HitmanReferee()
-    map = phase1(referee)
+    scores = []
 
-    """
-    phase 2
+    for map_int in range(0, 9):
+        """ dans arbitre :
+from maps import world_examples
 
-    first goal: 
-    go to the rope, take it then go to the target in a minimum of actions and kill it
-    come back to the start position
+class HitmanReferee:
+    def __init__(self, map_int: int) -> None:
+        self.__map_int = map_int
+        self.__world = world_examples[map_int]
+        self.__m = len(self.__world)
+        self.__n = len(self.__world[0])
+        """
 
-    second goal:
-    same in a minimum of penalties (include guards seen, rope, costume...)
-    come back to the start position
-    """
-    # phase2(referee, map)
+        referee = HitmanReferee(map_int)
+
+        map, time, score = phase1(referee)
+        scores.append([map_int, time, score])
+        """
+        phase 2
+
+        first goal: 
+        go to the rope, take it then go to the target in a minimum of actions and kill it
+        come back to the start position
+
+        second goal:
+        same in a minimum of penalties (include guards seen, rope, costume...)
+        come back to the start position
+        """
+        # phase2(referee, map)
+    
+    pprint(scores)
 
 
 if __name__ == "__main__":
