@@ -39,6 +39,10 @@ Opti a*:
 - typer stateTree
 - a t on besoin de dico aussi grand ? a t on besoin de stocker tous les states
 
+1. identifier les états qui ne seront jamais utilisés 
+2. les supprimer des dicos O(1)
+3. peut aussi permettre de ne pas développer des états pas ouf
+
 The choice between speed and accuracy does not have to be global. You can choose some things dynamically based on the importance of having accuracy in some region of the map. For example, it may be more important to choose a good path near the current location, on the assumption that we might end up recalculating the path or changing direction at some point, so why bother being accurate about the faraway part of the path? Or perhaps it’s not so important to have the shortest path in a safe area of the map, but when sneaking past an enemy village, safety and quickness are essential.
 
 
