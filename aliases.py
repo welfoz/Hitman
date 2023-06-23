@@ -30,4 +30,6 @@ SPECIAL_ACTIONS = {
     "nothing_special": 0,
     "neutralize_guard": 1,
     "neutralize_civil": 2,
+    "take_costume": 3,
+    "put_costume": 4,
 }
