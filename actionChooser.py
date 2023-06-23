@@ -631,20 +631,22 @@ def fromPathToActionPhase1(path):
                 actions.append('turn 90')
     return actions 
 
-def getClusteringScore(allUnkownCases, position):
+def getClusteringScore(allUnkownCases):
     """
     return the clustering score of the map
     """
     # compute the distance between each unknown cell
-    # allUnkownCases.append(position)
 
-    if len(allUnkownCases) == 0 or len(allUnkownCases) == 1:
+    if len(allUnkownCases) == 0:
         return 0
+    if len(allUnkownCases) == 1:
+        return 1
     
     distances = []
     for i in range(len(allUnkownCases)):
         for j in range(i + 1, len(allUnkownCases)):
-            distances.append(abs(allUnkownCases[i][0] - allUnkownCases[j][0]) + abs(allUnkownCases[i][1] - allUnkownCases[j][1]))
+            distance = abs(allUnkownCases[i][0] - allUnkownCases[j][0]) + abs(allUnkownCases[i][1] - allUnkownCases[j][1])
+            distances.append(distance)
 
     return sum(distances)
 
@@ -663,16 +665,23 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     global_dict: dict[Tuple[Position, Optional[Position]], 
         Global_Tuple
     ] = {}
+    allUnkownCases = []
+    for y in range(len(graph.map)):
+        for x in range(len(graph.map[y])):
+            if graph.map[y][x] == -1:
+                allUnkownCases.append([x, y])
+
+    base_clustering = getClusteringScore(allUnkownCases) 
 
     minimum = start
-    minimumValue = howManyUnknown(graph.map)
+    minimumValue = base_clustering 
 
     minimumCostPosition = start
     minimumCostValue = 10000
 
     global_dict[startTuple] = Global_Tuple(
         came_from=(None, None), 
-        cost_so_far=(0, howManyUnknown(graph.map)),
+        cost_so_far=(0, base_clustering),
         state_map_new_infos=[],
         backtrack=[]
     )
@@ -703,6 +712,12 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             minimumCostValue = current_cost_so_far[0]
             minimumCostPosition = current
 
+        allUnkownCases = []
+        for y in range(len(graph.map)):
+            for x in range(len(graph.map[y])):
+                if [x, y, -2] not in current_state_map_new_infos and graph.map[y][x] == -1:
+                    allUnkownCases.append([x, y])
+
         howManyUnknownCurrent = howManyUnknownBase - len(current_state_map_new_infos) 
         if howManyUnknownCurrent == 0:
             print("goal found")
@@ -717,31 +732,38 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
             new_cost = current_cost_so_far[0] + graph.cost(howManyGuardsAreSeeingUs, next, surrondings, sat_info[-1]) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
 
-            howManyCasesUnknown = howManyUnknownCurrent - len(newInfos)
-            if nextTuple not in global_dict or howManyCasesUnknown < global_dict[nextTuple].cost_so_far[1] or (howManyCasesUnknown == global_dict[nextTuple].cost_so_far[1] and new_cost < global_dict[nextTuple].cost_so_far[0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
+            # howManyCasesUnknown = howManyUnknownCurrent - len(newInfos)
+            next_state_map_new_infos = [info for info in current_state_map_new_infos] + newInfos
+            allUnkownCases = []
+            for y in range(len(graph.map)):
+                for x in range(len(graph.map[y])):
+                    if [x, y, -2] not in next_state_map_new_infos and graph.map[y][x] == -1:
+                        allUnkownCases.append([x, y])
+            clustering = getClusteringScore(allUnkownCases) 
+            if nextTuple not in global_dict or clustering < global_dict[nextTuple].cost_so_far[1] or (clustering == global_dict[nextTuple].cost_so_far[1] and new_cost < global_dict[nextTuple].cost_so_far[0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
                 # si on trouve une route apportant plus d'information pour aller à nextTuple, on la prend
                 # backtrack[nextTuple] = backtrack[current] + [nextTuple[0]]
                 next_backtrack = current_backtrack + [nextTuple[0]]
 
-                next_cost_so_far = (new_cost, howManyCasesUnknown)
+                next_cost_so_far = (new_cost, clustering)
 
-                next_state_map_new_infos = [info for info in current_state_map_new_infos] + newInfos
 
-                allUnkownCases = []
-                for y in range(len(graph.map)):
-                    for x in range(len(graph.map[y])):
-                        if [x, y, -2] not in next_state_map_new_infos and graph.map[y][x] == -1:
-                            allUnkownCases.append([x, y])
 
-                fartherUnknownDistance = 1000
-                for unknown in allUnkownCases:
-                    distance = manhattan_distance(unknown, (next[0], next[1]))
-                    if distance < fartherUnknownDistance:
-                        fartherUnknownDistance = distance
+                # closiestUnknownDistance = 1000
+                # for unknown in allUnkownCases:
+                #     distance = manhattan_distance(unknown, (next[0], next[1]))
+                #     if distance < closiestUnknownDistance:
+                #         closiestUnknownDistance = distance
+                # # print(closiestUnknownDistance)
+                # if len(allUnkownCases) == 0:
+                #     closiestUnknownDistance = 0
+                
+                # if closiestUnknownDistance > 2:
+                #     closiestUnknownDistance -= 2
 
                 # but de l'heuristique: estimer le mieux la penalité restante jusqu'à ne plus avoir de case inconnue
                 # priority = new_cost + fartherUnknownDistance + getClusteringScore(allUnkownCases)
-                priority = new_cost + getClusteringScore(allUnkownCases, next)
+                priority = new_cost + getClusteringScore(allUnkownCases) / 2 #+ closiestUnknownDistance
                 # priority = howManyUnknown(nextMap) # pretty efficient but not best result
                 # priority = new_cost + score # inneficient but find the best result as it expends more than others
                 # priority = new_cost + score * 10 # get stuck, why ? circular path
@@ -831,7 +853,7 @@ def reconstruct_path_new(
 def manhattan_distance(a: GridLocation, b: GridLocation) -> float:
     (x1, y1) = a
     (x2, y2) = b
-    return abs(x1 - x2) + abs(y1 - y2)
+    return abs(x1 - x2) + abs(y1 - y2) 
 
 def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tuple[int, int]):
     """basic a star search
@@ -904,4 +926,9 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position, goal: Tup
 
                 openList.put(nextTuple, priority)
                 came_from[nextTuple] = currentTuple
+    print("cost prevu: ", cost_so_far[currentTuple])
+    if cost_so_far[currentTuple] != len(backtrack[currentTuple]):
+        print("diff")
+        print("cost_so_far[currentTuple]", cost_so_far[currentTuple])
+        print("len(backtrack[currentTuple])", len(backtrack[currentTuple]))
     return came_from, cost_so_far, currentTuple, backtrack[currentTuple]
