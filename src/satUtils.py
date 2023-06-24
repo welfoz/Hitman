@@ -155,12 +155,12 @@ def exec_gophersat(
 ) -> Tuple[bool, List[int]]:
     # Vérifier si l'OS est macOS
     if platform.system() == 'Darwin':
-        cmd = os.getcwd() + "/gophersat/gophersat"
+        cmd = os.getcwd() + "/gophersat"
     # Vérifier si l'OS est Windows
     elif platform.system() == 'Windows':
-        cmd = os.getcwd() + "\gophersat\gophersat.exe"
+        cmd = os.getcwd() + "\gophersat.exe"
     else:
-        cmd = os.getcwd() + "/gophersat/gophersat" # à modifier si besoin
+        cmd = os.getcwd() + "/gophersat" # à modifier si besoin
 
     result = subprocess.run(
         [cmd, filename], capture_output=True, check=True, encoding=encoding
