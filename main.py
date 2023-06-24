@@ -144,7 +144,6 @@ def phase1(referee: HitmanReferee):
     pprint(referee.end_phase1())
     return map, end_time - start_time, status["penalties"]
 
-
 def phase2(referee: HitmanReferee, map):
     start_time = time.time()
 
@@ -189,7 +188,6 @@ def phase2(referee: HitmanReferee, map):
     pprint(referee.end_phase2())
     return end_time - start_time, status["penalties"]
 
-
 def main():
 
     scores_p1 = []
@@ -209,7 +207,6 @@ def main():
     pprint(scores_p1)
     print("Scores phase 2 :")
     pprint(scores_p2)
-
 
 if __name__ == "__main__":
     main()

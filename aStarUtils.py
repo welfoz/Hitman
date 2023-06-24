@@ -6,12 +6,9 @@
 
 from __future__ import annotations
 from typing import Iterator, Tuple, TypeVar, Optional, List, Dict
-T = TypeVar('T')
 from pprint import pprint
-from aliases import Position, OBJECTS_INDEX, PositionAction, SPECIAL_ACTIONS, HasObjects
+from aliases import Position, OBJECTS_INDEX, PositionAction, SPECIAL_ACTIONS, HasObjects, GridLocation
 import heapq
-
-GridLocation = Tuple[int, int]
 
 def draw_tile(graph: SquareGrid, id, style):
     r = " . "

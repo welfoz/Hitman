@@ -36,17 +36,6 @@ def addTurnInfo(status, heardMap, seenMap, map):
     # printMaps([map, heardMap])
     return
 
-def fromHCDirectionToOrientation(direction: HC) -> Orientation:
-    if direction == HC.N:
-        return "N"
-    elif direction == HC.S:
-        return "S"
-    elif direction == HC.E:
-        return "E"
-    elif direction == HC.W:
-        return "W"
-    raise Exception("Unknown direction")
-
 def findObject(map, object):
     for i in range(len(map)):
         for j in range(len(map[i])):

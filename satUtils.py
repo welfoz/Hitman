@@ -101,15 +101,6 @@ def generateClausesForObject(n_col : int, n_lig : int, n_object: int, object_ind
     #print(r)
     return r
 
-# def addInfoVision(n_col : int, n_lig : int, info_vision : Information) -> ClauseBase:
-#     # print("Info vision : " + str(info_vision))
-#     x = info_vision[0]
-#     y = info_vision[1]
-#     value = ObjectIndexToMapGuardIndex(info_vision[2])
-#     # print("Clauses pour les infos de vision : ")
-#     # print(result)
-#     return [[x * n_lig * 4 + y * 4 + value]]
-
 def addInfoListening(n_col : int, n_lig : int, position : Tuple, nb_heard : int, map) -> ClauseBase:
     x = position[0]
     y = position[1]
@@ -223,16 +214,6 @@ def HCInfoToGuardIndex(value : int) -> int:
         return GUARD_INDEX['empty']
     else:
         return GUARD_INDEX['unknown']
-    
-# def HCInfoToMapGuardIndex(value : int) -> int:
-#     if value == HC.WALL._value_ or value in range(HC.TARGET._value_, HC.PIANO_WIRE._value_ + 1):
-#         return MAP_GUARD_INDEX['blocking']
-#     if value in range(HC.GUARD_N._value_, HC.GUARD_W._value_ + 1):
-#         return MAP_GUARD_INDEX['guard']
-#     if value in range(HC.CIVIL_N._value_, HC.CIVIL_W._value_ + 1):
-#         return MAP_GUARD_INDEX['civil']
-#     if value == HC.EMPTY._value_:
-#         return MAP_GUARD_INDEX['empty']
     
 # renvoie les 4 paires de 2 cases autour de la position
 def get_surroundings(position, map, n_col, n_lig) -> List[Information]:

@@ -15,6 +15,7 @@ Position = Tuple[int, int, Orientation]
 PositionAction = Tuple[int, int, Orientation, int, int]
 # x, y, value from OBJECTS_INDEX
 Information = Tuple[int, int, int]
+GridLocation = Tuple[int, int]
 
 OBJECTS_INDEX = {
     'empty': 1,
