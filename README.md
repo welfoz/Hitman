@@ -1,3 +1,8 @@
+# Installation
+
+Merci de mettre l'éxécutable gophersat dans le dossier ```/gophersat/``` et de vérifier le chemin dans la fonction ```exec_gophersat``` (satUtils.py, l246).
+
+<br>
 
 # Utilisation
 
