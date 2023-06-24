@@ -2,7 +2,7 @@ import sys
 from typing import List, Tuple
 import copy
 
-from aliases import Position, OBJECTS_INDEX, PositionAction, SPECIAL_ACTIONS
+from aliases import Position, OBJECTS_INDEX, PositionAction, SPECIAL_ACTIONS, HasObjects
 from aStarUtils import SquareGrid, draw_grid, PriorityQueue, GridLocation, Position, Optional
 from utils import getAllNewInformation, howManyUnknown, isOutsideTheMap, updateMap
 from satUtils import are_surrondings_safe
