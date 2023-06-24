@@ -88,6 +88,7 @@ Cela permet de récompenser à la fois la diminution du nombre de cases inconnue
 ### Améliorations possibles :
 - Améliorer l'heuristique en intégrant la position du Hitman dans l'évaluation
 - Recalculer le chemin uniquement lorsque l'on a de nouvelles informations
+- Faire un portfolio d'heuristiques, lancer les résolutions en parallèle et prendre la premiere réponse
 
 <br>
 
@@ -115,8 +116,8 @@ Ditance de manhattan, pour trouver le plus court chemin.
 
 ### Améliorations possibles :
 - N'utiliser A* qu'une seule fois et exécuter le plan.
-- Rassembler les exécutions pour chaque but
 - Le calcul du coût pour aller prendre et mettre le costume est aussi à améliorer
+- Faire un portfolio d'heuristiques, lancer les résolutions en parallèle et prendre la premiere réponse
 
 <br>
 
