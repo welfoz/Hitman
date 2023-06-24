@@ -83,7 +83,7 @@ def phase1(referee: HitmanReferee):
     addTurnInfo(status, heardMap, seenMap, map)
     updateSolutionMap(solutionMap, status["vision"])
 
-    MAX = 100
+    MAX = 100000
     count = 0
     actions = []
     sat_bonus = 1
@@ -160,9 +160,10 @@ def isInCase(position, goal):
         return True
     return False
 
-def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPosition, goal, position: Position, status, MAX, hasObjects: dict[str, bool]):
+def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPosition, goal, position: Position, status, hasObjects: dict[str, bool]):
     count = 0
     actions = []
+    MAX = 100000
     while count < MAX and not isInCase(position, goal):
         print("------------------")        
 
@@ -265,7 +266,7 @@ def phase2(referee: HitmanReferee, map):
         "hasCostume": False,
         "wearCostume": False
     }
-    status, position = goToGoal(actionChooser, referee, map, startPosition, (ropePosition[0], ropePosition[1]), position, status, 100, hasObjects)
+    status, position = goToGoal(actionChooser, referee, map, startPosition, (ropePosition[0], ropePosition[1]), position, status, hasObjects)
 
     print("We are on the rope")
     print("we take the rope")
@@ -279,7 +280,7 @@ def phase2(referee: HitmanReferee, map):
 
     print("now go kill the target")
 
-    status, position = goToGoal(actionChooser, referee, map, position, (targetPosition[0], targetPosition[1]), position, status, 100, hasObjects)
+    status, position = goToGoal(actionChooser, referee, map, position, (targetPosition[0], targetPosition[1]), position, status, hasObjects)
     ### then go to the target
 
     print("We are on the target")
@@ -289,7 +290,7 @@ def phase2(referee: HitmanReferee, map):
     pprint(status)
 
     ### then come back to the start position
-    status, position = goToGoal(actionChooser, referee, map, position, (startPosition[0], startPosition[1]), position, status, 100, hasObjects)
+    status, position = goToGoal(actionChooser, referee, map, position, (startPosition[0], startPosition[1]), position, status, hasObjects)
 
     end_time = time.time()
     print("total time: ", end_time - start_time)
