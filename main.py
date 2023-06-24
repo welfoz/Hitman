@@ -1,21 +1,21 @@
 from typing import List, Tuple, Dict
 from pprint import pprint
-from itertools import combinations
 import time
 from pprint import pprint
 
 from arbitre_gitlab.hitman.hitman import HC, HitmanReferee
-
 from actionChooser import ActionChooser
 from aliases import Position, OBJECTS_INDEX
 from utils import createMap, howManyUnknown, isMapComplete, updateSolutionMap, fromHCDirectionToOrientation, addTurnInfo, fromHCDirectionToOrientation, findObject
 
+SAT_BONUS = 1
+
 def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPosition, position: Position, status, hasObjects: dict[str, bool], targetKilled, ropePosition, targetPosition):
-    count = 0
     actions = []
     print("------------------")        
 
     actions_result = actionChooser.choose_phase2(map, position, hasObjects["hasRope"], hasObjects["hasCostume"], hasObjects["wearCostume"], targetKilled, ropePosition, targetPosition)
+
     for action in actions_result:
         # all actions 
         if action == 1:
@@ -73,7 +73,6 @@ def phase1(referee: HitmanReferee):
     start_time = time.time()
 
     status = referee.start_phase1()
-    # pprint(status)
 
     n_col = status['n']
     n_lig = status['m']
@@ -93,7 +92,6 @@ def phase1(referee: HitmanReferee):
     MAX = 100000
     count = 0
     actions = []
-    sat_bonus = 1
 
     while count < MAX and not isMapComplete(map):
         print("------------------")
@@ -102,7 +100,7 @@ def phase1(referee: HitmanReferee):
         position: Position = [status["position"][0], status["position"][1], orientation]
         print("position: ", position)
 
-        sat_info = (map, heardMap, seenMap, n_col, n_lig, sat_bonus)
+        sat_info = (map, heardMap, seenMap, n_col, n_lig, SAT_BONUS)
         action = actionChooser.choose(map, position, sat_info)        
 
         unknown = howManyUnknown(map)
@@ -116,28 +114,14 @@ def phase1(referee: HitmanReferee):
             actions.append(("turn -90", position, unknown))
             status = referee.turn_anti_clockwise()
 
-        # pprint({
-        #     "vision": status['vision'],
-        #     "hear": status['hear'],
-        #     "position": status['position'],
-        #     "orientation": status['orientation'],
-        #     "is_in_guard_range": status['is_in_guard_range'],
-        #     "penalties": status['penalties'],
-        #     "status": status['status']
-        # })
-
         addTurnInfo(status, heardMap, seenMap, map)
         updateSolutionMap(solutionMap, status["vision"])
         count += 1
 
     print("count: ", count)
-    # pprint(status)
-    # print("Carte connue : \n")
     pprint(map)
     end_time = time.time()
     print("total time: ", end_time - start_time)
-    # pprint(solutionMap)
-    # pprint(actions)
     print("is good solution for referee....", end=" ")
     print(referee.send_content(solutionMap))
     print("end phase1....")
@@ -148,7 +132,6 @@ def phase2(referee: HitmanReferee, map):
     start_time = time.time()
 
     status = referee.start_phase2()
-    # pprint(status)
     
     ropePosition = findObject(map, OBJECTS_INDEX['rope'])
     if ropePosition is None:
@@ -163,10 +146,6 @@ def phase2(referee: HitmanReferee, map):
     orientation = fromHCDirectionToOrientation(status["orientation"])
     startPosition: Position = (status["position"][0], status["position"][1], orientation)
     position: Position = startPosition
-    # print("ropePosition: ", ropePosition)
-    # print("costumePosition: ", costumePosition)
-    # print("targetPosition: ", targetPosition)
-    # print("startPosition: ", startPosition)
 
     n_col = status['n']
     n_lig = status['m']
@@ -183,7 +162,6 @@ def phase2(referee: HitmanReferee, map):
 
     end_time = time.time()
     print("total time: ", end_time - start_time)
-    # pprint(actions)
     print("is good solution for referee....", end=" ")
     pprint(referee.end_phase2())
     return end_time - start_time, status["penalties"]

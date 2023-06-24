@@ -1,29 +1,12 @@
-from typing import List, Tuple, Dict
-from pprint import pprint
-from itertools import combinations
-
-from aliases import  Literal, ClauseBase, Information
-from arbitre_gitlab.hitman.hitman import HC
-from utils import OBJECTS_INDEX, HCInfoToObjectIndexFull
-
 import subprocess
 import os
 import platform
-import time
+from typing import List, Tuple
+from itertools import combinations
 
-GUARD_INDEX = {
-    'unknown' : -1,
-    'empty': 1,
-    'blocking': 2,
-    'guard': 3,
-}
-
-MAP_GUARD_INDEX = {
-    'empty': 1,
-    'blocking': 2,
-    'guard': 3,
-    'civil': 4
-}
+from aliases import  Literal, ClauseBase, Information, GUARD_INDEX, MAP_GUARD_INDEX
+from arbitre_gitlab.hitman.hitman import HC
+from utils import OBJECTS_INDEX, HCInfoToObjectIndexFull
 
 def ObjectIndexToMapGuardIndex(value : int) -> int:
     if value == OBJECTS_INDEX['empty']:

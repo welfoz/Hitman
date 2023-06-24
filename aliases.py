@@ -37,6 +37,21 @@ SPECIAL_ACTIONS = {
     "kill_target": 6,
 }
 
+GUARD_INDEX = {
+    'unknown' : -1,
+    'empty': 1,
+    'blocking': 2,
+    'guard': 3,
+}
+
+MAP_GUARD_INDEX = {
+    'empty': 1,
+    'blocking': 2,
+    'guard': 3,
+    'civil': 4
+}
+
+
 
 Global_Tuple = namedtuple('Global_Tuple', ['cost_so_far', 'state_map_new_infos', 'backtrack'])
 HasObjects = namedtuple('Objects', ['hasRope', 'hasCostume', 'wearingCostume', 'targetKilled'])

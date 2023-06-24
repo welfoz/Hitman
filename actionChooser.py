@@ -1,14 +1,11 @@
-import sys
 from typing import List, Tuple
 import copy
 
-from aliases import Position, OBJECTS_INDEX, PositionAction, SPECIAL_ACTIONS, HasObjects
+from aliases import Position, OBJECTS_INDEX, PositionAction, SPECIAL_ACTIONS, HasObjects, Global_Tuple
 from aStarUtils import SquareGrid, draw_grid, PriorityQueue, GridLocation, Position, Optional
 from utils import getAllNewInformation, howManyUnknown, isOutsideTheMap, updateMap
 from satUtils import are_surrondings_safe
 from collections import namedtuple
-
-Global_Tuple = namedtuple('Global_Tuple', ['cost_so_far', 'state_map_new_infos', 'backtrack'])
 
 def getAllPositions(map, object) -> List[Tuple[int, int, int]]:
     positions = []
@@ -182,35 +179,6 @@ class ActionChooser:
                 raise Exception("Error: action not found")
         return actions
 
-    # def farthestCasesWithNewInformation(self, position, map, numberOfCasesWanted: int) -> List[Tuple[int, int]]:
-    #     """
-    #     return the X farthest cases with new information
-    #     @param map: the map of the game
-    #     @param position: the position of the agent [x, y, direction]
-    #     """
-    #     # new information is the case with value -1
-    #     allUnkownCases = []
-    #     for y in range(len(map)):
-    #         for x in range(len(map[y])):
-    #             if map[y][x] == -1:
-    #                 allUnkownCases.append([x, y])
-        
-    #     farthestCases = []
-    #     while len(farthestCases) < numberOfCasesWanted and len(allUnkownCases) > 0:
-    #         farthestDistance = 0
-    #         farthestCase = None
-    #         for case in allUnkownCases:
-    #             distance = self.distanceBetweenTwoCases(position, case)
-    #             if distance > farthestDistance:
-    #                 farthestCase = case
-    #                 farthestDistance = distance
-    #         if farthestCase == None:
-    #             raise Exception("No nearest case found")
-    #         farthestCases.append(farthestCase)
-    #         allUnkownCases.remove(farthestCase)
-
-    #     return farthestCases
-    
     def distanceBetweenTwoCases(self, case1, case2) -> int:
         """
         return the manhattan distance between two cases
@@ -247,30 +215,6 @@ def astar_phase2(start: Position, diagram):
 
     # path = reconstruct_path(came_from, start=start, goal=goal)
     return newpathBacktrack
-
-# def reconstruct_path(came_from: dict[str, str], start: str, goal: Tuple[int, int, str|None]) -> list[str]:
-#     """
-#     input: { (0, 0, 'N'): (0, 0, 'N'), (0, 0, 'E', 2): (0, 0, 'N', 1), (1, 0, 'E', 1): (0, 0, 'E', 1) }
-#     output: [(0, 0, 'N'), (0, 0, 'E'), (1, 0, 'E')]
-#     """
-#     current = goal
-
-#     path = []
-
-#     goalFound = False
-#     for key in came_from.keys():
-#         if key[0] == goal[0] and key[1] == goal[1]:
-#             goalFound = True
-#             break
-#     if not goalFound:
-#         return []
-
-#     while current != start:
-#         path.append(current)
-#         current = came_from[current]
-#     path.append(start) # optional
-#     path.reverse() # optional
-#     return path
 
 def fromPathToActionsPhase2(path):
     """
@@ -518,43 +462,6 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     # print("len of came from: ", len(came_from))
     
     return minimumCostPosition, minimumValue, global_dict[minimumCostPosition].backtrack
-
-# def reconstruct_path_new(
-#         came_from: dict[
-#             Tuple[Position, Optional[Position]],
-#             Tuple[Optional[Position], Optional[Position]]
-#             ], 
-#         start: Tuple[Position, None], goal: Tuple[Position, Optional[Position]]) -> list[str]:
-#     """
-#     input: { (0, 0, 'N'): (0, 0, 'N'), (0, 0, 'E', 2): (0, 0, 'N', 1), (1, 0, 'E', 1): (0, 0, 'E', 1) }
-#     output: [(0, 0, 'N'), (0, 0, 'E'), (1, 0, 'E')]
-#     """
-#     current = goal
-
-#     path = []
-
-#     goalFound = False
-#     for key in came_from.keys():
-#         if key[0] == goal[0] and key[1] == goal[1]:
-#             # print("key 0", key[0])
-#             # print("key 1", key[1])
-#             goalFound = True
-#             break
-#     if not goalFound:
-#         return []
-
-#     MAX = 1000
-#     count = 0
-#     while current != start and count < MAX:
-#         path.append(current)
-#         current = came_from[current]
-#         count += 1
-#     if count == MAX:
-#         print("MAX ATTEINT")
-#         raise Exception("MAX")
-#     path.append(start) # optional
-#     path.reverse() # optional
-#     return path
 
 def manhattan_distance(a: GridLocation, b: GridLocation) -> float:
     (x1, y1) = a
