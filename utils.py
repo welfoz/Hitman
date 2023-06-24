@@ -2,7 +2,6 @@
 from typing import List, Tuple, Dict
 from aliases import OBJECTS_INDEX, Information
 from aliases import Orientation, Information, OBJECTS_INDEX
-
 from arbitre_gitlab.hitman.hitman import HC
 
 """ dans arbitre :
@@ -15,6 +14,50 @@ class HitmanReferee:
         self.__m = len(self.__world)
         self.__n = len(self.__world[0])
         """
+
+
+def addTurnInfo(status, heardMap, seenMap, map):
+    visions = getVisionsFromStatus(status["vision"])
+    # print("visions", visions)
+    for vision in visions: 
+        if (not isInformationAlreadyKnown(map, vision)):
+            map = updateMap(map, [vision])
+
+    if status["is_in_guard_range"]:
+        seenInfo = 1
+    else:
+        seenInfo = 0
+    if (not isInformationAlreadyKnown(seenMap, (status["position"][0], status["position"][1], seenInfo))):
+        seenMap = updateMap(seenMap, [(status["position"][0], status["position"][1], seenInfo)])
+
+    heardInfo: Information = [status["position"][0], status["position"][1], status["hear"]]
+    if (not isInformationAlreadyKnown(heardMap, heardInfo)):
+        heardMap = updateMap(heardMap, [heardInfo])
+    # printMaps([map, heardMap])
+    return
+
+def fromHCDirectionToOrientation(direction: HC) -> Orientation:
+    if direction == HC.N:
+        return "N"
+    elif direction == HC.S:
+        return "S"
+    elif direction == HC.E:
+        return "E"
+    elif direction == HC.W:
+        return "W"
+    raise Exception("Unknown direction")
+
+def findObject(map, object):
+    for i in range(len(map)):
+        for j in range(len(map[i])):
+            if map[i][j] == object:
+                return (j, i)
+    return None
+
+def isInCase(position, goal):
+    if (position[0], position[1]) == (goal[0], goal[1]):
+        return True
+    return False
 
 def HCInfoToObjectIndexFull(value : int) -> int:
      if value == HC.GUARD_N._value_:

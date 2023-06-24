@@ -7,130 +7,8 @@ from pprint import pprint
 from arbitre_gitlab.hitman.hitman import HC, HitmanReferee
 
 from actionChooser import ActionChooser
-from aliases import Orientation, Information, Position, OBJECTS_INDEX
-from utils import createMap, howManyUnknown, isInformationAlreadyKnown, updateMap, isMapComplete, updateSolutionMap, fromHCDirectionToOrientation, getVisionsFromStatus
-
-def addTurnInfo(status, heardMap, seenMap, map):
-    visions = getVisionsFromStatus(status["vision"])
-    # print("visions", visions)
-    for vision in visions: 
-        if (not isInformationAlreadyKnown(map, vision)):
-            map = updateMap(map, [vision])
-
-    if status["is_in_guard_range"]:
-        seenInfo = 1
-    else:
-        seenInfo = 0
-    if (not isInformationAlreadyKnown(seenMap, (status["position"][0], status["position"][1], seenInfo))):
-        seenMap = updateMap(seenMap, [(status["position"][0], status["position"][1], seenInfo)])
-
-    heardInfo: Information = [status["position"][0], status["position"][1], status["hear"]]
-    if (not isInformationAlreadyKnown(heardMap, heardInfo)):
-        heardMap = updateMap(heardMap, [heardInfo])
-    # printMaps([map, heardMap])
-    return
-
-def fromHCDirectionToOrientation(direction: HC) -> Orientation:
-    if direction == HC.N:
-        return "N"
-    elif direction == HC.S:
-        return "S"
-    elif direction == HC.E:
-        return "E"
-    elif direction == HC.W:
-        return "W"
-    raise Exception("Unknown direction")
-
-def phase1(referee: HitmanReferee):
-    start_time = time.time()
-
-    status = referee.start_phase1()
-    # pprint(status)
-
-    n_col = status['n']
-    n_lig = status['m']
-
-    actionChooser = ActionChooser(n_col, n_lig)
-
-    map = createMap(n_col, n_lig)
-    solutionMap: Dict[Tuple[int, int], HC] = {} 
-    heardMap = createMap(n_col, n_lig)
-    seenMap = createMap(n_col, n_lig)
-    
-    map[0][0] = OBJECTS_INDEX['empty']
-    updateSolutionMap(solutionMap, [((0, 0), HC.EMPTY)])
-    addTurnInfo(status, heardMap, seenMap, map)
-    updateSolutionMap(solutionMap, status["vision"])
-
-    MAX = 100000
-    count = 0
-    actions = []
-    sat_bonus = 1
-
-    while count < MAX and not isMapComplete(map):
-        print("------------------")
-
-        orientation = fromHCDirectionToOrientation(status["orientation"])
-        position: Position = [status["position"][0], status["position"][1], orientation]
-        print("position: ", position)
-
-        sat_info = (map, heardMap, seenMap, n_col, n_lig, sat_bonus)
-        action = actionChooser.choose(map, position, sat_info)
-
-        
-
-        unknown = howManyUnknown(map)
-        if action == 1:
-            actions.append(('move', position, unknown))
-            status = referee.move()
-        elif action == 2:
-            actions.append(("turn 90", position, unknown))
-            status = referee.turn_clockwise()
-        elif action == 3:
-            actions.append(("turn -90", position, unknown))
-            status = referee.turn_anti_clockwise()
-
-        # pprint({
-        #     "vision": status['vision'],
-        #     "hear": status['hear'],
-        #     "position": status['position'],
-        #     "orientation": status['orientation'],
-        #     "is_in_guard_range": status['is_in_guard_range'],
-        #     "penalties": status['penalties'],
-        #     "status": status['status']
-        # })
-
-        addTurnInfo(status, heardMap, seenMap, map)
-        updateSolutionMap(solutionMap, status["vision"])
-        count += 1
-
-    print("count: ", count)
-    # pprint(status)
-
-
-    # print("Carte connue : \n")
-    pprint(map)
-    end_time = time.time()
-    print("total time: ", end_time - start_time)
-    # pprint(solutionMap)
-    # pprint(actions)
-    print("is good solution for referee....", end=" ")
-    print(referee.send_content(solutionMap))
-    print("end phase1....")
-    pprint(referee.end_phase1())
-    return map, end_time - start_time, status["penalties"]
-
-def findObject(map, object):
-    for i in range(len(map)):
-        for j in range(len(map[i])):
-            if map[i][j] == object:
-                return (j, i)
-    return None
-
-def isInCase(position, goal):
-    if (position[0], position[1]) == (goal[0], goal[1]):
-        return True
-    return False
+from aliases import Position, OBJECTS_INDEX
+from utils import createMap, howManyUnknown, isMapComplete, updateSolutionMap, fromHCDirectionToOrientation, addTurnInfo, fromHCDirectionToOrientation, findObject
 
 def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPosition, position: Position, status, hasObjects: dict[str, bool], targetKilled, ropePosition, targetPosition):
     count = 0
@@ -191,6 +69,82 @@ def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPos
     # pprint(status)
     return status, position
 
+def phase1(referee: HitmanReferee):
+    start_time = time.time()
+
+    status = referee.start_phase1()
+    # pprint(status)
+
+    n_col = status['n']
+    n_lig = status['m']
+
+    actionChooser = ActionChooser(n_col, n_lig)
+
+    map = createMap(n_col, n_lig)
+    solutionMap: Dict[Tuple[int, int], HC] = {} 
+    heardMap = createMap(n_col, n_lig)
+    seenMap = createMap(n_col, n_lig)
+    
+    map[0][0] = OBJECTS_INDEX['empty']
+    updateSolutionMap(solutionMap, [((0, 0), HC.EMPTY)])
+    addTurnInfo(status, heardMap, seenMap, map)
+    updateSolutionMap(solutionMap, status["vision"])
+
+    MAX = 100000
+    count = 0
+    actions = []
+    sat_bonus = 1
+
+    while count < MAX and not isMapComplete(map):
+        print("------------------")
+
+        orientation = fromHCDirectionToOrientation(status["orientation"])
+        position: Position = [status["position"][0], status["position"][1], orientation]
+        print("position: ", position)
+
+        sat_info = (map, heardMap, seenMap, n_col, n_lig, sat_bonus)
+        action = actionChooser.choose(map, position, sat_info)        
+
+        unknown = howManyUnknown(map)
+        if action == 1:
+            actions.append(('move', position, unknown))
+            status = referee.move()
+        elif action == 2:
+            actions.append(("turn 90", position, unknown))
+            status = referee.turn_clockwise()
+        elif action == 3:
+            actions.append(("turn -90", position, unknown))
+            status = referee.turn_anti_clockwise()
+
+        # pprint({
+        #     "vision": status['vision'],
+        #     "hear": status['hear'],
+        #     "position": status['position'],
+        #     "orientation": status['orientation'],
+        #     "is_in_guard_range": status['is_in_guard_range'],
+        #     "penalties": status['penalties'],
+        #     "status": status['status']
+        # })
+
+        addTurnInfo(status, heardMap, seenMap, map)
+        updateSolutionMap(solutionMap, status["vision"])
+        count += 1
+
+    print("count: ", count)
+    # pprint(status)
+    # print("Carte connue : \n")
+    pprint(map)
+    end_time = time.time()
+    print("total time: ", end_time - start_time)
+    # pprint(solutionMap)
+    # pprint(actions)
+    print("is good solution for referee....", end=" ")
+    print(referee.send_content(solutionMap))
+    print("end phase1....")
+    pprint(referee.end_phase1())
+    return map, end_time - start_time, status["penalties"]
+
+
 def phase2(referee: HitmanReferee, map):
     start_time = time.time()
 
@@ -234,6 +188,7 @@ def phase2(referee: HitmanReferee, map):
     print("is good solution for referee....", end=" ")
     pprint(referee.end_phase2())
     return end_time - start_time, status["penalties"]
+
 
 def main():
 
