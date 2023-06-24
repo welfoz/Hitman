@@ -266,6 +266,7 @@ def phase2(referee: HitmanReferee, map):
     return end_time - start_time, status["penalties"]
 
 def main():
+    # INSTALLATION : attention, l'éxécutable gophersat doit être dans /gophersat/
 
     scores_p1 = []
     scores_p2 = []
