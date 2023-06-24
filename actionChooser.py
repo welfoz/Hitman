@@ -5,7 +5,83 @@ from aliases import Position, OBJECTS_INDEX, PositionAction, SPECIAL_ACTIONS, Ha
 from aStarUtils import SquareGrid, draw_grid, PriorityQueue, GridLocation, Position, Optional
 from utils import getAllNewInformation, howManyUnknown, isOutsideTheMap, updateMap
 from satUtils import are_surrondings_safe
-from collections import namedtuple
+
+class ActionChooser:
+    def __init__(self, n_col, n_lig):
+        self.n_col = n_col 
+        self.n_lig = n_lig
+
+    def choose(self, map, position, sat_info : Tuple):
+        """
+        return the best action to do according to the best path, which maximizes the total information gained
+        @param stateTree: list of the values of the total information gained for each path
+        """
+
+        diagram = SquareGrid(self.n_col, self.n_lig, map)
+
+        new_goal, howManyUnknown, backtrack = a_star_search_points(diagram, tuple(position), sat_info)
+        path = [tuple(position)] + backtrack
+
+        result = fromPathToActionPhase1(path)
+
+        print("Result: " + str(result))
+        print('number of actions: ', len(result))
+        draw_grid(diagram, start=(position[0], position[1], position[2]), path=path)
+
+        if result[0] == "move":
+            return 1
+        elif result[0] == "turn 90":
+            return 2
+        elif result[0] == "turn -90":
+            return 3
+        else: 
+            raise Exception("Error: action not found")
+
+    def choose_phase2(self, map, position: Position, hasRope: bool, hasCostume: bool, wearCostume: bool, targetKilled: bool, ropePosition: Tuple[int, int], targetPosition: Tuple[int, int]):
+        """
+        return the best action to do according to the best path, which maximizes the total information gained
+        @param stateTree: list of the values of the total information gained for each path
+        """
+
+        diagram = SquareGrid(self.n_col, self.n_lig, map, hasRope, hasCostume, wearCostume, targetKilled, ropePosition, targetPosition)
+
+
+        cost_so_far, new_goal, backtrack = a_star_search_points_with_goal(diagram, position)
+        path = [tuple(position)] + backtrack
+        result = fromPathToActionsPhase2(path)
+
+        pathWithoutActions = []
+        for i in range(len(path)):
+            pathWithoutActions.append((path[i][0], path[i][1], path[i][2]))
+
+        print("Result: " + str(result))
+        print('number of actions: ', len(result))
+        draw_grid(diagram, start=(position[0], position[1], position[2]), path=pathWithoutActions)
+
+        actions = []
+        for i in range(len(result)):
+
+            if result[i] == "move":
+                actions.append(1)
+            elif result[i] == "turn 90":
+                actions.append(2)
+            elif result[i] == "turn -90":
+                actions.append(3)
+            elif result[i] == "neutralize_guard":
+                actions.append(4)
+            elif result[i] == "neutralize_civil":
+                actions.append(5)
+            elif result[i] == "take_rope":
+                actions.append(6)
+            elif result[i] == "take_costume":
+                actions.append(7)
+            elif result[i] == "put_costume":
+                actions.append(8)
+            elif result[i] == "kill_target":
+                actions.append(9)
+            else: 
+                raise Exception("Error: action not found")
+        return actions
 
 def getAllPositions(map, object) -> List[Tuple[int, int, int]]:
     positions = []
@@ -103,118 +179,6 @@ def howManyCivilsLookingAtUs(position, map) -> int:
             civilsLookingAtUs += 1
         
     return civilsLookingAtUs
-
-class ActionChooser:
-    def __init__(self, n_col, n_lig):
-        self.n_col = n_col 
-        self.n_lig = n_lig
-
-    def choose(self, map, position, sat_info : Tuple):
-        """
-        return the best action to do according to the best path, which maximizes the total information gained
-        @param stateTree: list of the values of the total information gained for each path
-        """
-
-        diagram = SquareGrid(self.n_col, self.n_lig, map)
-
-        path, howManyUnknownVariable = astar(position, diagram, sat_info)
-        result = fromPathToActionPhase1(path)
-
-        # if howManyUnknownVariable < bestHowManyUnknown: # favorise la découverte
-        print("Result: " + str(result))
-        print('number of actions: ', len(result))
-        draw_grid(diagram, start=(position[0], position[1], position[2]), path=path)
-
-        if result[0] == "move":
-            return 1
-        elif result[0] == "turn 90":
-            return 2
-        elif result[0] == "turn -90":
-            return 3
-        else: 
-            raise Exception("Error: action not found")
-
-    def choose_phase2(self, map, position: Position, hasRope: bool, hasCostume: bool, wearCostume: bool, targetKilled: bool, ropePosition: Tuple[int, int], targetPosition: Tuple[int, int]):
-        """
-        return the best action to do according to the best path, which maximizes the total information gained
-        @param stateTree: list of the values of the total information gained for each path
-        """
-
-        diagram = SquareGrid(self.n_col, self.n_lig, map, hasRope, hasCostume, wearCostume, targetKilled, ropePosition, targetPosition)
-
-
-        path = astar_phase2(position, diagram)
-        result = fromPathToActionsPhase2(path)
-
-        pathWithoutActions = []
-        for i in range(len(path)):
-            pathWithoutActions.append((path[i][0], path[i][1], path[i][2]))
-        # if howManyUnknownVariable < bestHowManyUnknown: # favorise la découverte
-        print("Result: " + str(result))
-        print('number of actions: ', len(result))
-        draw_grid(diagram, start=(position[0], position[1], position[2]), path=pathWithoutActions)
-
-        actions = []
-        for i in range(len(result)):
-
-            if result[i] == "move":
-                actions.append(1)
-            elif result[i] == "turn 90":
-                actions.append(2)
-            elif result[i] == "turn -90":
-                actions.append(3)
-            elif result[i] == "neutralize_guard":
-                actions.append(4)
-            elif result[i] == "neutralize_civil":
-                actions.append(5)
-            elif result[i] == "take_rope":
-                actions.append(6)
-            elif result[i] == "take_costume":
-                actions.append(7)
-            elif result[i] == "put_costume":
-                actions.append(8)
-            elif result[i] == "kill_target":
-                actions.append(9)
-            else: 
-                raise Exception("Error: action not found")
-        return actions
-
-    def distanceBetweenTwoCases(self, case1, case2) -> int:
-        """
-        return the manhattan distance between two cases
-        @param case1: the first case [x, y]
-        @param case2: the second case [x, y]
-        """
-        return abs(case1[0] - case2[0]) + abs(case1[1] - case2[1])
-
-def astar(start, diagram, sat_info : Tuple):
-    new_goal, howManyUnknown, backtrack = a_star_search_points(diagram, tuple(start), sat_info)
-    newpathBacktrack = [tuple(start)] + backtrack
-
-    # pprint("newpathBacktrack")
-    # pprint(newpathBacktrack)
-
-    if howManyUnknown == None:
-        raise Exception("No new goal found")
-
-    if new_goal != None:
-        goal = new_goal[0]
-        # print("new_goal", new_goal)
-    else: 
-        raise Exception("No new goal found")
-
-    return newpathBacktrack, howManyUnknown
-
-def astar_phase2(start: Position, diagram):
-    cost_so_far, new_goal, backtrack = a_star_search_points_with_goal(diagram, start)
-    newpathBacktrack = [tuple(start)] + backtrack
-
-    # if new_goal != None:
-    #     goal: Position = new_goal
-    #     print("new_goal", new_goal)
-
-    # path = reconstruct_path(came_from, start=start, goal=goal)
-    return newpathBacktrack
 
 def fromPathToActionsPhase2(path):
     """
