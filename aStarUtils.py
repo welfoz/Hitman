@@ -129,20 +129,8 @@ class SquareGrid:
         return 1 + 5 * howManyGuardsAreSeeingUs
     
     def cost_phase2(self, next, howManyGuardsAreSeeingUs, howManyCivilsAreSeeingUs, wearingCostume, howManyGuardsWillSeeUsWithoutCostume: int) -> float:
-        new_cost = 1
-        
-        if not wearingCostume and howManyGuardsAreSeeingUs > 0:
-            # nb de fois vu par un garde * 5
-            new_cost += 5 * howManyGuardsAreSeeingUs
+        new_cost = self.cost_phase2_without_costume(next, howManyGuardsAreSeeingUs, howManyCivilsAreSeeingUs, wearingCostume)
 
-        if next[3] == SPECIAL_ACTIONS['neutralize_guard'] or next[3] == SPECIAL_ACTIONS['neutralize_civil']:
-            # nb de personnes neutralisées * 20 
-            new_cost += 20
-            # nb de fois vu en train de neutraliser * 100
-            if not wearingCostume:
-                new_cost += 100 * (howManyGuardsAreSeeingUs + howManyCivilsAreSeeingUs)
-        
-        
         if next[3] == SPECIAL_ACTIONS["take_costume"]:
             new_cost -= 5 * howManyGuardsWillSeeUsWithoutCostume
             
@@ -151,10 +139,6 @@ class SquareGrid:
             # nb de fois vu en train de mettre un costume * 100
             new_cost += 100 * (howManyGuardsAreSeeingUs + howManyCivilsAreSeeingUs)
         
-        if next[3] == SPECIAL_ACTIONS["kill_target"]:
-            # nb de fois vu en train de tuer la cible * 100
-            new_cost += 100 * (howManyGuardsAreSeeingUs + howManyCivilsAreSeeingUs)
-
         return new_cost
     
     def cost_phase2_without_costume(self, next, howManyGuardsAreSeeingUs, howManyCivilsAreSeeingUs, wearingCostume) -> float:
