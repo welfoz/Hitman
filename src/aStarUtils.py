@@ -7,7 +7,7 @@
 from __future__ import annotations
 from typing import Iterator, Tuple, List, Optional
 from pprint import pprint
-from aliases import Position, OBJECTS_INDEX, PositionAction, SPECIAL_ACTIONS, HasObjects, GridLocation
+from src.aliases import Position, OBJECTS_INDEX, PositionAction, SPECIAL_ACTIONS, HasObjects, GridLocation
 import heapq
 
 def draw_tile(graph: SquareGrid, id, style):

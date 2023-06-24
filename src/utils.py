@@ -1,7 +1,6 @@
 
 from typing import List, Tuple, Dict
-from aliases import OBJECTS_INDEX, Information
-from aliases import Orientation, Information, OBJECTS_INDEX
+from src.aliases import OBJECTS_INDEX, Information, Orientation, Information, OBJECTS_INDEX
 from arbitre_gitlab.hitman.hitman import HC
 
 """ dans arbitre :
