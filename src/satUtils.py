@@ -149,7 +149,7 @@ def write_dimacs_file(dimacs: str, filename: str):
     with open(filename, "w", newline="") as cnf:
         cnf.write(dimacs)
 
-# l'executable gophersat soit etre dans le cwd
+# l'executable gophersat soit etre dans le dossier /gophersat
 def exec_gophersat(
     filename: str, cmd: str = "", encoding: str = "utf8"
 ) -> Tuple[bool, List[int]]:
@@ -157,8 +157,10 @@ def exec_gophersat(
     if platform.system() == 'Darwin':
         cmd = os.getcwd() + "/gophersat/gophersat"
     # Vérifier si l'OS est Windows
-    if platform.system() == 'Windows':
+    elif platform.system() == 'Windows':
         cmd = os.getcwd() + "\gophersat\gophersat.exe"
+    else:
+        cmd = os.getcwd() + "/gophersat/gophersat" # à modifier si besoin
 
     result = subprocess.run(
         [cmd, filename], capture_output=True, check=True, encoding=encoding
