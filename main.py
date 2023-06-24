@@ -211,6 +211,10 @@ def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPos
             status = referee.kill_target()
         else: 
             raise Exception("action not found")
+        if status["status"] != "OK":
+            pprint(status)
+            print(action)
+            raise Exception("invalid move")
 
     pprint(status)
     return status, position

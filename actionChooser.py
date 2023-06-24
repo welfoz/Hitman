@@ -881,6 +881,7 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position):
 
     backtrack = {}
     backtrack[startTuple] = []
+    howManyGuardsWillSeeUsWithoutCostume, _ = a_star_search_points_without_costume(graph, start, (startPosition[0], startPosition[1]), 1)
     
     while not openList.empty():
         currentTuple: Tuple[PositionAction, Optional[PositionAction]]  = openList.get()
@@ -893,7 +894,7 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position):
         if current_x == startPosition[0] and current_y == startPosition[1] and current_goal == 3:
             break
         
-        for next in graph.neighbors_phase2((current_x, current_y, current_direction), hasObjects[currentTuple], current_goal):
+        for next in graph.neighbors_phase2((current_x, current_y, current_direction), state_map[currentTuple], hasObjects[currentTuple], current_goal):
             nextTuple = (next, current)
             nextMap = state_map[currentTuple]
             # need to build the map according to graph.map and all infos
@@ -904,20 +905,27 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position):
 
             new_cost = cost_so_far[currentTuple] + graph.cost_phase2(
                 next=next, 
-                wearingCostume=hasObjects[currentTuple][1], 
+                wearingCostume=hasObjects[currentTuple].wearingCostume, 
                 howManyCivilsAreSeeingUs=howManyCivilsAreSeeingUs,
-                howManyGuardsAreSeeingUs=howManyGuardsAreSeeingUs
+                howManyGuardsAreSeeingUs=howManyGuardsAreSeeingUs,
+                howManyGuardsWillSeeUsWithoutCostume=howManyGuardsWillSeeUsWithoutCostume
             ) 
             
             if nextTuple not in cost_so_far or new_cost < cost_so_far[nextTuple]:
                 # ok on a trouvé une nouvelle route pour aller à next moins chere
                 backtrack[nextTuple] = backtrack[currentTuple] + [nextTuple[0]]
-                state_map[nextTuple] = nextMap
 
                 hasObjects[nextTuple] = hasObjects[currentTuple]
 
                 if action_next == SPECIAL_ACTIONS['neutralize_guard'] or action_next == SPECIAL_ACTIONS['neutralize_civil']:
-                    nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next, y_next, OBJECTS_INDEX["empty"]]])
+                    if direction_next == "N":
+                        nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next, y_next + 1, OBJECTS_INDEX["empty"]]])
+                    elif direction_next == "S":
+                        nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next, y_next - 1, OBJECTS_INDEX["empty"]]])
+                    elif direction_next == "E":
+                        nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next + 1, y_next, OBJECTS_INDEX["empty"]]])
+                    elif direction_next == "W":
+                        nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next - 1, y_next, OBJECTS_INDEX["empty"]]])
                 elif action_next == SPECIAL_ACTIONS["take_costume"]:
                     hasObjects[nextTuple] = hasObjects[nextTuple]._replace(hasCostume=True)
                     nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next, y_next, OBJECTS_INDEX["empty"]]])
@@ -932,6 +940,7 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position):
                     nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next, y_next, OBJECTS_INDEX["empty"]]])                
 
                 cost_so_far[nextTuple] = new_cost
+                state_map[nextTuple] = nextMap
                 heuristic = None
                 if not hasObjects[nextTuple].hasRope and goal_next == 1:
                     # goal 1: take costume
@@ -955,3 +964,111 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position):
         print("cost_so_far[currentTuple]", cost_so_far[currentTuple])
         print("len(backtrack[currentTuple])", len(backtrack[currentTuple]))
     return cost_so_far, currentTuple, backtrack[currentTuple]
+
+
+def a_star_search_points_without_costume(graph: SquareGrid, start: Position, goal: Tuple[int, int], startGoal: int):
+    """basic a star search
+    to go from start to goal
+
+    goal 1: take rope
+    goal 2: kill target
+    goal 3: go to goal
+    """
+    ropePosition = graph.ropePosition
+    targetPosition = graph.targetPosition
+    targetKilled = graph.targetKilled
+    startPosition = start
+
+    openList = PriorityQueue()
+    startTuple = ((start[0], start[1], start[2], SPECIAL_ACTIONS['nothing_special'], startGoal), None)
+    openList.put(startTuple, 0)
+
+    # cost, howManyGuardsAreSeeingUs
+    cost_so_far: dict[Tuple[PositionAction, Optional[PositionAction]], Tuple[float, int]] = {}
+    # Tuple[bool, bool] = (hasCostume, wearingCostume, hasRope, targetKilled)
+    hasObjects: dict[Tuple[PositionAction, Optional[PositionAction]], HasObjects] = {}
+
+    cost_so_far[startTuple] = (0, 0)
+    hasObjects[startTuple] = HasObjects(
+        hasCostume=graph.hasCostume, 
+        wearingCostume=graph.wearCostume, 
+        hasRope=graph.hasRope, 
+        targetKilled=graph.targetKilled
+    )
+
+    state_map: dict[Tuple[PositionAction, Optional[PositionAction]], List[List[int]]] = {}
+    state_map[startTuple] = graph.map
+
+    backtrack = {}
+    backtrack[startTuple] = []
+    
+    while not openList.empty():
+        currentTuple: Tuple[PositionAction, Optional[PositionAction]]  = openList.get()
+        current = currentTuple[0]
+
+        if backtrack.get(currentTuple, None) == None:
+            backtrack[currentTuple] = []
+        
+        current_x, current_y, current_direction, current_action, current_goal = current
+        if current_x == goal[0] and current_y == goal[1] and current_goal == 3:
+            break
+        
+        for next in graph.neighbors_phase2_without_costume((current_x, current_y, current_direction), state_map[currentTuple], hasObjects[currentTuple], current_goal):
+            nextTuple = (next, current)
+            nextMap = state_map[currentTuple]
+            # need to build the map according to graph.map and all infos
+            x_next, y_next, direction_next, action_next, goal_next = next
+
+            howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, nextMap)
+            howManyCivilsAreSeeingUs = howManyCivilsLookingAtUs(next, nextMap)
+
+            new_cost = cost_so_far[currentTuple][0] + graph.cost_phase2_without_costume(
+                next=next, 
+                wearingCostume=hasObjects[currentTuple][1], 
+                howManyCivilsAreSeeingUs=howManyCivilsAreSeeingUs,
+                howManyGuardsAreSeeingUs=howManyGuardsAreSeeingUs
+            ) 
+            
+            if nextTuple not in cost_so_far or new_cost < cost_so_far[nextTuple][0]:
+                # ok on a trouvé une nouvelle route pour aller à next moins chere
+                backtrack[nextTuple] = backtrack[currentTuple] + [nextTuple[0]]
+
+                hasObjects[nextTuple] = hasObjects[currentTuple]
+
+                if action_next == SPECIAL_ACTIONS['neutralize_guard'] or action_next == SPECIAL_ACTIONS['neutralize_civil']:
+                    if direction_next == "N":
+                        nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next, y_next + 1, OBJECTS_INDEX["empty"]]])
+                    elif direction_next == "S":
+                        nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next, y_next - 1, OBJECTS_INDEX["empty"]]])
+                    elif direction_next == "E":
+                        nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next + 1, y_next, OBJECTS_INDEX["empty"]]])
+                    elif direction_next == "W":
+                        nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next - 1, y_next, OBJECTS_INDEX["empty"]]])
+                elif action_next == SPECIAL_ACTIONS["take_rope"]:
+                    hasObjects[nextTuple] = hasObjects[nextTuple]._replace(hasRope=True)
+                    nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next, y_next, OBJECTS_INDEX["empty"]]])
+                elif action_next == SPECIAL_ACTIONS["kill_target"]:
+                    hasObjects[nextTuple] = hasObjects[nextTuple]._replace(targetKilled=True)
+                    nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next, y_next, OBJECTS_INDEX["empty"]]])                
+
+                cost_so_far[nextTuple] = (new_cost, cost_so_far[currentTuple][1] + howManyGuardsAreSeeingUs)
+                state_map[nextTuple] = nextMap
+                heuristic = None
+                if not hasObjects[nextTuple].hasRope and goal_next == 1:
+                    # goal 1: take costume
+                    heuristic = manhattan_distance((next[0], next[1]), (ropePosition[0], ropePosition[1]))
+                elif not hasObjects[nextTuple].targetKilled and goal_next == 2:
+                    # goal 2: kill target
+                    heuristic = manhattan_distance((next[0], next[1]), (targetPosition[0], targetPosition[1]))
+                elif hasObjects[nextTuple].targetKilled and goal_next == 3:
+                    # goal 3: go to goal = start
+                    heuristic = manhattan_distance((next[0], next[1]), (startPosition[0], startPosition[1]))
+                else: 
+                    raise Exception("should not happen")
+
+
+                priority = new_cost + heuristic # manhattan distance
+
+                openList.put(nextTuple, priority)
+    print("cost prevu: ", cost_so_far[currentTuple])
+    return cost_so_far[currentTuple][1], backtrack[currentTuple]
