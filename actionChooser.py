@@ -290,7 +290,7 @@ def getClusteringScore(allUnkownCases):
 
 def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     '''
-    but: voir la case goal en gagnant le plus de nouvelles cases possible
+    but: voir toute la map en un minimum de cost
     '''
     openList = PriorityQueue()
     startTuple = (start, None)
@@ -307,7 +307,6 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
 
     base_clustering = getClusteringScore(allUnkownCases) 
 
-    minimum = start
     minimumValue = base_clustering 
 
     minimumCostPosition = start
@@ -339,7 +338,6 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
         
         if current_cost_so_far[1] < minimumValue \
                 or (current_cost_so_far[1] == minimumValue and current_cost_so_far[0] < minimumCostValue):
-            minimum = current
             minimumValue = current_cost_so_far[1]
             minimumCostValue = current_cost_so_far[0]
             minimumCostPosition = current
@@ -410,21 +408,6 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     # print("total count: ", count)
     # print('len nodes: ', len(list(global_dict.keys())))
 
-
-    # if minimumValue > 0:
-        # print("minimum VAlue: ", minimumValue)
-    # print("size of the map: ", sys.getsizeof(state_map))
-    # print("size of cost so far: ", sys.getsizeof(global_dict))
-    # print("size of backtrack: ", sys.getsizeof(backtrack))
-    # print("size of came from: ", sys.getsizeof(came_from))
-    # print("size of open list: ", sys.getsizeof(openList))
-    # print("size of minimum: ", sys.getsizeof(minimum))
-    # print("size of minimum value: ", sys.getsizeof(minimumValue))
-    # print("size of minimum cost position: ", sys.getsizeof(minimumCostPosition))
-    # print("size of minimum cost value: ", sys.getsizeof(minimumCostValue))
-    # print("len of backtrack: ", len(backtrack))
-    # print("len of came from: ", len(came_from))
-    
     return minimumCostPosition, minimumValue, global_dict[minimumCostPosition].backtrack
 
 def manhattan_distance(a: GridLocation, b: GridLocation) -> float:
@@ -450,7 +433,7 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position):
     openList.put(startTuple, 0)
 
     cost_so_far: dict[Tuple[PositionAction, Optional[PositionAction]], float] = {}
-    hasObjects: dict[Tuple[PositionAction, Optional[PositionAction]], Tuple[bool, bool]] = {}
+    hasObjects: dict[Tuple[PositionAction, Optional[PositionAction]], HasObjects] = {}
 
     cost_so_far[startTuple] = 0
     hasObjects[startTuple] = HasObjects(
@@ -481,7 +464,6 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position):
         for next in graph.neighbors_phase2((current_x, current_y, current_direction), state_map[currentTuple], hasObjects[currentTuple], current_goal):
             nextTuple = (next, current)
             nextMap = state_map[currentTuple]
-            # need to build the map according to graph.map and all infos
             x_next, y_next, direction_next, action_next, goal_next = next
 
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, nextMap)
@@ -543,12 +525,7 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position):
 
                 openList.put(nextTuple, priority)
     print("Coût prevu: ", cost_so_far[currentTuple])
-    # if cost_so_far[currentTuple] != len(backtrack[currentTuple]):
-    #     print("diff")
-    #     print("cost_so_far[currentTuple]", cost_so_far[currentTuple])
-    #     print("len(backtrack[currentTuple])", len(backtrack[currentTuple]))
     return cost_so_far, currentTuple, backtrack[currentTuple]
-
 
 def a_star_search_points_without_costume(graph: SquareGrid, start: Position, goal: Tuple[int, int], startGoal: int):
     """basic a star search
