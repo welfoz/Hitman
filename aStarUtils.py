@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Iterator, Tuple, TypeVar, Optional, List, Dict
 T = TypeVar('T')
 from pprint import pprint
-from aliases import Position, OBJECTS_INDEX, Information, PositionAction, SPECIAL_ACTIONS
+from aliases import Position, OBJECTS_INDEX, Information, PositionAction, SPECIAL_ACTIONS, HasObjects
 import heapq
 from satUtils import is_position_safe_opti
 
@@ -101,13 +101,16 @@ def draw_grid(graph, **style):
     print("~~~" * graph.width)
 
 class SquareGrid:
-    def __init__(self, width: int, height: int, map, hasRope: bool = False, hasCostume: bool = False, wearCostume: bool = False):
+    def __init__(self, width: int, height: int, map, hasRope: bool = False, hasCostume: bool = False, wearCostume: bool = False, targetKilled: bool = False, ropePosition = None, targetPosition = None):
         self.width = width
         self.height = height
         self.map = map
         self.hasRope = hasRope
         self.hasCostume = hasCostume
         self.wearCostume = wearCostume
+        self.targetKilled = targetKilled
+        self.ropePosition = ropePosition
+        self.targetPosition = targetPosition
     
     def in_bounds(self, id: Position | PositionAction) -> bool:
         x = id[0]
@@ -159,6 +162,10 @@ class SquareGrid:
         if next[3] == SPECIAL_ACTIONS["put_costume"]:
             # nb de fois vu en train de mettre un costume * 100
             new_cost += 100 * (howManyGuardsAreSeeingUs + howManyCivilsAreSeeingUs)
+        
+        if next[3] == SPECIAL_ACTIONS["kill_target"]:
+            # nb de fois vu en train de tuer la cible * 100
+            new_cost += 100 * (howManyGuardsAreSeeingUs + howManyCivilsAreSeeingUs)
 
         return new_cost
     
@@ -181,30 +188,30 @@ class SquareGrid:
         results = filter(self.passable, results)
         return results
 
-    def neighbors_phase2(self, id: Position, hasObjects) -> List[PositionAction]:
+    def neighbors_phase2(self, id: Position, hasObjects: HasObjects, currentGoal: int) -> List[PositionAction]:
         (x, y, direction) = id
         neighbors = []
         firstCase = None
         if direction == 'N':
             # move, turn 90, turn -90
-            neighbors = [(x, y+1, 'N', SPECIAL_ACTIONS["nothing_special"]),
-                         (x, y, 'E', SPECIAL_ACTIONS["nothing_special"]),
-                         (x, y, 'W', SPECIAL_ACTIONS["nothing_special"])]   
+            neighbors = [(x, y+1, 'N', SPECIAL_ACTIONS["nothing_special"], currentGoal),
+                         (x, y, 'E', SPECIAL_ACTIONS["nothing_special"], currentGoal),
+                         (x, y, 'W', SPECIAL_ACTIONS["nothing_special"], currentGoal)]   
             firstCase = [x, y+1, 'N', OBJECTS_INDEX["empty"]]
         elif direction == 'S':
-            neighbors = [(x, y-1, 'S', SPECIAL_ACTIONS["nothing_special"]), 
-                         (x, y, 'W', SPECIAL_ACTIONS["nothing_special"]),
-                         (x, y, 'E', SPECIAL_ACTIONS["nothing_special"])]
+            neighbors = [(x, y-1, 'S', SPECIAL_ACTIONS["nothing_special"], currentGoal), 
+                         (x, y, 'W', SPECIAL_ACTIONS["nothing_special"], currentGoal),
+                         (x, y, 'E', SPECIAL_ACTIONS["nothing_special"], currentGoal)]
             firstCase = [x, y-1, "S", OBJECTS_INDEX["empty"]]
         elif direction == 'W':
-            neighbors = [(x-1, y, 'W', SPECIAL_ACTIONS["nothing_special"]), 
-                         (x, y, 'N', SPECIAL_ACTIONS["nothing_special"]), 
-                         (x, y, 'S', SPECIAL_ACTIONS["nothing_special"])]
+            neighbors = [(x-1, y, 'W', SPECIAL_ACTIONS["nothing_special"], currentGoal), 
+                         (x, y, 'N', SPECIAL_ACTIONS["nothing_special"], currentGoal), 
+                         (x, y, 'S', SPECIAL_ACTIONS["nothing_special"], currentGoal)]
             firstCase = [x-1, y, "W", OBJECTS_INDEX["empty"]]
         elif direction == 'E':
-            neighbors = [(x+1, y, 'E', SPECIAL_ACTIONS["nothing_special"]), 
-                         (x, y, 'S', SPECIAL_ACTIONS["nothing_special"]), 
-                         (x, y, 'N', SPECIAL_ACTIONS["nothing_special"])]
+            neighbors = [(x+1, y, 'E', SPECIAL_ACTIONS["nothing_special"], currentGoal), 
+                         (x, y, 'S', SPECIAL_ACTIONS["nothing_special"], currentGoal), 
+                         (x, y, 'N', SPECIAL_ACTIONS["nothing_special"], currentGoal)]
             firstCase = [x+1, y, "E", OBJECTS_INDEX["empty"]]
         else:
             raise ValueError('Invalid direction')
@@ -229,7 +236,8 @@ class SquareGrid:
                         or firstCase[3] == OBJECTS_INDEX['guard'][4] and direction != 'E'
                         )
                     ):
-                specialActions.append((firstCase[0], firstCase[1], firstCase[2], SPECIAL_ACTIONS["neutralize_guard"]))
+                specialActions.append((firstCase[0], firstCase[1], firstCase[2], SPECIAL_ACTIONS["neutralize_guard"], currentGoal))
+
                 
             # to test well
             if firstCase[3] in OBJECTS_INDEX["civil"] \
@@ -241,17 +249,32 @@ class SquareGrid:
                         or firstCase[3] == OBJECTS_INDEX['civil'][4] and direction != 'E'
                         )
                     ):
-                specialActions.append((firstCase[0], firstCase[1], firstCase[2], SPECIAL_ACTIONS["neutralize_civil"]))
+                specialActions.append((firstCase[0], firstCase[1], firstCase[2], SPECIAL_ACTIONS["neutralize_civil"], currentGoal))
+
             
         # take costume, need to be on the same case as the costume
-        hasCostume = hasObjects[0]
-        wearingCostume = hasObjects[1]
+        hasCostume = hasObjects.hasCostume
+        wearingCostume = hasObjects.wearingCostume
+        hasRope = hasObjects.hasRope
+        targetKilled = hasObjects.targetKilled
         if not hasCostume and self.map[y][x] == OBJECTS_INDEX["costume"]:
-            specialActions.append((x, y, direction, SPECIAL_ACTIONS["take_costume"]))
+            specialActions.append((x, y, direction, SPECIAL_ACTIONS["take_costume"], currentGoal))
+
 
         # put costume, need to have the costume
         if hasCostume and not wearingCostume: 
-            specialActions.append((x, y, direction, SPECIAL_ACTIONS["put_costume"]))
+            specialActions.append((x, y, direction, SPECIAL_ACTIONS["put_costume"], currentGoal))
+
+
+        # if dont have the rope and we are on the rope
+        if not hasRope and self.map[y][x] == OBJECTS_INDEX["rope"]:
+            specialActions.append((x, y, direction, SPECIAL_ACTIONS["take_rope"], currentGoal + 1))
+
+
+        # if we have the rope and we are on the target 
+        if not targetKilled and hasRope and self.map[y][x] == OBJECTS_INDEX["target"]:
+            specialActions.append((x, y, direction, SPECIAL_ACTIONS["kill_target"], currentGoal + 1))
+
 
         results = filter(self.in_bounds, neighbors)
         results = filter(self.passable, results)

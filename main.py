@@ -160,15 +160,13 @@ def isInCase(position, goal):
         return True
     return False
 
-def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPosition, goal, position: Position, status, hasObjects: dict[str, bool]):
+def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPosition, position: Position, status, hasObjects: dict[str, bool], targetKilled, ropePosition, targetPosition):
     count = 0
     actions = []
-    MAX = 100000
-    while count < MAX and not isInCase(position, goal):
-        print("------------------")        
+    print("------------------")        
 
-        action = actionChooser.choose_phase2(map, position, goal, hasObjects["hasRope"], hasObjects["hasCostume"], hasObjects["wearCostume"])
-
+    actions_result = actionChooser.choose_phase2(map, position, hasObjects["hasRope"], hasObjects["hasCostume"], hasObjects["wearCostume"], targetKilled, ropePosition, targetPosition)
+    for action in actions_result:
         # all actions 
         if action == 1:
             actions.append(('move', position))
@@ -197,7 +195,6 @@ def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPos
             status = referee.take_weapon()
             position = (status["position"][0], status["position"][1])
             map[position[1]][position[0]] = OBJECTS_INDEX['empty']
-
         elif action == 7:
             actions.append(("take_suit", position))
             status = referee.take_suit()
@@ -209,29 +206,16 @@ def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPos
             actions.append(("put_suit", position))
             status = referee.put_on_suit()
             hasObjects["wearCostume"] = True
+        elif action == 9:
+            actions.append(("kill_target", position))
+            status = referee.kill_target()
         else: 
             raise Exception("action not found")
 
-        orientation = fromHCDirectionToOrientation(status["orientation"])
-        position = (status["position"][0], status["position"][1], orientation)
-        count += 1
-    print("count: ", count)
     pprint(status)
     return status, position
 
 def phase2(referee: HitmanReferee, map):
-    # map = [[1, 1, 2, 2, 1, 4, 1], # default map 6*7
-    #         [1, 1, 1, 1, 1, 1, 1],
-    #         [2, 2, 1, 10, 1, 14, 15],
-    #         [3, 2, 1, 1, 1, 12, 1],
-    #         [1, 2, 1, 1, 1, 1, 1],
-    #         [1, 1, 1, 5, 9, 2, 2]]
-    # map = [ [1,  1,  2,  2,  1,  4,  1], # default map 6*7
-    #         [1,  1,  1,  1,  1,  1,  1],
-    #         [2,  2,  7,  9,  5,  1,  1],
-    #         [3,  2,  1,  1,  1,  12, 7],
-    #         [1,  2,  1,  1,  1,  1,  1],
-    #         [1,  1,  1,  1,  10, 2,  2]]
     start_time = time.time()
 
     status = referee.start_phase2()
@@ -266,31 +250,8 @@ def phase2(referee: HitmanReferee, map):
         "hasCostume": False,
         "wearCostume": False
     }
-    status, position = goToGoal(actionChooser, referee, map, startPosition, (ropePosition[0], ropePosition[1]), position, status, hasObjects)
-
-    print("We are on the rope")
-    print("we take the rope")
-    status = referee.take_weapon()
-    # the case becomes empty
-    map[ropePosition[1]][ropePosition[0]] = OBJECTS_INDEX['empty']
-    if status["has_weapon"] == False:
-        raise Exception("We don't have the rope")
-    hasObjects["hasRope"] = True
-    print("we have the rope")
-
-    print("now go kill the target")
-
-    status, position = goToGoal(actionChooser, referee, map, position, (targetPosition[0], targetPosition[1]), position, status, hasObjects)
-    ### then go to the target
-
-    print("We are on the target")
-    ### then kill the target
-    print("we kill the target")
-    status = referee.kill_target()
-    pprint(status)
-
-    ### then come back to the start position
-    status, position = goToGoal(actionChooser, referee, map, position, (startPosition[0], startPosition[1]), position, status, hasObjects)
+    targetKilled = False
+    status, position = goToGoal(actionChooser, referee, map, startPosition, position, status, hasObjects, targetKilled, ropePosition, targetPosition)
 
     end_time = time.time()
     print("total time: ", end_time - start_time)

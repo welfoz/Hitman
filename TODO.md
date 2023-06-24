@@ -26,7 +26,7 @@ nb de fois vu par un garde * 5 + OK
 nb de personnes neutralisées * 20 + OK
 nb de fois vu en train de passer le costume * 100 + OK
 nb de fois vu en train de neutraliser quelqu’un * 100 + OK
-nb de fois vu en train de tuer la cible * 100 TODO
+nb de fois vu en train de tuer la cible * 100 TODO + OK
 
 
 
@@ -45,6 +45,8 @@ Opti a*:
 
 The choice between speed and accuracy does not have to be global. You can choose some things dynamically based on the importance of having accuracy in some region of the map. For example, it may be more important to choose a good path near the current location, on the assumption that we might end up recalculating the path or changing direction at some point, so why bother being accurate about the faraway part of the path? Or perhaps it’s not so important to have the shortest path in a safe area of the map, but when sneaking past an enemy village, safety and quickness are essential.
 
+
+- comment préférer de voir les cases proches plutot que de faire des plans sur la cometes qui vont pas marcher à causes des cases inconnues ?
 
 
 ### rapport
