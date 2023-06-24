@@ -1,28 +1,22 @@
 
 from typing import List, Tuple, Dict
 from aliases import OBJECTS_INDEX, Information
-from aliases import  ClauseBase, Orientation, Information, Position, OBJECTS_INDEX
+from aliases import Orientation, Information, OBJECTS_INDEX
 
 from arbitre_gitlab.hitman.hitman import HC
 
-def HCInfoToObjectIndex(value : int) -> int:
-     if value in range(HC.GUARD_N._value_, HC.GUARD_W._value_ + 1):
-         return OBJECTS_INDEX['guard'][0]
-     if value in range(HC.CIVIL_N._value_, HC.CIVIL_W._value_ + 1):
-         return OBJECTS_INDEX['civil'][0]
-     if value == HC.EMPTY._value_:
-         return OBJECTS_INDEX['empty']
-     if value == HC.WALL._value_:
-         return OBJECTS_INDEX['wall']
-     if value == HC.TARGET._value_:
-         return OBJECTS_INDEX['target']
-     if value == HC.SUIT._value_:
-         return OBJECTS_INDEX['costume']
-     if value == HC.PIANO_WIRE._value_:
-         return OBJECTS_INDEX['rope']
+""" dans arbitre :
+from maps import world_examples
+
+class HitmanReferee:
+    def __init__(self, map_int: int) -> None:
+        self.__map_int = map_int
+        self.__world = world_examples[map_int]
+        self.__m = len(self.__world)
+        self.__n = len(self.__world[0])
+        """
 
 def HCInfoToObjectIndexFull(value : int) -> int:
-     # if value in range(HC.GUARD_N._value_, HC.GUARD_W._value_ + 1):
      if value == HC.GUARD_N._value_:
          return OBJECTS_INDEX['guard'][1]
      if value == HC.GUARD_S._value_:
@@ -49,14 +43,6 @@ def HCInfoToObjectIndexFull(value : int) -> int:
          return OBJECTS_INDEX['costume']
      if value == HC.PIANO_WIRE._value_:
          return OBJECTS_INDEX['rope']
-
-def getKeyFromValue(obj: Dict[str, int], value: int) -> str:
-    for key, v in obj.items():
-        if v == value:
-            return key
-        # check if v is a list
-        if isinstance(v, list) and value in v:
-            return key
 
 def getVisionsFromStatus(status_vision: List[Tuple[Tuple[int, int], HC]]) -> List[Information]:
     # print("status vision", status_vision)
@@ -182,43 +168,9 @@ def howManyUnknown(map: List[List[int]]) -> int:
                 unknown += 1
     return unknown
 
-def printMaps(maps, reverse = True):
-    print("maps")
-    for map in maps:
-        if reverse:
-            for i in range(len(map) - 1, -1, -1):
-                print(map[i])
-        else:
-            for i in range(len(map)):
-                print(map[i])
-        print()
-
 def isMapComplete(map: List[List[HC]]) -> bool:
     for i in range(len(map)):
         for j in range(len(map[i])):
             if map[i][j] == -1:
                 return False
     return True
-
-# to test 
-def mapDivider(map):
-    if len(map) < 5 and len(map[0]) < 5:
-        return [map]
-    
-    # divide the map in 4
-    map1 = [] # bottom left
-    map2 = [] # bottom right
-    map3 = [] # top left
-    map4 = [] # top right
-    for y in range(len(map)):
-        for x in range(len(map[y])):
-            case = map[y][x]
-            if y < len(map) / 2 and x < len(map[y]) / 2:
-                map1.append(case)
-            elif y < len(map) / 2 and x >= len(map[y]) / 2:
-                map2.append(case)
-            elif y >= len(map) / 2 and x < len(map[y]) / 2:
-                map3.append(case)
-            elif y >= len(map) / 2 and x >= len(map[y]) / 2:
-                map4.append(case)
-    return [map1, map2, map3, map4]

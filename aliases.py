@@ -9,11 +9,9 @@ Literal = int
 Clause = List[Literal]
 ClauseBase = List[Clause]
 
-# Orientation = Enum(HC.N, HC.E, HC.S, HC.W)
 Orientation = Enum('Orientation', 'N E S W')
 Position = Tuple[int, int, Orientation]
 PositionAction = Tuple[int, int, Orientation, int]
-# x, y, value from OBJECTS_INDEX
 Information = Tuple[int, int, int]
 
 OBJECTS_INDEX = {

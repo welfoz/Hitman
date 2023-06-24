@@ -8,9 +8,8 @@ from __future__ import annotations
 from typing import Iterator, Tuple, TypeVar, Optional, List, Dict
 T = TypeVar('T')
 from pprint import pprint
-from aliases import Position, OBJECTS_INDEX, Information, PositionAction, SPECIAL_ACTIONS
+from aliases import Position, OBJECTS_INDEX, PositionAction, SPECIAL_ACTIONS
 import heapq
-from satUtils import is_position_safe_opti
 
 GridLocation = Tuple[int, int]
 
@@ -209,9 +208,6 @@ class SquareGrid:
         else:
             raise ValueError('Invalid direction')
         
-        # if we are looking directly at a guard or a civil
-        # and if he is not looking at us
-        # we can neutralize it
         specialActions = []
         if self.in_bounds(firstCase):
             firstCase[3] = self.map[firstCase[1]][firstCase[0]]
@@ -219,7 +215,6 @@ class SquareGrid:
             # we can neutralize if 
             # - we are looking at a guard
             # - the guard isn't looking at us OR we are hidden by a civil
-            # to test well
             if firstCase[3] in OBJECTS_INDEX["guard"] \
                 and (
                     self.map[y][x] in OBJECTS_INDEX["civil"] \
@@ -231,7 +226,6 @@ class SquareGrid:
                     ):
                 specialActions.append((firstCase[0], firstCase[1], firstCase[2], SPECIAL_ACTIONS["neutralize_guard"]))
                 
-            # to test well
             if firstCase[3] in OBJECTS_INDEX["civil"] \
                 and (
                     self.map[y][x] in OBJECTS_INDEX["civil"] \
@@ -279,7 +273,7 @@ def heuristic(a: GridLocation, b: GridLocation) -> float:
     (x2, y2) = b
     return abs(x1 - x2) + abs(y1 - y2)
 
-def a_star_search(graph: SquareGrid, start: Position, goal: GridLocation):
+# def a_star_search(graph: SquareGrid, start: Position, goal: GridLocation):
     """basic a star search
     to go from start to goal
     """

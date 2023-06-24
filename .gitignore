@@ -1,4 +1,5 @@
-# gophersat
 *.cnf
-.vscode
+.vscode/
 __pycache__/
+gophersat/
+.DS_Store
