@@ -4,9 +4,9 @@ import time
 from pprint import pprint
 
 from arbitre_gitlab.hitman.hitman import HC, HitmanReferee
-from actionChooser import ActionChooser
-from aliases import Position, OBJECTS_INDEX
-from utils import createMap, howManyUnknown, isMapComplete, updateSolutionMap, fromHCDirectionToOrientation, addTurnInfo, fromHCDirectionToOrientation, findObject
+from src.actionChooser import ActionChooser
+from src.aliases import Position, OBJECTS_INDEX
+from src.utils import createMap, howManyUnknown, isMapComplete, updateSolutionMap, fromHCDirectionToOrientation, addTurnInfo, fromHCDirectionToOrientation, findObject
 
 SAT_BONUS = 1
 

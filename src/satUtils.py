@@ -4,9 +4,9 @@ import platform
 from typing import List, Tuple
 from itertools import combinations
 
-from aliases import  Literal, ClauseBase, Information, GUARD_INDEX, MAP_GUARD_INDEX
+from src.aliases import  Literal, ClauseBase, Information, GUARD_INDEX, MAP_GUARD_INDEX
 from arbitre_gitlab.hitman.hitman import HC
-from utils import OBJECTS_INDEX, HCInfoToObjectIndexFull
+from src.utils import OBJECTS_INDEX, HCInfoToObjectIndexFull
 
 def ObjectIndexToMapGuardIndex(value : int) -> int:
     if value == OBJECTS_INDEX['empty']:
