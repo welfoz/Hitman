@@ -15,7 +15,6 @@ class HitmanReferee:
         self.__n = len(self.__world[0])
         """
 
-
 def addTurnInfo(status, heardMap, seenMap, map):
     visions = getVisionsFromStatus(status["vision"])
     # print("visions", visions)
@@ -33,7 +32,6 @@ def addTurnInfo(status, heardMap, seenMap, map):
     heardInfo: Information = [status["position"][0], status["position"][1], status["hear"]]
     if (not isInformationAlreadyKnown(heardMap, heardInfo)):
         heardMap = updateMap(heardMap, [heardInfo])
-    # printMaps([map, heardMap])
     return
 
 def findObject(map, object):
@@ -77,7 +75,6 @@ def HCInfoToObjectIndexFull(value : int) -> int:
          return OBJECTS_INDEX['rope']
 
 def getVisionsFromStatus(status_vision: List[Tuple[Tuple[int, int], HC]]) -> List[Information]:
-    # print("status vision", status_vision)
     visions = []
     for vision in status_vision:
         visionValue = HCInfoToObjectIndexFull(vision[1].value)

@@ -13,7 +13,6 @@ ClauseBase = List[Clause]
 Orientation = Enum('Orientation', 'N E S W')
 Position = Tuple[int, int, Orientation]
 PositionAction = Tuple[int, int, Orientation, int, int]
-# x, y, value from OBJECTS_INDEX
 Information = Tuple[int, int, int]
 GridLocation = Tuple[int, int]
 
@@ -50,8 +49,6 @@ MAP_GUARD_INDEX = {
     'guard': 3,
     'civil': 4
 }
-
-
 
 Global_Tuple = namedtuple('Global_Tuple', ['cost_so_far', 'state_map_new_infos', 'backtrack'])
 HasObjects = namedtuple('Objects', ['hasRope', 'hasCostume', 'wearingCostume', 'targetKilled'])

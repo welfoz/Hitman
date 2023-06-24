@@ -497,7 +497,6 @@ def a_star_search_points_with_goal(graph: SquareGrid, start: Position):
                     nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next, y_next, OBJECTS_INDEX["empty"]]])
                 elif action_next == SPECIAL_ACTIONS["put_costume"]:
                     hasObjects[nextTuple] = hasObjects[nextTuple]._replace(wearingCostume=True)
-                    # hasObjects[nextTuple] = (hasObjects[currentTuple][0], True, hasObjects[currentTuple][2], hasObjects[currentTuple][3])
                 elif action_next == SPECIAL_ACTIONS["take_rope"]:
                     hasObjects[nextTuple] = hasObjects[nextTuple]._replace(hasRope=True)
                     nextMap = updateMap(copy.deepcopy(state_map[currentTuple]), [[x_next, y_next, OBJECTS_INDEX["empty"]]])
@@ -537,7 +536,6 @@ def a_star_search_points_without_costume(graph: SquareGrid, start: Position, goa
     """
     ropePosition = graph.ropePosition
     targetPosition = graph.targetPosition
-    targetKilled = graph.targetKilled
     startPosition = start
 
     openList = PriorityQueue()
