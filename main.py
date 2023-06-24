@@ -126,7 +126,7 @@ def phase1(referee: HitmanReferee):
     print(referee.send_content(solutionMap))
     print("end phase1....")
     pprint(referee.end_phase1())
-    return map, end_time - start_time, status["penalties"]
+    return map #, end_time - start_time, status["penalties"]
 
 def phase2(referee: HitmanReferee, map):
     start_time = time.time()
@@ -164,28 +164,16 @@ def phase2(referee: HitmanReferee, map):
     print("total time: ", end_time - start_time)
     print("is good solution for referee....", end=" ")
     pprint(referee.end_phase2())
-    return end_time - start_time, status["penalties"]
+    return #end_time - start_time, status["penalties"]
 
 def main():
     # INSTALLATION : attention, l'éxécutable gophersat doit être dans /gophersat/
 
-    scores_p1 = []
-    scores_p2 = []
+    referee = HitmanReferee()
 
-    for map_int in range(0, 9):
+    map = phase1(referee)
 
-        referee = HitmanReferee(map_int)
-
-        map, time, score = phase1(referee)
-        scores_p1.append([map_int, time, score])
-
-        time, score = phase2(referee, map)
-        scores_p2.append([map_int, time, score])
-    
-    print("Scores phase 1 :")
-    pprint(scores_p1)
-    print("Scores phase 2 :")
-    pprint(scores_p2)
+    phase2(referee, map)
 
 if __name__ == "__main__":
     main()
