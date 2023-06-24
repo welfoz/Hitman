@@ -115,8 +115,6 @@ Nous utilisons le même algorithme que dans la phase 1. Cette fois ci, il calcul
 Ditance de manhattan, pour trouver le plus court chemin.
 
 ### Améliorations possibles :
-- N'utiliser A* qu'une seule fois et exécuter le plan.
-- Le calcul du coût pour aller prendre et mettre le costume est aussi à améliorer
 - Faire un portfolio d'heuristiques, lancer les résolutions en parallèle et prendre la premiere réponse
 
 <br>
@@ -134,4 +132,3 @@ Ditance de manhattan, pour trouver le plus court chemin.
 
 - Les heuristiques utilisées pourraient surestimer le coût réel
 - Déductions SAT limitées autour d'Hitman
-- Le calcul du coût pour prendre et mettre le costume dans la phase 2 pourrait être amélioré
