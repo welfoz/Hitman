@@ -803,7 +803,7 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             newInfos = [info for info in caseSeen if info not in current_state_map_new_infos and info not in allInfosBase] # we only keep the new information
 
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
-            new_cost = current_cost_so_far[0] + graph.cost(howManyGuardsAreSeeingUs, next, surrondings, sat_info[-1])
+            new_cost = current_cost_so_far[0] + graph.cost(howManyGuardsAreSeeingUs, next)
 
             next_state_map_new_infos = [info for info in current_state_map_new_infos] + newInfos
             allUnkownCases = []
@@ -826,10 +826,15 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
                             closestDistance = distance
                             indexClosest = len(allUnkownCases) - 1
             clustering = getClusteringScore(allUnkownCases, graph, indexClosest)
+            x, y, d = next
+            sat_cost = 0
+            if (x, y, False) in surrondings:
+                sat_cost = sat_info[-1] * 0.99
+            heuristic = clustering + sat_cost
 
             # before = clustering
             # print(before, clustering, len(allUnkownCases))
-            diffClustering = current_cost_so_far[1] - clustering
+            diffHeuristic = current_cost_so_far[1] - heuristic
             diffCost = current_cost_so_far[0] - new_cost
             
             """
@@ -841,7 +846,7 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             si diffClustering < 0 mais diffCost > 0, on est pas content
 
             """
-            sum = diffClustering + diffCost
+            sum = diffHeuristic + diffCost
             # if nextTuple not in global_dict or (diffClustering > 0 and diffCost > 0): 
             if nextTuple not in global_dict or sum > 0: 
             # if nextTuple not in global_dict or clustering < global_dict[nextTuple].cost_so_far[1] or (clustering == global_dict[nextTuple].cost_so_far[1] and new_cost < global_dict[nextTuple].cost_so_far[0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
@@ -849,7 +854,7 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
                 # si on trouve une route apportant plus d'information pour aller à nextTuple, on la prend
                 next_backtrack = current_backtrack + [nextTuple[0]]
 
-                next_cost_so_far = (new_cost, clustering)
+                next_cost_so_far = (new_cost, heuristic)
 
 
 
@@ -868,7 +873,7 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
                 # but de l'heuristique: estimer le mieux la penalité restante jusqu'à ne plus avoir de case inconnue
                 # priority = new_cost + fartherUnknownDistance + getClusteringScore(allUnkownCases)
                 # priority = new_cost + getClusteringScore(allUnkownCases) #+ closiestUnknownDistance
-                priority = new_cost + clustering #+ closiestUnknownDistance
+                priority = new_cost + heuristic #+ closiestUnknownDistance
                 # priority = new_cost + manhattan_distance((next[0], next[1]), goal)  
                 # priority = howManyUnknown(nextMap) # pretty efficient but not best result
                 # priority = new_cost + score # inneficient but find the best result as it expends more than others
