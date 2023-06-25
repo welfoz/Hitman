@@ -1,3 +1,11 @@
+__author__ = "Fabien Michel and Pol Corty"
+__copyright__ = "Copyright 2023"
+__license__ = "LGPL-3.0"
+__version__ = "1.0.0"
+__maintainer__ = "Fabien michel"
+__email__ = "fabien.michel@etu.utc.fr"
+__status__ = "dev"
+
 from typing import List, Tuple, Dict
 from pprint import pprint
 import time
