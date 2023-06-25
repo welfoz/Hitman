@@ -1,3 +1,11 @@
+__author__ = "Fabien Michel and Pol Corty"
+__copyright__ = "Copyright 2023"
+__license__ = "LGPL-3.0"
+__version__ = "1.0.0"
+__maintainer__ = "Fabien michel"
+__email__ = "fabien.michel@etu.utc.fr"
+__status__ = "dev"
+
 from typing import List, Tuple, Dict
 from pprint import pprint
 import time
@@ -125,8 +133,8 @@ def phase1(referee: HitmanReferee):
     print("is good solution for referee....", end=" ")
     print(referee.send_content(solutionMap))
     print("end phase1....")
-    end = referee.end_phase1()
-    return map, end[1] #, end_time - start_time, status["penalties"]
+    pprint(referee.end_phase1())
+    return map, end_time - start_time, status["penalties"]
 
 def phase2(referee: HitmanReferee, map):
     start_time = time.time()
@@ -163,21 +171,29 @@ def phase2(referee: HitmanReferee, map):
     end_time = time.time()
     print("total time: ", end_time - start_time)
     print("is good solution for referee....", end=" ")
-    end = referee.end_phase2()
-    return end[1] #end_time - start_time, status["penalties"]
+    pprint(referee.end_phase2())
+    return end_time - start_time, status["penalties"]
 
 def main():
-    # INSTALLATION : attention, l'éxécutable gophersat doit être dans le cwd (vérifier l153 de /src/satUtils.py)
+    # INSTALLATION : attention, l'éxécutable gophersat doit être dans le cwd (vérifier l153 de satUtils.py)
 
-    referee = HitmanReferee()
+    scores_p1 = []
+    scores_p2 = []
 
-    map, score1 = phase1(referee)
+    for map_int in range(0, 9):
 
-    score2 = phase2(referee, map)
+        referee = HitmanReferee(map_int)
 
-    print("\n\n-----------------\n")
-    print("score phase1: ", score1)
-    print("score phase2: ", score2)
+        map, time, score = phase1(referee)
+        scores_p1.append([map_int, time, score])
+
+        time, score = phase2(referee, map)
+        scores_p2.append([map_int, time, score])
+    
+    print("Scores phase 1 :")
+    pprint(scores_p1)
+    print("Scores phase 2 :")
+    pprint(scores_p2)
 
 if __name__ == "__main__":
     main()

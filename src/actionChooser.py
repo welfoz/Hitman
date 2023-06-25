@@ -375,26 +375,9 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
 
                 next_cost_so_far = (new_cost, clustering)
 
-
-
-                # closiestUnknownDistance = 1000
-                # for unknown in allUnkownCases:
-                #     distance = manhattan_distance(unknown, (next[0], next[1]))
-                #     if distance < closiestUnknownDistance:
-                #         closiestUnknownDistance = distance
-                # # print(closiestUnknownDistance)
-                # if len(allUnkownCases) == 0:
-                #     closiestUnknownDistance = 0
-                
-                # if closiestUnknownDistance > 2:
-                #     closiestUnknownDistance -= 2
-
                 # but de l'heuristique: estimer le mieux la penalité restante jusqu'à ne plus avoir de case inconnue
-                # priority = new_cost + fartherUnknownDistance + getClusteringScore(allUnkownCases)
-                priority = new_cost + getClusteringScore(allUnkownCases) / 2 #+ closiestUnknownDistance
-                # priority = howManyUnknown(nextMap) # pretty efficient but not best result
-                # priority = new_cost + score # inneficient but find the best result as it expends more than others
-                # priority = new_cost + score * 10 # get stuck, why ? circular path
+                priority = new_cost + getClusteringScore(allUnkownCases)
+                # priority = new_cost + (howManyUnknownBase - len(next_state_map_new_infos))
                 # priority = new_cost # diskstra
                 
                 openList.put(nextTuple, priority)
