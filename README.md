@@ -14,11 +14,8 @@ git submodule update
 
 Dans [main.py](main.py#L172).
 
-```python
-def main():
-    referee = HitmanReferee()
-    map = phase1(referee)
-    phase2(referee, map)
+```bash
+python main.py
 ```
 
 <br>
