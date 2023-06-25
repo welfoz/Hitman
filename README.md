@@ -1,10 +1,18 @@
 # Installation
 
-Merci de mettre l'éxécutable gophersat dans le dossier ```/gophersat/``` et de vérifier le chemin dans la fonction ```exec_gophersat``` (satUtils.py, l246).
+Merci de mettre l'éxécutable gophersat dans la racine du projet et de vérifier le chemin dans la fonction ```exec_gophersat``` ([src/satUtils](src/satUtils.py#L161), L161). 
+Pensez également à effectuer les commandes suivantes pour initialiser le submodule arbitre_hitman :
+```bash
+cd arbitre_hitman
+git submodule init
+git submodule update
+```
 
 <br>
 
 # Utilisation
+
+Dans [main.py](main.py#L172).
 
 ```python
 def main():
@@ -15,24 +23,19 @@ def main():
 
 <br>
 
-# Modélisation STRIPS
-
-La modélisation est détaillée dans le fichier ```STRIPS.md```
-
-<br>
-
 # Fonctionnement de notre projet
 
 
 ## Modélisation en SAT pour la phase 1
 
-Nous nous sommes basés sur les fonctions uniqueX(), atLeast() et atMost() (satUtils.py, 45:80) vues en TP, en les améliorant.
+Nous nous sommes basés sur les fonctions uniqueX(), atLeast() et atMost() ([satUtils.py](src/satUtils.py#L27), 27:62) vues en TP, en les améliorant.
 
-### Historique des systèmes en SAT réalisés :
+### Historique des systèmes réalisés en SAT :
 
-1. **modéliser l'ensemble de la carte en SAT et déduire la position des gardes à partir de toutes les informations** : fonctionnel et précis mais le nombre de clauses explose trop rapidement (10 millions pour la carte 6*7), surtout quand le nombre de gardes et de civils augmente.
-2. **faire un grand nombre d'appels au solveur pour calculer la probabilité qu'un garde se trouve sur une case** (nombre de solutions avec le garde / grand nombre d'appels au solveur) : impossible d'avoir des déductions cohérentes, le solveur n'est pas fait pour cela.
-3. **modéliser à chaque tour uniquement les cases inconnues dans un rayon de 25 cases autour du Hitman (portée de l'écoute) et faire abstraction de la direction des gardes pour savoir si une case est sans danger** : fonctionne bien, en général moins de 1000 clauses, cependant les décisions sont prises sans faire de déductions au delà de la portée de l'écoute. C'est la version actuelle.
+1. **modéliser l'ensemble de la carte en SAT et déduire la position des gardes à partir de toutes les informations** <br> Fonctionnel et précis mais le nombre de clauses explose trop rapidement (10 millions pour la carte 6*7), surtout quand le nombre de gardes et de civils augmente.
+2. **faire un grand nombre d'appels au solveur pour calculer la probabilité qu'un garde se trouve sur une case** <br>Proba: nombre de solutions avec le garde / grand nombre d'appels au solveur. <br>
+Impossible d'avoir des déductions cohérentes, le solveur n'est pas fait pour cela.
+3. **modéliser à chaque tour uniquement les cases inconnues dans un rayon de 25 cases autour du Hitman (portée de l'écoute) et faire abstraction de la direction des gardes pour savoir si une case est sans danger** <br> Fonctionne bien, en général moins de 1000 clauses, cependant les décisions sont prises sans faire de déductions au delà de la portée de l'écoute. C'est la version actuelle.
 
 <br>
 
@@ -53,7 +56,7 @@ MAP_GUARD_INDEX = {
     'civil': 4
 }
 ````
-La fonction ```is_position_safe_opti()``` utilise la carte connue, la position à tester, la carte des informations entendues, et la carte des informations de is_in_guard_range de l'arbitre.
+La fonction [is_position_safe_opti()](src/satUtils.py#L292) utilise la carte connue, la position à tester, la carte des informations entendues, et la carte des informations de is_in_guard_range de l'arbitre.
 
 Elle génère des clauses pour les cases dans un rayon de 2 autour du Hitman :
 - extraction de la sous-carte
@@ -63,13 +66,13 @@ Elle génère des clauses pour les cases dans un rayon de 2 autour du Hitman :
 - génération des clauses liées aux cases connues
 - génération des clauses liées aux positions où Hitman à été vu
 
-La fonction ```is_position_safe()``` regarde ensuite si un modèle SAT avec un garde existe pour tous les environs. Si aucun modèle n'existe, la case est sans danger.
+La fonction [is_position_safe()](src/satUtils.py#L221) regarde ensuite si un modèle SAT avec un garde existe pour tous les environs. Si aucun modèle n'existe, la case est sans danger.
 
 Cette modélisation SAT est ensuite utilisée dans la fonction de coût de notre algorithme A* pour choisir la direction à prendre.
 
 ### Améliorations possibles :
 
-- prendre en compte toutes les informations d'écoute (actullement la fonction ne génère des clauses qu'avec les cases où aucun garde/civil n'est entendu pour réduire le nombre de clauses)
+- prendre en compte toutes les informations d'écoute (actuellement la fonction ne génère des clauses qu'avec les cases où aucun garde/civil n'est entendu pour réduire le nombre de clauses).
 
 <br>
 
@@ -78,10 +81,15 @@ Cette modélisation SAT est ensuite utilisée dans la fonction de coût de notre
 <br>
 
 ## Algorithme A* pour la phase 1 :
+(à retrouver dans [a_star_search_points()](src/actionChooser.py#L291))
 
-Nous utilisons un algorithme A* pour déterminer la route à prendre dans la phase 1. Cette algorithme utilise la modélisation SAT dans son calcul du coût des chemins, uniquement au niveau 1 de l'arbre.
+Le but de la phase 1 est de trouver le chemin de coût minimal pour visiter toutes les cases encore inconnues. 
 
-Il calcule le chemin de coût minimal pour visiter toutes les cases encore inconnues. Ce calcul est fait à nouveau à chaque action de Hitman, et difficile à cause des parties inconnues.
+Nous utilisons un algorithme A* pour déterminer la route à prendre dans la phase 1. Cette algorithme utilise la modélisation SAT dans son calcul du coût des chemins.
+
+A chaque action de Hitman, nous recalculons le chemin avec a* en prenant en compte des nouvelles données (cases découvertes, zone d'écoute différente...).
+
+Il est difficile de trouver le meilleur chemin de coût minimal permettant de voir toutes les cases de la carte à cause des cases inconnues. 
 
 **Heuristique** :
 
@@ -91,9 +99,9 @@ Plus les cases sont proches les unes des autres et donc plus facile à voir ense
 Cela permet de récompenser à la fois la diminution du nombre de cases inconnue mais également leur rapprochement.
 
 ### Améliorations possibles :
-- Améliorer l'heuristique en intégrant la position du Hitman dans l'évaluation
-- Recalculer le chemin uniquement lorsque l'on a de nouvelles informations
-- Faire un portfolio d'heuristiques, lancer les résolutions en parallèle et prendre la premiere réponse
+- Améliorer l'heuristique en intégrant la position du Hitman dans l'évaluation.
+- Recalculer le chemin uniquement lorsque l'on a de nouvelles informations.
+- Faire un portfolio d'heuristiques, lancer les résolutions en parallèle et prendre la première réponse.
 
 <br>
 
@@ -103,7 +111,7 @@ Cela permet de récompenser à la fois la diminution du nombre de cases inconnue
 
 ## Modélisation STRIPS :
 
-La modélisation est détaillée dans le fichier ```STRIPS.md```
+La modélisation est détaillée dans le fichier [STRIPS.md](STRIPS.md)
 
 <br>
 
@@ -112,15 +120,18 @@ La modélisation est détaillée dans le fichier ```STRIPS.md```
 <br>
 
 ## Algorithme A* pour la phase 2 :
+(à retrouver dans [a_star_search_points_with_goal()](src/actionChooser.py#L418))
 
-Nous utilisons le même algorithme que dans la phase 1. Cette fois ci, il calcule le chemin de coût minimal pour aller tuer la cible. Ce parcours est séparé en 4 buts : prendre la corde de piano, aller sur la case de la cible, la tuer, revenir au départ.
+Nous utilisons le même algorithme que dans la phase 1. Cette fois ci, il calcule le chemin de coût minimal pour aller tuer la cible et revenir à la case de départ. 
+
+Ce parcours est séparé en 4 buts : prendre la corde de piano, aller sur la case de la cible, la tuer, revenir au départ.
 
 **Heuristique** :
 
-Ditance de manhattan, pour trouver le plus court chemin.
+Ditance de manhattan, pour trouver le plus court chemin entre la position d'hitman et celle de son but actuel.
 
 ### Améliorations possibles :
-- Faire un portfolio d'heuristiques, lancer les résolutions en parallèle et prendre la premiere réponse
+- Faire un portfolio d'heuristiques, lancer les résolutions en parallèle et prendre la premiere réponse.
 
 <br>
 
@@ -135,5 +146,5 @@ Ditance de manhattan, pour trouver le plus court chemin.
 
 ## Faiblesses :
 
-- Les heuristiques utilisées pourraient surestimer le coût réel
+- L'heuristique de la phase 1 n'estime pas le coût restant et elle n'est pas admissible, elle peut surestimer le coût réel et donc ne pas trouver le chemin optimal
 - Déductions SAT limitées autour d'Hitman
