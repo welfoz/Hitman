@@ -303,7 +303,7 @@ def main():
 
     scores = []
 
-    for map_int in range(0, 9):
+    for map_int in range(0, 1):
         """ dans arbitre :
 from maps import world_examples
 

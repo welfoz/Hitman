@@ -654,6 +654,18 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     '''
     but: voir la case goal en gagnant le plus de nouvelles cases possible
     '''
+    
+    # goal is closest unknown case
+    goal = (None, None)
+    goalDistance = 10000
+    for y in range(len(graph.map)):
+        for x in range(len(graph.map[y])):
+            if graph.map[y][x] == -1:
+                distance = abs(start[0] - x) + abs(start[1] - y)
+                if distance < goalDistance:
+                    goalDistance = distance
+                    goal = (x, y)
+
     openList = PriorityQueue()
     startTuple = (start, None)
     openList.put(startTuple, 0)
@@ -713,7 +725,11 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
                     allUnkownCases.append([x, y])
 
         howManyUnknownCurrent = howManyUnknownBase - len(current_state_map_new_infos) 
-        if howManyUnknownCurrent == 0:
+        # if howManyUnknownCurrent == 0:
+        #     print("goal found")
+        #     break
+
+        if current[0][0] == goal[0] and current[0][1] == goal[1]:
             print("goal found")
             break
 
@@ -732,8 +748,9 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
                 for x in range(len(graph.map[y])):
                     if [x, y, -2] not in next_state_map_new_infos and graph.map[y][x] == -1:
                         allUnkownCases.append([x, y])
-            clustering = getClusteringScore(allUnkownCases) 
-            if nextTuple not in global_dict or clustering < global_dict[nextTuple].cost_so_far[1] or (clustering == global_dict[nextTuple].cost_so_far[1] and new_cost < global_dict[nextTuple].cost_so_far[0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
+            clustering = getClusteringScore(allUnkownCases) / 2
+            # if nextTuple not in global_dict or clustering < global_dict[nextTuple].cost_so_far[1] or (clustering == global_dict[nextTuple].cost_so_far[1] and new_cost < global_dict[nextTuple].cost_so_far[0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
+            if nextTuple not in global_dict or new_cost < global_dict[nextTuple].cost_so_far[0]:
                 # si on trouve une route apportant plus d'information pour aller à nextTuple, on la prend
                 next_backtrack = current_backtrack + [nextTuple[0]]
 
@@ -755,11 +772,12 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
 
                 # but de l'heuristique: estimer le mieux la penalité restante jusqu'à ne plus avoir de case inconnue
                 # priority = new_cost + fartherUnknownDistance + getClusteringScore(allUnkownCases)
-                priority = new_cost + getClusteringScore(allUnkownCases) / 2 #+ closiestUnknownDistance
+                # priority = new_cost + getClusteringScore(allUnkownCases) #+ closiestUnknownDistance
+                # priority = new_cost + manhattan_distance((next[0], next[1]), goal)  
                 # priority = howManyUnknown(nextMap) # pretty efficient but not best result
                 # priority = new_cost + score # inneficient but find the best result as it expends more than others
                 # priority = new_cost + score * 10 # get stuck, why ? circular path
-                # priority = new_cost # diskstra
+                priority = new_cost # diskstra
                 
                 openList.put(nextTuple, priority)
 
