@@ -122,10 +122,7 @@ class SquareGrid:
             return False
         return True
     
-    def cost(self, howManyGuardsAreSeeingUs: int, next : Tuple, surroundings : List[Tuple], sat_bonus : float) -> float:
-        x, y, d = next
-        if (x, y, False) in surroundings:
-            return 1 + 5 * howManyGuardsAreSeeingUs + sat_bonus
+    def cost(self, howManyGuardsAreSeeingUs: int) -> float:
         return 1 + 5 * howManyGuardsAreSeeingUs
     
     def cost_phase2(self, next, howManyGuardsAreSeeingUs, howManyCivilsAreSeeingUs, wearingCostume, howManyGuardsWillSeeUsWithoutCostume: int) -> float:

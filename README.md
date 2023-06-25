@@ -91,12 +91,19 @@ A chaque action de Hitman, nous recalculons le chemin avec a* en prenant en comp
 
 Il est difficile de trouver le meilleur chemin de coût minimal permettant de voir toutes les cases de la carte à cause des cases inconnues. 
 
-**Heuristique** :
+**Heuristique** : ([calcul](src/actionChooser.py#L379))
+
+```python 
+heuristic = clustering + sat_cost
+```
 
 On utilise la somme entre les distances entre chaque case inconnue, ce qu'on appelle *clustering*. <br>
 Plus le nombre de cases inconnues diminue, plus *clustering* diminue.
 Plus les cases sont proches les unes des autres et donc plus facile à voir ensemble, plus *clustering* est faible. <br>
 Cela permet de récompenser à la fois la diminution du nombre de cases inconnue mais également leur rapprochement.
+
+On ajoute à cela le coût SAT. 
+Il vaut 0 si la case est safe et 0.99 sinon.<br>
 
 ### Améliorations possibles :
 - Améliorer l'heuristique en intégrant la position du Hitman dans l'évaluation.
@@ -120,7 +127,7 @@ La modélisation est détaillée dans le fichier [STRIPS.md](STRIPS.md)
 <br>
 
 ## Algorithme A* pour la phase 2 :
-(à retrouver dans [a_star_search_points_with_goal()](src/actionChooser.py#L418))
+(à retrouver dans [a_star_search_points_with_goal()](src/actionChooser.py#L414))
 
 Nous utilisons le même algorithme que dans la phase 1. Cette fois ci, il calcule le chemin de coût minimal pour aller tuer la cible et revenir à la case de départ. 
 
