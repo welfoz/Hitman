@@ -632,7 +632,8 @@ def fromPathToActionPhase1(path):
                 actions.append('turn 90')
     return actions 
 
-def getClusteringScore(allUnkownCases, graph):
+def getClusteringScore(allUnkownCases, graph, closestCaseIndex):
+    # print(closestCaseIndex)
     """
     return the clustering score of the map
     """
@@ -642,34 +643,18 @@ def getClusteringScore(allUnkownCases, graph):
         return 0
     if len(allUnkownCases) == 1:
         return 1
-    def isThereAGuardOrAWallBetweenCases(case1, case2):
-        """
-        return True if there is a guard or a wall between the two cases
-        """
-        if case1[1] == case2[1]:
-            # same line
-            for x in range(min(case1[0], case2[0]), max(case1[0], case2[0])):
-                if graph.map[case1[1]][x] == OBJECTS_INDEX["wall"] or graph.map[case1[1]][x] == OBJECTS_INDEX["guard"]:
-                    return True
-        elif case1[0] == case2[0]:
-            # same column
-            for y in range(min(case1[1], case2[1]), max(case1[1], case2[1])):
-                if graph.map[y][case1[0]] == OBJECTS_INDEX["wall"] or graph.map[y][case1[0]] == OBJECTS_INDEX["guard"]:
-                    return True
-        return False
-    
     # if there is a guard or a wall between two unknown cases, the distance is += 1
     distances = []
-    random = allUnkownCases[0]
+    closest = allUnkownCases[0]
     for i in range(len(allUnkownCases)):
         # for j in range(i + 1, len(allUnkownCases)):
         #     distance = abs(allUnkownCases[i][0] - allUnkownCases[j][0]) + abs(allUnkownCases[i][1] - allUnkownCases[j][1])
         #     if isThereAGuardOrAWallBetweenCases(allUnkownCases[i], allUnkownCases[j]):
         #         distance += 5
         # for j in range(i + 1, len(allUnkownCases)):
-        distance = abs(allUnkownCases[i][0] - random[0]) + abs(allUnkownCases[i][1] - random[1])
-        # if isThereAGuardOrAWallBetweenCases(allUnkownCases[i], random):
-        #     distance += 5
+        distance = abs(allUnkownCases[i][0] - closest[0]) + abs(allUnkownCases[i][1] - closest[1])
+        if isThereAGuardOrAWallBetweenCases(allUnkownCases[i], closest, graph):
+            distance += 1
 
         """
         2            [[0, 4.701056718826294, 60],
@@ -681,6 +666,33 @@ def getClusteringScore(allUnkownCases, graph):
 
     return sum(distances)
 
+def isThereAGuardOrAWallBetweenCases(case1, case2, graph):
+    """
+    return True if there is a guard or a wall between the two cases
+    """
+    if case1[0] == case2[0] or case1[1] == case2[1]:
+        if case1[1] == case2[1]:
+            # same line
+            for x in range(min(case1[0], case2[0]), max(case1[0], case2[0])):
+                if graph.map[case1[1]][x] == OBJECTS_INDEX["wall"] or graph.map[case1[1]][x] == OBJECTS_INDEX["guard"]:
+                    return True
+        elif case1[0] == case2[0]:
+            # same column
+            for y in range(min(case1[1], case2[1]), max(case1[1], case2[1])):
+                if graph.map[y][case1[0]] == OBJECTS_INDEX["wall"] or graph.map[y][case1[0]] == OBJECTS_INDEX["guard"]:
+                    return True
+        return False
+
+    for x in range(min(case1[0], case2[0]), max(case1[0], case2[0])):
+        if graph.map[case1[1]][x] == OBJECTS_INDEX["wall"] or graph.map[case1[1]][x] == OBJECTS_INDEX["guard"] \
+            or graph.map[case2[1]][x] == OBJECTS_INDEX["wall"] or graph.map[case2[1]][x] == OBJECTS_INDEX["guard"]:
+            return True
+    for y in range(min(case1[1], case2[1]), max(case1[1], case2[1])):
+        if graph.map[y][case1[0]] == OBJECTS_INDEX["wall"] or graph.map[y][case1[0]] == OBJECTS_INDEX["guard"] \
+            or graph.map[y][case2[0]] == OBJECTS_INDEX["wall"] or graph.map[y][case2[0]] == OBJECTS_INDEX["guard"]:
+            return True
+    return False
+    
 def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
     '''
     but: voir la case goal en gagnant le plus de nouvelles cases possible
@@ -714,12 +726,20 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
         Global_Tuple
     ] = {}
     allUnkownCases = []
+    indexClosest = None
+    closestDistance = 10000
     for y in range(len(graph.map)):
         for x in range(len(graph.map[y])):
             if graph.map[y][x] == -1:
                 allUnkownCases.append([x, y])
+                distance = abs(start[0] - x) + abs(start[1] - y)
+                if isThereAGuardOrAWallBetweenCases(start, (x, y), graph):
+                    distance += 1
+                if distance < closestDistance:
+                    closestDistance = distance
+                    indexClosest = len(allUnkownCases) - 1
 
-    base_clustering = getClusteringScore(allUnkownCases, graph) 
+    base_clustering = getClusteringScore(allUnkownCases, graph, indexClosest) 
 
     minimum = start
     minimumValue = base_clustering 
@@ -787,11 +807,25 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
 
             next_state_map_new_infos = [info for info in current_state_map_new_infos] + newInfos
             allUnkownCases = []
+            # for y in range(len(graph.map)):
+            #     for x in range(len(graph.map[y])):
+            #         if [x, y, -2] not in next_state_map_new_infos and graph.map[y][x] == -1:
+            #             allUnkownCases.append([x, y])
+            # clustering = getClusteringScore(allUnkownCases, graph, 0)
+            allUnkownCases = []
+            indexClosest = None
+            closestDistance = 10000
             for y in range(len(graph.map)):
                 for x in range(len(graph.map[y])):
                     if [x, y, -2] not in next_state_map_new_infos and graph.map[y][x] == -1:
                         allUnkownCases.append([x, y])
-            clustering = getClusteringScore(allUnkownCases, graph)
+                        distance = abs(start[0] - x) + abs(start[1] - y)
+                        if isThereAGuardOrAWallBetweenCases(start, (x, y), graph):
+                            distance += 1
+                        if distance < closestDistance:
+                            closestDistance = distance
+                            indexClosest = len(allUnkownCases) - 1
+            clustering = getClusteringScore(allUnkownCases, graph, indexClosest)
 
             # before = clustering
             # print(before, clustering, len(allUnkownCases))
