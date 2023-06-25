@@ -269,22 +269,23 @@ def fromPathToActionPhase1(path):
                 actions.append('turn 90')
     return actions 
 
-def getClusteringScore(allUnkownCases):
+def getClusteringScore(allUnkownCases, graph):
     """
     return the clustering score of the map
     """
-    # compute the distance between each unknown cell
-
     if len(allUnkownCases) == 0:
         return 0
     if len(allUnkownCases) == 1:
         return 1
-    
     distances = []
+    closest = allUnkownCases[0]
     for i in range(len(allUnkownCases)):
-        for j in range(i + 1, len(allUnkownCases)):
-            distance = abs(allUnkownCases[i][0] - allUnkownCases[j][0]) + abs(allUnkownCases[i][1] - allUnkownCases[j][1])
-            distances.append(distance)
+        distance = abs(allUnkownCases[i][0] - closest[0]) + abs(allUnkownCases[i][1] - closest[1])
+
+        # if there is a guard or a wall between two unknown cases, the distance is += 1
+        if isThereAGuardOrAWallBetweenCases(allUnkownCases[i], closest, graph):
+            distance += 1
+        distances.append(distance)
 
     return sum(distances)
 
@@ -305,7 +306,7 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             if graph.map[y][x] == -1:
                 allUnkownCases.append([x, y])
 
-    base_clustering = getClusteringScore(allUnkownCases) 
+    base_clustering = getClusteringScore(allUnkownCases, graph) 
 
     minimumValue = base_clustering 
 
@@ -360,7 +361,7 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
             newInfos = [info for info in caseSeen if info not in current_state_map_new_infos and info not in allInfosBase] # we only keep the new information
 
             howManyGuardsAreSeeingUs = howManyGuardsLookingAtUs(next, graph.map)
-            new_cost = current_cost_so_far[0] + graph.cost(howManyGuardsAreSeeingUs, next, surrondings, sat_info[-1]) # default cost = 2, if we know a guard is seeing us, cost = 2 + 5*guards seeing us
+            new_cost = current_cost_so_far[0] + graph.cost(howManyGuardsAreSeeingUs)
 
             next_state_map_new_infos = [info for info in current_state_map_new_infos] + newInfos
             allUnkownCases = []
@@ -368,17 +369,29 @@ def a_star_search_points(graph: SquareGrid, start: Position, sat_info : Tuple):
                 for x in range(len(graph.map[y])):
                     if [x, y, -2] not in next_state_map_new_infos and graph.map[y][x] == -1:
                         allUnkownCases.append([x, y])
-            clustering = getClusteringScore(allUnkownCases) 
-            if nextTuple not in global_dict or clustering < global_dict[nextTuple].cost_so_far[1] or (clustering == global_dict[nextTuple].cost_so_far[1] and new_cost < global_dict[nextTuple].cost_so_far[0]): # on a trouvé une nouvelle route pour aller à nextTuple moins chere
-                # si on trouve une route apportant plus d'information pour aller à nextTuple, on la prend
+            clustering = getClusteringScore(allUnkownCases, graph) 
+
+            # use sat
+            x, y, d = next
+            sat_cost = 0
+            if (x, y, False) in surrondings:
+                sat_cost = sat_info[-1]
+            heuristic = clustering + sat_cost
+
+            diffHeuristic = current_cost_so_far[1] - heuristic
+            diffCost = current_cost_so_far[0] - new_cost
+
+            sumDiffs = diffHeuristic + diffCost
+            if nextTuple not in global_dict or sumDiffs > 0: 
+                # si on trouve une route apportant plus d'information à moindre cout, on l'ajoute
+                # si on fait de grande économie de cout, on ajoute aussi
+             
                 next_backtrack = current_backtrack + [nextTuple[0]]
 
-                next_cost_so_far = (new_cost, clustering)
+                next_cost_so_far = (new_cost, heuristic)
 
                 # but de l'heuristique: estimer le mieux la penalité restante jusqu'à ne plus avoir de case inconnue
-                priority = new_cost + getClusteringScore(allUnkownCases)
-                # priority = new_cost + (howManyUnknownBase - len(next_state_map_new_infos))
-                # priority = new_cost # diskstra
+                priority = new_cost + heuristic
                 
                 openList.put(nextTuple, priority)
 
@@ -614,3 +627,30 @@ def a_star_search_points_without_costume(graph: SquareGrid, start: Position, goa
                 openList.put(nextTuple, priority)
     print("cost prevu: ", cost_so_far[currentTuple])
     return cost_so_far[currentTuple][1], backtrack[currentTuple]
+
+def isThereAGuardOrAWallBetweenCases(case1, case2, graph):
+    """
+    return True if there is a guard or a wall between the two cases
+    """
+    if case1[0] == case2[0] or case1[1] == case2[1]:
+        if case1[1] == case2[1]:
+            # same line
+            for x in range(min(case1[0], case2[0]), max(case1[0], case2[0])):
+                if graph.map[case1[1]][x] == OBJECTS_INDEX["wall"] or graph.map[case1[1]][x] == OBJECTS_INDEX["guard"]:
+                    return True
+        elif case1[0] == case2[0]:
+            # same column
+            for y in range(min(case1[1], case2[1]), max(case1[1], case2[1])):
+                if graph.map[y][case1[0]] == OBJECTS_INDEX["wall"] or graph.map[y][case1[0]] == OBJECTS_INDEX["guard"]:
+                    return True
+        return False
+
+    for x in range(min(case1[0], case2[0]), max(case1[0], case2[0])):
+        if graph.map[case1[1]][x] == OBJECTS_INDEX["wall"] or graph.map[case1[1]][x] == OBJECTS_INDEX["guard"] \
+            or graph.map[case2[1]][x] == OBJECTS_INDEX["wall"] or graph.map[case2[1]][x] == OBJECTS_INDEX["guard"]:
+            return True
+    for y in range(min(case1[1], case2[1]), max(case1[1], case2[1])):
+        if graph.map[y][case1[0]] == OBJECTS_INDEX["wall"] or graph.map[y][case1[0]] == OBJECTS_INDEX["guard"] \
+            or graph.map[y][case2[0]] == OBJECTS_INDEX["wall"] or graph.map[y][case2[0]] == OBJECTS_INDEX["guard"]:
+            return True
+    return False

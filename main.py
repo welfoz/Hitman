@@ -8,7 +8,7 @@ from src.actionChooser import ActionChooser
 from src.aliases import Position, OBJECTS_INDEX
 from src.utils import createMap, howManyUnknown, isMapComplete, updateSolutionMap, fromHCDirectionToOrientation, addTurnInfo, fromHCDirectionToOrientation, findObject
 
-SAT_BONUS = 1
+SAT_BONUS = 0.99
 
 def goToGoal(actionChooser: ActionChooser, referee: HitmanReferee, map, startPosition, position: Position, status, hasObjects: dict[str, bool], targetKilled, ropePosition, targetPosition):
     actions = []
