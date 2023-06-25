@@ -14,7 +14,10 @@ git submodule update
 
 Dans [main.py](main.py#L172).
 
+
 ```bash
+# En étant dans la racine du projet, le lancer dans le terminal
+
 python main.py
 ```
 
