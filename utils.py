@@ -166,7 +166,7 @@ def getAllNewInformation(n_col, n_lig, map, position) -> List[Tuple[int, int, in
 
         if info[2] == OBJECTS_INDEX['empty']: # can see through empty cells
             casesSeen.append(info)
-        if info[2] == -1: # unknown cell
+        elif info[2] == -1: # unknown cell
             info[2] = -2 # means we don't know what we see
             casesSeen.append(info)
         elif info[2] != OBJECTS_INDEX['empty']: # can't see through objects
